@@ -18,13 +18,16 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { signOut } from "firebase/auth";
+import { doc, collection, serverTimestamp, writeBatch } from "firebase/firestore";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function Home() {
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const db = useFirestore();
   
   const [darkMode, setDarkMode] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
@@ -103,6 +106,69 @@ export default function Home() {
   const handleLogout = () => {
     setMustChangePassword(false);
     signOut(auth);
+  };
+
+  const handleSaveAll = async () => {
+    if (!currentRound || !user) return;
+    setIsSaving(true);
+
+    try {
+      const roundId = `round_${currentRound}`;
+      const roundRef = doc(db, "rounds", roundId);
+
+      // Salva dados da Rodada
+      setDocumentNonBlocking(roundRef, {
+        id: roundId,
+        roundNumber: currentRound,
+        name: roundName,
+        isScoresHidden: placaresOcultos,
+        dateUpdated: serverTimestamp(),
+        dateCreated: serverTimestamp(),
+      }, { merge: true });
+
+      // Salva as partidas da rodada no Firestore
+      matches.forEach((match, idx) => {
+        if (idx >= 10) return;
+        const matchId = `match_${match.id}`;
+        const matchRef = doc(db, "rounds", roundId, "matches", matchId);
+        setDocumentNonBlocking(matchRef, {
+          ...match,
+          roundId,
+          id: matchId,
+          dateUpdated: serverTimestamp(),
+        }, { merge: true });
+      });
+
+      // Salva apostas do usuário atual
+      predictions[user.displayName!].forEach((pred, idx) => {
+        if (pred.homeScore === "" || pred.awayScore === "") return;
+        const betId = `bet_${currentRound}_${idx}`;
+        const betRef = doc(db, "users", user.uid, "bets", betId);
+        setDocumentNonBlocking(betRef, {
+          id: betId,
+          userId: user.uid,
+          matchId: `match_${matches[idx]?.id || idx}`,
+          homeScorePrediction: parseInt(pred.homeScore),
+          awayScorePrediction: parseInt(pred.awayScore),
+          isScoresHidden: placaresOcultos,
+          dateSubmitted: serverTimestamp(),
+        }, { merge: true });
+      });
+
+      toast({
+        title: "Sucesso!",
+        description: "Os dados foram sincronizados com o Firebase.",
+      });
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível sincronizar os dados.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // State managers
@@ -297,12 +363,9 @@ export default function Home() {
                 {placaresOcultos ? "Revelar Placares" : "Ocultar Placares"}
               </Button>
             )}
-            <Button size="sm" className="gap-2 bg-secondary hover:bg-secondary/90" onClick={() => {
-              setIsSaving(true);
-              setTimeout(() => { setIsSaving(false); toast({ title: "Salvo!", description: "Dados sincronizados com o servidor." }); }, 800);
-            }}>
-              <Save className="h-4 w-4" />
-              Salvar Tudo
+            <Button size="sm" className="gap-2 bg-secondary hover:bg-secondary/90" onClick={handleSaveAll} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSaving ? "Sincronizando..." : "Salvar Tudo"}
             </Button>
           </div>
         </div>

@@ -2,8 +2,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, updatePassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { PLAYERS } from "@/lib/constants";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Label } from "./ui/label";
 import { Shield, Loader2, Trophy, AlertCircle, KeyRound, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface LoginScreenProps {
   onPasswordChangeRequired?: () => void;
@@ -21,27 +23,25 @@ interface LoginScreenProps {
 
 export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, forcePasswordChange }: LoginScreenProps) {
   const auth = useAuth();
+  const db = useFirestore();
   const { toast } = useToast();
   
-  // States
   const [loading, setLoading] = useState(false);
   const [playerName, setPlayerName] = useState<string>("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   
-  // Password Change Flow
   const [showPasswordChange, setShowPasswordChange] = useState(forcePasswordChange || false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Sync internal state with prop if Home forces it
   useEffect(() => {
     if (forcePasswordChange) {
       setShowPasswordChange(true);
     }
   }, [forcePasswordChange]);
 
-  const formatEmail = (name: string) => `${name.toLowerCase().replace(/\s+/g, '')}@alphabet.com`;
+  const formatEmail = (name: string) => `${name.toLowerCase().trim().replace(/\s+/g, '')}@alphabet.com`;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,10 +53,8 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
     const email = formatEmail(playerName);
 
     try {
-      // Tenta login
       await signInWithEmailAndPassword(auth, email, password);
       
-      // Se logou com a senha padrão, força a troca
       if (password === "alphabet123") {
         onPasswordChangeRequired?.();
         setShowPasswordChange(true);
@@ -67,13 +65,20 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         });
       }
     } catch (err: any) {
-      // Se o erro for de credencial inválida e a senha for a padrão, 
-      // pode ser o primeiro acesso (conta não criada ainda)
       if ((err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") && password === "alphabet123") {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName: playerName });
           
+          // Cria o documento do usuário no Firestore (Gera a coleção 'users')
+          const userRef = doc(db, "users", userCredential.user.uid);
+          setDocumentNonBlocking(userRef, {
+            id: userCredential.user.uid,
+            username: playerName,
+            isAdmin: playerName === "Jardel",
+            dateCreated: serverTimestamp(),
+          }, { merge: true });
+
           toast({
             title: "Primeiro Acesso!",
             description: "Agora, por favor, defina uma senha segura.",
