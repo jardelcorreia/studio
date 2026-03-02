@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
 import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
-import { doc, collection, serverTimestamp, query, where } from "firebase/firestore";
+import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function Home() {
@@ -57,7 +57,6 @@ export default function Home() {
   const roundDocRef = useMemoFirebase(() => roundId ? doc(db, "rounds", roundId) : null, [db, roundId]);
   const { data: roundData } = useDoc(roundDocRef);
 
-  // Nova query: busca direta dentro da coleção 'bets' da rodada (sem Collection Group)
   const betsCollectionRef = useMemoFirebase(() => {
     if (!roundId) return null;
     return collection(db, "rounds", roundId, "bets");
@@ -123,6 +122,7 @@ export default function Home() {
 
     setPredictions(prev => {
       const next = { ...prev };
+      // Limpa os palpites anteriores para evitar "rastros" de outras rodadas
       PLAYERS.forEach(p => {
         next[p] = Array(10).fill({ homeScore: "", awayScore: "" });
       });
