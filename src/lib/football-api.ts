@@ -7,6 +7,30 @@ const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const BASE_URL = 'https://api.football-data.org/v4';
 
 /**
+ * Busca a rodada atual do Brasileirão (BSA).
+ */
+export async function getBrasileiraoCurrentMatchday(): Promise<number> {
+  if (!API_KEY) return 1;
+
+  try {
+    const response = await fetch(`${BASE_URL}/competitions/BSA`, {
+      headers: {
+        'X-Auth-Token': API_KEY,
+      },
+      next: { revalidate: 86400 }, // Cache de 24 horas para info da competição
+    });
+
+    if (!response.ok) return 1;
+
+    const data = await response.json();
+    return data.currentSeason?.currentMatchday || 1;
+  } catch (error) {
+    console.error('Erro ao buscar rodada atual:', error);
+    return 1;
+  }
+}
+
+/**
  * Busca os jogos de uma rodada específica do Brasileirão (BSA).
  */
 export async function getBrasileiraoMatches(matchday: number): Promise<Match[]> {

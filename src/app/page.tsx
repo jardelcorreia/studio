@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { PLAYERS, TEAMS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getBrasileiraoMatches } from "@/lib/football-api";
+import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday } from "@/lib/football-api";
 
 export default function Home() {
   const { toast } = useToast();
@@ -23,10 +23,10 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   
   // App state
-  const [currentRound, setCurrentRound] = useState(1);
+  const [currentRound, setCurrentRound] = useState<number | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
-  const [roundName, setRoundName] = useState("Rodada 1");
+  const [roundName, setRoundName] = useState("");
   const [matchDescriptions, setMatchDescriptions] = useState<string[]>(Array(10).fill(""));
   const [predictions, setPredictions] = useState<PlayerPredictions>(
     Object.fromEntries(PLAYERS.map(p => [p, Array(10).fill({ homeScore: "", awayScore: "" })]))
@@ -35,11 +35,23 @@ export default function Home() {
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch data from API
+  // Initial fetch: Get current matchday
   useEffect(() => {
+    async function init() {
+      const matchday = await getBrasileiraoCurrentMatchday();
+      setCurrentRound(matchday);
+      setRoundName(`Rodada ${matchday}`);
+    }
+    init();
+  }, []);
+
+  // Fetch data from API when round changes
+  useEffect(() => {
+    if (currentRound === null) return;
+
     async function loadMatches() {
       setLoadingMatches(true);
-      const data = await getBrasileiraoMatches(currentRound);
+      const data = await getBrasileiraoMatches(currentRound!);
       setMatches(data);
       
       if (data.length > 0) {
@@ -292,13 +304,15 @@ export default function Home() {
                 <span className="h-8 w-2 bg-secondary" />
                 Calendário Brasileirão
               </h2>
-              <MatchCalendar 
-                matches={matches}
-                round={currentRound}
-                totalRounds={38}
-                onPrev={() => setCurrentRound(prev => Math.max(1, prev - 1))}
-                onNext={() => setCurrentRound(prev => Math.min(38, prev + 1))}
-              />
+              {currentRound !== null && (
+                <MatchCalendar 
+                  matches={matches}
+                  round={currentRound}
+                  totalRounds={38}
+                  onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
+                  onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
+                />
+              )}
             </section>
           </div>
 
