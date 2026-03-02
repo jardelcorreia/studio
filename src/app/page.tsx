@@ -13,7 +13,8 @@ import { AiBetAssistant } from "@/components/ai-bet-assistant";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
 
@@ -182,9 +183,7 @@ export default function Home() {
 
         const isUnreachable = playerStats.every(other => {
           if (p.name === other.name) return true;
-          // Can 'other' catch up in points?
           if (other.maxPossiblePts < pStat.points) return true;
-          // If they can reach same points, check exact scores tie-breaker
           if (other.maxPossiblePts === pStat.points && other.maxPossibleExs < pStat.exactScores) return true;
           return false;
         });
@@ -217,6 +216,8 @@ export default function Home() {
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
+  const isAdmin = currentUser === "Jardel";
+
   return (
     <div className="flex-1 space-y-8 pb-20">
       <div className="relative overflow-hidden bg-primary py-12 px-4 shadow-xl">
@@ -233,7 +234,15 @@ export default function Home() {
               </span>
             ))}
           </h1>
-          <p className="text-white/80 font-medium tracking-widest uppercase">Liga de Apostas Profissional</p>
+          <div className="flex items-center gap-3">
+            <p className="text-white/80 font-medium tracking-widest uppercase">Liga de Apostas Profissional</p>
+            {isAdmin && (
+              <Badge className="bg-accent text-accent-foreground font-black italic flex gap-1 px-3">
+                <Shield className="h-3 w-3" />
+                ADMIN
+              </Badge>
+            )}
+          </div>
         </div>
         <div className="absolute top-4 right-4 flex gap-2">
            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => setDarkMode(!darkMode)}>
@@ -248,15 +257,20 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 space-y-12">
         <div className="flex flex-wrap items-center gap-4 bg-white dark:bg-card p-4 rounded-xl shadow-sm border">
-          <div className="flex items-center gap-2">
-            <LayoutDashboard className="h-5 w-5 text-primary" />
-            <span className="font-bold">Painel Alpha</span>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <UserCheck className="h-6 w-6" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Logado como</span>
+              <span className="font-black italic text-primary uppercase leading-tight">{currentUser}</span>
+            </div>
           </div>
           <div className="flex gap-2 ml-auto">
             {loadingMatches && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-            {currentUser === "Jardel" && (
-              <Button variant="outline" size="sm" onClick={() => setPlacaresOcultos(!placaresOcultos)} className="gap-2">
-                <Shield className="h-4 w-4 text-primary" />
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setPlacaresOcultos(!placaresOcultos)} className="gap-2 border-primary/30 text-primary hover:bg-primary/5">
+                <Shield className="h-4 w-4" />
                 {placaresOcultos ? "Revelar Placares" : "Ocultar Placares"}
               </Button>
             )}
@@ -301,10 +315,15 @@ export default function Home() {
               </TabsList>
 
               <TabsContent value="betting" className="space-y-4">
-                <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
-                  <span className="h-8 w-2 bg-primary" />
-                  Quadro de Apostas
-                </h2>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
+                    <span className="h-8 w-2 bg-primary" />
+                    Quadro de Apostas
+                  </h2>
+                  <Badge variant="outline" className={placaresOcultos ? "border-destructive text-destructive" : "border-secondary text-secondary"}>
+                    {placaresOcultos ? "Placares Ocultos" : "Placares Visíveis"}
+                  </Badge>
+                </div>
                 <BettingTable 
                   roundName={roundName}
                   setRoundName={setRoundName}
