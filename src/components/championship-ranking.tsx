@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, TrendingUp, TrendingDown, Users, CheckCircle2 } from "lucide-react";
+import { Trophy, Medal, TrendingUp, TrendingDown, Users, CheckCircle2, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChampionshipRankingProps {
@@ -18,25 +18,6 @@ interface ChampionshipRankingProps {
 
 export function ChampionshipRanking({ roundWinners, setRoundWinners }: ChampionshipRankingProps) {
   
-  const toggleWinner = (roundIndex: number, playerName: string) => {
-    setRoundWinners((prev) =>
-      prev.map((rw, i) => {
-        if (i !== roundIndex) return rw;
-        
-        const winnersList = rw.winners.split(",").map(s => s.trim()).filter(s => s !== "");
-        let newWinners: string[];
-        
-        if (winnersList.includes(playerName)) {
-          newWinners = winnersList.filter(w => w !== playerName);
-        } else {
-          newWinners = [...winnersList, playerName];
-        }
-        
-        return { ...rw, winners: newWinners.join(", ") };
-      })
-    );
-  };
-
   const updateValue = (roundIndex: number, value: number) => {
     setRoundWinners((prev) =>
       prev.map((rw, i) => (i === roundIndex ? { ...rw, value } : rw))
@@ -52,7 +33,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
     );
 
     roundWinners.forEach((rw) => {
-      if (!rw.winners.trim()) return;
+      if (!rw.winners || !rw.winners.trim()) return;
 
       const winnersList = rw.winners
         .split(",")
@@ -114,42 +95,37 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[650px] p-4">
-            <div className="space-y-4">
+            <div className="space-y-3">
               {roundWinners.map((rw, idx) => (
-                <div key={rw.round} className="space-y-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group border-b border-dashed last:border-0 pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                        {rw.round}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] font-bold text-muted-foreground">R$</span>
-                        <Input
-                          type="number"
-                          value={rw.value}
-                          onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
-                          className="w-10 h-6 p-1 text-center font-bold text-[10px] border-none bg-muted/30"
-                        />
+                <div key={rw.round} className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-card border border-muted/50 hover:border-primary/30 transition-all group">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                      {rw.round}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground">Vencedor</span>
+                      <div className="flex items-center gap-2 min-h-[20px]">
+                        {rw.winners ? (
+                          <span className="text-sm font-black italic text-primary uppercase">
+                            {rw.winners}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] italic text-muted-foreground/50">Aguardando resultados...</span>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {PLAYERS.map(player => {
-                      const isWinner = rw.winners.split(",").map(s => s.trim()).includes(player);
-                      return (
-                        <Badge 
-                          key={player}
-                          variant={isWinner ? "default" : "outline"}
-                          className={cn(
-                            "cursor-pointer text-[9px] px-2 h-5 transition-all select-none",
-                            isWinner ? "bg-primary border-primary shadow-sm" : "text-muted-foreground hover:bg-primary/10"
-                          )}
-                          onClick={() => toggleWinner(idx, player)}
-                        >
-                          {player.substring(0, 3).toUpperCase()}
-                        </Badge>
-                      );
-                    })}
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Valor</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-primary">R$</span>
+                      <Input
+                        type="number"
+                        value={rw.value}
+                        onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
+                        className="w-12 h-7 p-1 text-right font-black text-xs border-muted-foreground/20 bg-muted/20"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -212,7 +188,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
         <Card className="bg-muted/20 border-dashed border-2">
           <CardContent className="p-4 flex items-center gap-4 text-xs text-muted-foreground italic">
             <Users className="h-8 w-8 opacity-20" />
-            <p>O saldo é calculado automaticamente: quando todos os placares de uma rodada são preenchidos, o sistema identifica o vencedor (usando placares exatos como desempate) e atualiza o ranking instantaneamente.</p>
+            <p>O saldo é calculado automaticamente: quando todos os placares de uma rodada são preenchidos na aba de Apostas, o sistema identifica os vencedores (usando placares exatos como desempate) e atualiza o ranking instantaneamente.</p>
           </CardContent>
         </Card>
       </div>
