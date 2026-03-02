@@ -14,8 +14,7 @@ import { Shield, Loader2, Trophy, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function LoginScreen() {
-  const auth = authInstance(); // Usando a instância do hook ou helper se disponível, mas aqui usaremos useAuth()
-  const authHook = useAuth();
+  const auth = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [playerName, setPlayerName] = useState<string>("");
@@ -35,7 +34,7 @@ export function LoginScreen() {
 
     try {
       // Tenta fazer o login direto
-      await signInWithEmailAndPassword(authHook, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: `Bem-vindo, ${playerName}!`,
         description: "Acesso autorizado.",
@@ -48,7 +47,7 @@ export function LoginScreen() {
       // Se falhar e a senha for a padrão, tentamos criar a conta (Primeiro Acesso)
       if ((err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") && password === "alphabet123") {
         try {
-          const userCredential = await createUserWithEmailAndPassword(authHook, email, password);
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName: playerName });
           
           toast({
