@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, Users, Award, Wallet, Star } from "lucide-react";
+import { Trophy, Medal, Award, Wallet, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChampionshipRankingProps {
@@ -27,7 +27,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
     );
 
     roundWinners.forEach((rw) => {
-      // 1. Somar pontos de cada jogador nesta rodada
+      // 1. Somar pontos de cada jogador nesta rodada (Soma Técnica Total)
       if (rw.pointsMap) {
         PLAYERS.forEach(p => {
           stats[p].points += rw.pointsMap?.[p] || 0;
@@ -64,7 +64,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
       if (b.wins !== a.wins) return b.wins - a.wins;
       // Critério 2: Empates (Rodadas empatadas na liderança)
       if (b.draws !== a.draws) return b.draws - a.draws;
-      // Critério 3: Pontos (Soma total de pontos em todas as rodadas)
+      // Critério 3: Pontos (Soma total de pontos técnicos de todas as rodadas)
       if (b.points !== a.points) return b.points - a.points;
       // Critério Extra: Saldo financeiro
       return b.balance - a.balance;
@@ -98,15 +98,10 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
                          </div>
                        )}
                     </div>
-                    <h3 className="text-xl font-black italic uppercase text-primary leading-none mb-1">{player.name}</h3>
-                    <div className="flex gap-2">
-                      <Badge variant="outline" className="rounded-full text-[8px] font-black uppercase tracking-widest border-primary/20">
-                         {index === 0 ? "Líder Alpha" : `Top ${index + 1} Elite`}
-                      </Badge>
-                      <Badge className="rounded-full bg-primary text-white text-[8px] font-black uppercase px-2">
-                        {player.points} PTS ACUMULADOS
-                      </Badge>
-                    </div>
+                    <h3 className="text-xl font-black italic uppercase text-primary leading-none mb-2">{player.name}</h3>
+                    <Badge variant="outline" className="rounded-full text-[8px] font-black uppercase tracking-widest border-primary/20 px-4">
+                       {index === 0 ? "Líder Alpha" : `Top ${index + 1} Elite`}
+                    </Badge>
                  </div>
 
                  <div className="p-6 grid grid-cols-3 gap-2">
