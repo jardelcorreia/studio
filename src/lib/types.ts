@@ -51,3 +51,17 @@ export type PlayerScore = {
   isWinner?: boolean;
   betsCompleted: boolean;
 };
+
+export type ChampionshipWinner = {
+  round: number;
+  winners: string; // Ex: "Jardel, Werbet"
+  value: number;
+};
+
+export type PlayerOverallStats = {
+  name: string;
+  wins: number;
+  draws: number;
+  points: number;
+  balance: number;
+};

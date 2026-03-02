@@ -8,11 +8,12 @@ import { RankingSummary } from "@/components/ranking-summary";
 import { BettingTable } from "@/components/betting-table";
 import { MatchCalendar } from "@/components/match-calendar";
 import { LeagueStandings } from "@/components/league-standings";
+import { ChampionshipRanking } from "@/components/championship-ranking";
 import { AiBetAssistant } from "@/components/ai-bet-assistant";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2, ListOrdered, Calendar, Table as TableIcon } from "lucide-react";
+import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
 
@@ -202,14 +203,18 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-3">
             <Tabs defaultValue="betting" className="space-y-8">
-              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 h-12">
+              <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1 h-12">
                 <TabsTrigger value="betting" className="gap-2 font-bold uppercase text-xs">
                   <TableIcon className="h-4 w-4" />
                   Apostas
                 </TabsTrigger>
+                <TabsTrigger value="overall" className="gap-2 font-bold uppercase text-xs">
+                  <Medal className="h-4 w-4" />
+                  Ranking Geral
+                </TabsTrigger>
                 <TabsTrigger value="standings" className="gap-2 font-bold uppercase text-xs">
                   <ListOrdered className="h-4 w-4" />
-                  Classificação
+                  Tabela Brasileirão
                 </TabsTrigger>
                 <TabsTrigger value="calendar" className="gap-2 font-bold uppercase text-xs">
                   <Calendar className="h-4 w-4" />
@@ -236,9 +241,17 @@ export default function Home() {
                 />
               </TabsContent>
 
-              <TabsContent value="standings" className="space-y-4">
+              <TabsContent value="overall" className="space-y-4">
                 <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
                   <span className="h-8 w-2 bg-accent" />
+                  Ranking AlphaBet 2026
+                </h2>
+                <ChampionshipRanking />
+              </TabsContent>
+
+              <TabsContent value="standings" className="space-y-4">
+                <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
+                  <span className="h-8 w-2 bg-primary/40" />
                   Tabela Brasileirão
                 </h2>
                 <LeagueStandings standings={standings} />
