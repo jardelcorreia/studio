@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -18,10 +19,19 @@ interface MatchCalendarProps {
 }
 
 export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: MatchCalendarProps) {
-  const getTeamInfo = (name: string) => TEAMS[name] || {
-    abrev: name.substring(0, 3).toUpperCase(),
-    nome: name,
-    escudo: "https://logodetimes.com/imagens/generico-256.png"
+  const getTeamInfo = (name: string) => {
+    if (TEAMS[name]) return TEAMS[name];
+    
+    // Limpeza de fallback para nomes que não estão no mapeamento
+    const cleanName = name
+      .replace(/\s(FC|EC|SC|AC|AF|FR|FBPA|CR|SE|RB|Club|Clube|Paulista|da Gama)$|^(SE|SC|EC|CR|RB)\s/gi, '')
+      .trim();
+
+    return {
+      abrev: cleanName.substring(0, 3).toUpperCase(),
+      nome: cleanName,
+      escudo: "https://logodetimes.com/imagens/generico-256.png"
+    };
   };
 
   const formatTime = (dateStr: string) => {
