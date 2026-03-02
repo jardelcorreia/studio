@@ -1,12 +1,11 @@
-
 "use client";
 
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
-import { BrainCircuit, Sparkles, AlertCircle, Loader2 } from "lucide-react";
+import { BrainCircuit, Sparkles, AlertCircle, Loader2, Zap } from "lucide-react";
 import { aiBetSuggestion, AiBetSuggestionOutput } from "@/ai/flows/ai-bet-suggestion-flow";
-import { TEAMS } from "@/lib/constants";
+import { Badge } from "./ui/badge";
 
 export function AiBetAssistant() {
   const [loading, setLoading] = useState(false);
@@ -17,7 +16,6 @@ export function AiBetAssistant() {
     setLoading(true);
     setError(null);
     try {
-      // Mocked data based on actual teams for the flow
       const result = await aiBetSuggestion({
         homeTeamName: "Palmeiras",
         awayTeamName: "Botafogo",
@@ -32,65 +30,75 @@ export function AiBetAssistant() {
       });
       setSuggestion(result);
     } catch (err) {
-      setError("Falha ao gerar sugestão. Tente novamente.");
+      setError("Falha ao gerar sugestão.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
-      <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          <BrainCircuit className="h-6 w-6 text-primary" />
-          <CardTitle className="text-xl">Assistente AlphaAI</CardTitle>
+    <Card className="glass-card border-none rounded-3xl overflow-hidden relative group">
+      <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+         <BrainCircuit className="h-32 w-32 text-primary" />
+      </div>
+
+      <CardHeader className="relative z-10 pb-2">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+            <Zap className="h-6 w-6 fill-current" />
+          </div>
+          <div>
+            <CardTitle className="text-xl font-black italic uppercase text-primary">AlphaAI Agent</CardTitle>
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Oráculo de Probabilidades</CardDescription>
+          </div>
         </div>
-        <CardDescription>Análise inteligente para seus palpites da rodada.</CardDescription>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="relative z-10">
         {!suggestion ? (
-          <div className="flex flex-col items-center py-6 gap-4">
-            <Sparkles className="h-12 w-12 text-accent/50 animate-pulse" />
-            <p className="text-sm text-center text-muted-foreground max-w-xs">
-              Deixe nossa IA analisar os dados históricos e a forma atual dos times para você.
-            </p>
-            <Button onClick={generateSuggestion} disabled={loading} className="gap-2">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {loading ? "Analisando..." : "Gerar Palpite Sugerido"}
+          <div className="flex flex-col items-center py-8 gap-6">
+            <div className="text-center space-y-2">
+               <p className="text-xs font-medium leading-relaxed max-w-[240px]">
+                 Nossa rede neural analisa dados de forma, histórico H2H e performance atual para sugerir o placar mais provável.
+               </p>
+            </div>
+            <Button onClick={generateSuggestion} disabled={loading} className="w-full h-12 rounded-2xl gap-2 font-black italic uppercase shadow-xl shadow-primary/20">
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5 fill-current" />}
+              {loading ? "Processando..." : "Analisar Rodada"}
             </Button>
             {error && (
-              <div className="flex items-center gap-2 text-destructive text-xs mt-2">
+              <div className="flex items-center gap-2 text-destructive text-[10px] font-bold uppercase">
                 <AlertCircle className="h-3 w-3" /> {error}
               </div>
             )}
           </div>
         ) : (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="bg-white dark:bg-card p-4 rounded-lg border border-primary/10 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs font-bold uppercase text-primary">Previsão</span>
-                <Badge variant="outline" className="border-secondary text-secondary">{suggestion.prediction}</Badge>
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10">
+              <div className="flex justify-between items-center mb-6">
+                <span className="text-[9px] font-black uppercase text-primary tracking-widest">Predição Neural</span>
+                <Badge className="bg-accent text-accent-foreground font-black italic rounded-full px-3">{suggestion.prediction}</Badge>
               </div>
               
-              <div className="flex items-center justify-center gap-8 py-2">
+              <div className="flex items-center justify-center gap-6">
                 <div className="text-center">
-                  <div className="text-4xl font-black">{suggestion.suggestedHomeScore}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold">CASA</div>
+                  <div className="text-5xl font-black italic text-primary">{suggestion.suggestedHomeScore}</div>
+                  <div className="text-[8px] font-black text-muted-foreground uppercase mt-1">CASA</div>
                 </div>
-                <div className="text-2xl font-light text-muted-foreground">vs</div>
+                <div className="h-12 w-px bg-primary/10 rotate-12" />
                 <div className="text-center">
-                  <div className="text-4xl font-black">{suggestion.suggestedAwayScore}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold">FORA</div>
+                  <div className="text-5xl font-black italic text-primary">{suggestion.suggestedAwayScore}</div>
+                  <div className="text-[8px] font-black text-muted-foreground uppercase mt-1">FORA</div>
                 </div>
               </div>
               
-              <div className="mt-4 p-3 bg-muted/30 rounded text-xs leading-relaxed italic text-muted-foreground">
+              <div className="mt-8 p-4 bg-white/50 dark:bg-card/50 rounded-2xl text-[11px] leading-relaxed italic text-muted-foreground border border-dashed">
                 "{suggestion.reasoning}"
               </div>
             </div>
             
-            <Button variant="outline" size="sm" onClick={() => setSuggestion(null)} className="w-full text-xs">
-              Nova análise
+            <Button variant="ghost" size="sm" onClick={() => setSuggestion(null)} className="w-full text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 rounded-xl">
+              Reiniciar Protocolo
             </Button>
           </div>
         )}

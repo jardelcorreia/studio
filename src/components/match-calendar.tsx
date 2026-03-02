@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -6,8 +5,9 @@ import { Match } from "@/lib/types";
 import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { CalendarDays, Clock, Trophy } from "lucide-react";
+import { CalendarDays, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 interface MatchCalendarProps {
   matches: Match[];
@@ -35,29 +35,26 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between bg-white dark:bg-card p-4 rounded-lg shadow-sm">
-        <button 
-          onClick={onPrev} 
-          disabled={round <= 1}
-          className="p-2 hover:bg-muted rounded-full disabled:opacity-30"
-        >
-          <CalendarDays className="h-5 w-5 rotate-180" />
-        </button>
-        <div className="text-center">
-          <h3 className="font-bold text-lg">Rodada {round}</h3>
-          <p className="text-xs text-muted-foreground">Brasileirão Série A</p>
+    <div className="space-y-8">
+      {/* Round Selector Premium */}
+      <div className="flex items-center justify-between glass-card p-4 rounded-3xl shadow-lg border-none">
+        <Button variant="ghost" size="icon" onClick={onPrev} disabled={round <= 1} className="rounded-2xl hover:bg-primary/10">
+          <ChevronLeft className="h-6 w-6" />
+        </Button>
+        <div className="flex flex-col items-center">
+          <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase mb-1 px-3">Brasileirão Elite</Badge>
+          <div className="flex items-baseline gap-2">
+             <span className="text-xs font-bold text-muted-foreground uppercase">Rodada</span>
+             <span className="text-2xl font-black italic text-primary leading-none">#{round}</span>
+          </div>
         </div>
-        <button 
-          onClick={onNext} 
-          disabled={round >= totalRounds}
-          className="p-2 hover:bg-muted rounded-full disabled:opacity-30"
-        >
-          <CalendarDays className="h-5 w-5" />
-        </button>
+        <Button variant="ghost" size="icon" onClick={onNext} disabled={round >= totalRounds} className="rounded-2xl hover:bg-primary/10">
+          <ChevronRight className="h-6 w-6" />
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Matches Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {matches.map(match => {
           const home = getTeamInfo(match.homeTeam);
           const away = getTeamInfo(match.awayTeam);
@@ -65,49 +62,59 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
           const isLive = match.status === 'LIVE' || match.status === 'PAUSED';
 
           return (
-            <Card key={match.id} className="hover:shadow-md transition-shadow group overflow-hidden">
-              <CardContent className="p-4 flex flex-col h-full">
-                <div className="flex justify-between items-center mb-4 pb-2 border-b border-muted">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                    <CalendarDays className="h-3 w-3" />
-                    {formatDate(match.utcDate)}
-                  </span>
-                  <Badge variant={isLive ? "destructive" : "secondary"} className={cn("text-[9px] h-5 px-2", isLive && "animate-pulse")}>
-                    {match.status === 'FINISHED' ? 'Encerrado' : isLive ? 'Ao Vivo' : 'Agendado'}
-                  </Badge>
+            <Card key={match.id} className="glass-card border-none rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500 group">
+              <CardContent className="p-0">
+                {/* Status Bar */}
+                <div className="px-6 py-3 bg-muted/30 flex justify-between items-center border-b border-white/10">
+                   <div className="flex items-center gap-2">
+                      <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[9px] font-black uppercase text-muted-foreground">{formatDate(match.utcDate)}</span>
+                   </div>
+                   <Badge className={cn(
+                     "rounded-full px-3 text-[8px] font-black uppercase border-none",
+                     isLive ? "bg-destructive text-white animate-pulse" : "bg-primary/10 text-primary"
+                   )}>
+                      {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : 'Agendado'}
+                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between flex-1">
-                  <div className="flex flex-col items-center w-1/3 text-center">
-                    <img src={home.escudo} alt={home.nome} className="w-12 h-12 object-contain mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="font-bold text-sm leading-tight">{home.abrev}</span>
-                    <span className="text-[10px] text-muted-foreground line-clamp-1">{home.nome}</span>
+                {/* Conflict Area */}
+                <div className="p-8 flex items-center justify-between gap-4">
+                  <div className="flex flex-col items-center gap-3 w-1/3 text-center">
+                    <img src={home.escudo} alt={home.nome} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+                    <div className="flex flex-col">
+                       <span className="text-lg font-black italic uppercase leading-tight">{home.abrev}</span>
+                       <span className="text-[9px] font-bold text-muted-foreground uppercase line-clamp-1">{home.nome}</span>
+                    </div>
                   </div>
 
                   <div className="flex flex-col items-center justify-center w-1/3">
                     {match.homeScore !== undefined ? (
-                      <div className="flex items-center gap-2 text-2xl font-black">
-                        <span>{match.homeScore}</span>
-                        <span className="text-muted-foreground font-light text-xl">:</span>
-                        <span>{match.awayScore}</span>
+                      <div className="flex items-center gap-4">
+                        <span className="text-4xl font-black italic text-primary">{match.homeScore}</span>
+                        <div className="h-8 w-[2px] bg-muted/50 rotate-12" />
+                        <span className="text-4xl font-black italic text-primary">{match.awayScore}</span>
                       </div>
                     ) : (
-                      <div className="bg-muted h-10 w-10 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-bold text-muted-foreground">VS</span>
+                      <div className="h-12 w-12 rounded-full sports-gradient flex items-center justify-center text-white shadow-lg animate-float">
+                        <span className="text-xs font-black italic">VS</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-col items-center w-1/3 text-center">
-                    <img src={away.escudo} alt={away.nome} className="w-12 h-12 object-contain mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="font-bold text-sm leading-tight">{away.abrev}</span>
-                    <span className="text-[10px] text-muted-foreground line-clamp-1">{away.nome}</span>
+                  <div className="flex flex-col items-center gap-3 w-1/3 text-center">
+                    <img src={away.escudo} alt={away.nome} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+                    <div className="flex flex-col">
+                       <span className="text-lg font-black italic uppercase leading-tight">{away.abrev}</span>
+                       <span className="text-[9px] font-bold text-muted-foreground uppercase line-clamp-1">{away.nome}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-2 border-t border-muted flex justify-center items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {formatTime(match.utcDate)}
+                {/* Footer Info */}
+                <div className="px-6 py-4 bg-primary/5 flex justify-center items-center gap-2">
+                   <Clock className="h-3 w-3 text-primary/40" />
+                   <span className="text-[10px] font-black italic text-primary/60">{formatTime(match.utcDate)} • ESTÁDIO NACIONAL</span>
                 </div>
               </CardContent>
             </Card>

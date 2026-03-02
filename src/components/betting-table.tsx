@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -8,6 +7,7 @@ import { Input } from "./ui/input";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { cn } from "@/lib/utils";
+import { Trophy, CheckCircle2 } from "lucide-react";
 
 interface BettingTableProps {
   roundName: string;
@@ -39,116 +39,116 @@ export function BettingTable({
     const res = results[idx];
     const pred = predictions[player][idx];
     if (!res?.homeScore || !res?.awayScore || !pred?.homeScore || !pred?.awayScore) return null;
-    
-    const rh = parseInt(res.homeScore);
-    const ra = parseInt(res.awayScore);
-    const ph = parseInt(pred.homeScore);
-    const pa = parseInt(pred.awayScore);
-    
+    const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
+    const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
     if (ph === rh && pa === ra) return 3;
     if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) return 1;
     return 0;
   };
 
   return (
-    <Card className="overflow-x-auto border-none shadow-lg">
-      <table className="w-full text-sm border-collapse">
-        <thead className="bg-primary text-primary-foreground">
-          <tr>
-            <th className="p-4 text-left min-w-[140px] sticky left-0 z-20 bg-primary">
-              <Input
-                value={roundName}
-                onChange={(e) => setRoundName(e.target.value)}
-                className="bg-primary-foreground/10 border-none text-white font-bold h-8 placeholder:text-white/50"
-                placeholder="Rodada Name"
-              />
-            </th>
-            {PLAYERS.map(player => (
-              <th key={player} className="p-4 text-center min-w-[120px]">{player}</th>
-            ))}
-            <th className="p-4 text-center min-w-[120px]">Resultado</th>
-          </tr>
-        </thead>
-        <tbody className="bg-card">
-          {matchDescriptions.map((desc, idx) => (
-            <tr key={idx} className="border-b hover:bg-muted/50 transition-colors">
-              <td className="p-2 sticky left-0 z-10 bg-card border-r shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                <Input
+    <div className="grid grid-cols-1 gap-4">
+      {matchDescriptions.map((desc, idx) => (
+        <Card key={idx} className="glass-card border-none rounded-3xl overflow-hidden group hover:shadow-2xl transition-all duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-12 items-center">
+            {/* Match Info Area */}
+            <div className="md:col-span-3 p-6 bg-muted/30 flex flex-col justify-center border-b md:border-b-0 md:border-r border-dashed">
+               <div className="text-[10px] font-black uppercase text-muted-foreground mb-2">Confronto #{idx + 1}</div>
+               <Input
                   value={desc}
                   onChange={(e) => setMatchDescriptions(idx, e.target.value)}
-                  className="h-8 font-medium text-xs uppercase"
+                  className="bg-transparent border-none p-0 h-auto text-lg font-black italic uppercase text-primary placeholder:opacity-30 focus-visible:ring-0"
                   placeholder="TIME A x TIME B"
                 />
-              </td>
-              {PLAYERS.map(player => {
-                const isHidden = placaresOcultos && currentPlayer !== player;
-                // Os palpites ficam desabilitados se:
-                // 1. Os placares estiverem revelados (!placaresOcultos)
-                // 2. O palpite for de outro jogador (isHidden)
-                const isDisabled = !placaresOcultos || isHidden;
-                const points = getPoints(player, idx);
-                
-                return (
-                  <td key={player} className="p-2">
-                    <div className="flex items-center justify-center gap-1 relative">
-                      <Input
-                        type="number"
-                        disabled={isDisabled}
-                        value={isHidden ? "" : predictions[player][idx].homeScore}
-                        onChange={(e) => setPrediction(player, idx, 'home', e.target.value)}
-                        className={cn(
-                          "w-10 h-8 text-center p-0",
-                          points === 3 && "border-secondary bg-secondary/10",
-                          points === 1 && "border-accent bg-accent/10"
-                        )}
-                      />
-                      <span className="text-muted-foreground font-light text-xs">x</span>
-                      <Input
-                        type="number"
-                        disabled={isDisabled}
-                        value={isHidden ? "" : predictions[player][idx].awayScore}
-                        onChange={(e) => setPrediction(player, idx, 'away', e.target.value)}
-                        className={cn(
-                          "w-10 h-8 text-center p-0",
-                          points === 3 && "border-secondary bg-secondary/10",
-                          points === 1 && "border-accent bg-accent/10"
-                        )}
-                      />
-                      {points !== null && points > 0 && (
-                        <Badge 
-                          className={cn(
-                            "absolute -top-2 -right-2 h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px]",
-                            points === 3 ? "bg-secondary" : "bg-accent"
+            </div>
+
+            {/* Players Predictions Area */}
+            <div className="md:col-span-6 p-4 md:p-6 flex flex-wrap items-center justify-around gap-4">
+               {PLAYERS.map(player => {
+                  const isHidden = placaresOcultos && currentPlayer !== player;
+                  const isDisabled = !placaresOcultos || isHidden;
+                  const points = getPoints(player, idx);
+                  const isCurrent = currentPlayer === player;
+
+                  return (
+                    <div key={player} className={cn(
+                      "flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all",
+                      isCurrent && "bg-primary/5 ring-1 ring-primary/20"
+                    )}>
+                       <span className={cn(
+                         "text-[9px] font-black uppercase tracking-tighter",
+                         isCurrent ? "text-primary" : "text-muted-foreground"
+                       )}>{player}</span>
+                       <div className="flex items-center gap-1 relative">
+                          <Input
+                            type="number"
+                            disabled={isDisabled}
+                            value={isHidden ? "" : predictions[player][idx].homeScore}
+                            onChange={(e) => setPrediction(player, idx, 'home', e.target.value)}
+                            className={cn(
+                              "w-9 h-10 text-center rounded-xl p-0 font-black",
+                              points === 3 && "bg-secondary/20 border-secondary text-secondary",
+                              points === 1 && "bg-accent/20 border-accent text-accent",
+                              isDisabled && !isHidden && "opacity-80"
+                            )}
+                          />
+                          <span className="text-muted-foreground/30 font-black text-[10px]">X</span>
+                          <Input
+                            type="number"
+                            disabled={isDisabled}
+                            value={isHidden ? "" : predictions[player][idx].awayScore}
+                            onChange={(e) => setPrediction(player, idx, 'away', e.target.value)}
+                            className={cn(
+                              "w-9 h-10 text-center rounded-xl p-0 font-black",
+                              points === 3 && "bg-secondary/20 border-secondary text-secondary",
+                              points === 1 && "bg-accent/20 border-accent text-accent",
+                              isDisabled && !isHidden && "opacity-80"
+                            )}
+                          />
+                          {points !== null && points > 0 && (
+                            <div className={cn(
+                              "absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black text-white shadow-sm",
+                              points === 3 ? "bg-secondary" : "bg-accent"
+                            )}>
+                               {points === 3 ? <Trophy className="h-2 w-2" /> : points}
+                            </div>
                           )}
-                        >
-                          {points}
-                        </Badge>
-                      )}
+                          {isHidden && (
+                            <div className="absolute inset-0 bg-muted/40 backdrop-blur-[2px] rounded-xl flex items-center justify-center">
+                               <Badge className="bg-muted text-muted-foreground text-[7px] border-none">?</Badge>
+                            </div>
+                          )}
+                       </div>
                     </div>
-                  </td>
-                );
-              })}
-              <td className="p-2 bg-muted/20">
-                <div className="flex items-center justify-center gap-1">
+                  );
+               })}
+            </div>
+
+            {/* Real Result Area */}
+            <div className="md:col-span-3 p-6 bg-primary/5 flex flex-col items-center justify-center md:border-l border-dashed">
+               <div className="text-[10px] font-black uppercase text-primary mb-2 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Placar Final
+               </div>
+               <div className="flex items-center gap-2">
                   <Input
                     type="number"
                     value={results[idx].homeScore}
                     onChange={(e) => setResult(idx, 'home', e.target.value)}
-                    className="w-10 h-8 text-center p-0 font-bold border-muted-foreground/30"
+                    className="w-11 h-12 text-center rounded-xl p-0 font-black text-xl border-primary/20 shadow-inner"
                   />
-                  <span className="text-muted-foreground font-light text-xs">x</span>
+                  <span className="font-black text-primary/40 italic">VS</span>
                   <Input
                     type="number"
                     value={results[idx].awayScore}
                     onChange={(e) => setResult(idx, 'away', e.target.value)}
-                    className="w-10 h-8 text-center p-0 font-bold border-muted-foreground/30"
+                    className="w-11 h-12 text-center rounded-xl p-0 font-black text-xl border-primary/20 shadow-inner"
                   />
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </Card>
+               </div>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
   );
 }
