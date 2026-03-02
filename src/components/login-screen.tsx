@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, updatePassword } from "firebase/auth";
 import { PLAYERS } from "@/lib/constants";
@@ -16,9 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 interface LoginScreenProps {
   onPasswordChangeRequired?: () => void;
   onPasswordChanged?: () => void;
+  forcePasswordChange?: boolean;
 }
 
-export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged }: LoginScreenProps) {
+export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, forcePasswordChange }: LoginScreenProps) {
   const auth = useAuth();
   const { toast } = useToast();
   
@@ -29,9 +30,16 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged }: Log
   const [error, setError] = useState<string | null>(null);
   
   // Password Change Flow
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [showPasswordChange, setShowPasswordChange] = useState(forcePasswordChange || false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Sync internal state with prop if Home forces it
+  useEffect(() => {
+    if (forcePasswordChange) {
+      setShowPasswordChange(true);
+    }
+  }, [forcePasswordChange]);
 
   const formatEmail = (name: string) => `${name.toLowerCase().replace(/\s+/g, '')}@alphabet.com`;
 
@@ -50,8 +58,8 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged }: Log
       
       // Se logou com a senha padrão, força a troca
       if (password === "alphabet123") {
-        setShowPasswordChange(true);
         onPasswordChangeRequired?.();
+        setShowPasswordChange(true);
       } else {
         toast({
           title: `Bem-vindo de volta, ${playerName}!`,
@@ -59,23 +67,21 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged }: Log
         });
       }
     } catch (err: any) {
-      console.error("Erro no login:", err.code);
-
-      // Se o usuário não existe e usou a senha padrão, criamos a conta (Primeiro Acesso)
+      // Se o erro for de credencial inválida e a senha for a padrão, 
+      // pode ser o primeiro acesso (conta não criada ainda)
       if ((err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") && password === "alphabet123") {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName: playerName });
           
-          // Após criar com a padrão, obriga a trocar
-          setShowPasswordChange(true);
-          onPasswordChangeRequired?.();
           toast({
             title: "Primeiro Acesso!",
             description: "Agora, por favor, defina uma senha segura.",
           });
+          onPasswordChangeRequired?.();
+          setShowPasswordChange(true);
         } catch (createErr: any) {
-          setError("Erro ao configurar acesso. O admin precisa ativar o provedor de e-mail/senha.");
+          setError("Erro ao configurar acesso. Verifique se o login com e-mail/senha está ativo no Console.");
         }
       } else {
         setError("Senha incorreta ou usuário não encontrado.");
@@ -110,7 +116,6 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged }: Log
           title: "Senha Alterada!",
           description: "Sua conta está segura e pronta para o jogo.",
         });
-        setShowPasswordChange(false);
         onPasswordChanged?.();
       }
     } catch (err: any) {

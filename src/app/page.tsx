@@ -235,6 +235,7 @@ export default function Home() {
 
   if (!user || mustChangePassword) {
     return <LoginScreen 
+      forcePasswordChange={mustChangePassword}
       onPasswordChangeRequired={() => setMustChangePassword(true)} 
       onPasswordChanged={() => setMustChangePassword(false)} 
     />;
