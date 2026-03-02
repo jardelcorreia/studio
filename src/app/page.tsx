@@ -28,8 +28,9 @@ const MOCK_MATCHES: Match[] = [
 
 export default function Home() {
   const { toast } = useToast();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState("");
+  // Bypass login for development
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [currentUser, setCurrentUser] = useState("Jardel");
   const [password, setPassword] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   
@@ -47,7 +48,6 @@ export default function Home() {
   // Authentication
   const handleLogin = () => {
     if (currentUser && password) {
-      // In a real app, verify password. For now, simple check.
       setIsLoggedIn(true);
       toast({ title: "Bem-vindo!", description: `Logado como ${currentUser}` });
     } else {
