@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { PLAYERS, TEAMS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
@@ -34,9 +34,22 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   
+  // Initialize match descriptions from MOCK_MATCHES
+  const initialMatchDescriptions = useMemo(() => {
+    const descs = Array(10).fill("");
+    MOCK_MATCHES.forEach((match, idx) => {
+      if (idx < 10) {
+        const home = TEAMS[match.homeTeam]?.abrev || match.homeTeam.substring(0, 3).toUpperCase();
+        const away = TEAMS[match.awayTeam]?.abrev || match.awayTeam.substring(0, 3).toUpperCase();
+        descs[idx] = `${home} x ${away}`;
+      }
+    });
+    return descs;
+  }, []);
+
   // App state
   const [roundName, setRoundName] = useState("Rodada 1");
-  const [matchDescriptions, setMatchDescriptions] = useState<string[]>(Array(10).fill(""));
+  const [matchDescriptions, setMatchDescriptions] = useState<string[]>(initialMatchDescriptions);
   const [predictions, setPredictions] = useState<PlayerPredictions>(
     Object.fromEntries(PLAYERS.map(p => [p, Array(10).fill({ homeScore: "", awayScore: "" })]))
   );
