@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
 import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
-import { doc, collection, serverTimestamp, query, where, collectionGroup } from "firebase/firestore";
+import { doc, collection, serverTimestamp, query, where } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function Home() {
@@ -32,7 +32,6 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   
-  // App state
   const [currentRound, setCurrentRound] = useState<number | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<StandingEntry[]>([]);
@@ -46,7 +45,6 @@ export default function Home() {
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Championship Winners State
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
     Array.from({ length: 38 }, (_, i) => ({
       round: i + 1,
@@ -55,19 +53,17 @@ export default function Home() {
     }))
   );
 
-  // Firestore Sync - Current Round Config
   const roundId = currentRound ? `round_${currentRound}` : null;
   const roundDocRef = useMemoFirebase(() => roundId ? doc(db, "rounds", roundId) : null, [db, roundId]);
   const { data: roundData } = useDoc(roundDocRef);
 
-  // Firestore Sync - User's Bets (using collectionGroup for broader visibility if permissions allow)
-  const betsQuery = useMemoFirebase(() => {
+  // Nova query: busca direta dentro da coleção 'bets' da rodada (sem Collection Group)
+  const betsCollectionRef = useMemoFirebase(() => {
     if (!roundId) return null;
-    return query(collectionGroup(db, "bets"), where("roundId", "==", roundId));
+    return collection(db, "rounds", roundId, "bets");
   }, [db, roundId]);
-  const { data: allBets, isLoading: isLoadingBets } = useCollection(betsQuery);
+  const { data: allBets, isLoading: isLoadingBets } = useCollection(betsCollectionRef);
 
-  // Initial fetch from External API
   useEffect(() => {
     async function init() {
       const matchday = await getBrasileiraoCurrentMatchday();
@@ -76,7 +72,6 @@ export default function Home() {
     init();
   }, []);
 
-  // Sync Round Settings from Firestore
   useEffect(() => {
     if (roundData) {
       if (roundData.name) setRoundName(roundData.name);
@@ -86,7 +81,6 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
-  // Load matches and sync with predictions
   useEffect(() => {
     if (currentRound === null) return;
 
@@ -108,7 +102,6 @@ export default function Home() {
             const away = TEAMS[match.awayTeam]?.abrev || match.awayTeam.substring(0, 3).toUpperCase();
             newDescriptions[idx] = `${home} x ${away}`;
             
-            // Priority: Finished API results, but we'll merge them
             if (match.status === 'FINISHED') {
               newResults[idx] = {
                 homeScore: match.homeScore?.toString() || "",
@@ -125,27 +118,21 @@ export default function Home() {
     loadMatches();
   }, [currentRound]);
 
-  // Sync Bets from Firestore into local state
   useEffect(() => {
     if (!allBets || !currentRound) return;
 
     setPredictions(prev => {
       const next = { ...prev };
-      // Reset for this round before filling
       PLAYERS.forEach(p => {
         next[p] = Array(10).fill({ homeScore: "", awayScore: "" });
       });
 
       allBets.forEach(bet => {
-        // We need to find which match index this bet belongs to.
-        // We stored it as `bet_{round}_{idx}` in our save function.
-        const matchIdx = parseInt(bet.id.split('_').pop() || "-1");
+        const parts = bet.id.split('_');
+        const matchIdx = parseInt(parts[parts.length - 1]);
+        const player = bet.username;
         
-        // Find player name by searching their UID in our user docs? 
-        // For simplicity, let's assume we saved 'username' in the bet doc.
-        const player = bet.username || PLAYERS.find(p => bet.id.includes(p)); // fallback
-        
-        if (player && matchIdx >= 0 && matchIdx < 10) {
+        if (player && PLAYERS.includes(player) && matchIdx >= 0 && matchIdx < 10) {
           next[player][matchIdx] = {
             homeScore: bet.homeScorePrediction?.toString() || "",
             awayScore: bet.awayScorePrediction?.toString() || ""
@@ -162,36 +149,33 @@ export default function Home() {
   };
 
   const handleSaveAll = async () => {
-    if (!currentRound || !user) return;
+    if (!currentRound || !user || !roundId) return;
     setIsSaving(true);
 
     try {
-      const roundId = `round_${currentRound}`;
       const roundRef = doc(db, "rounds", roundId);
 
-      // Save Round Metadata
       setDocumentNonBlocking(roundRef, {
         id: roundId,
         roundNumber: currentRound,
         name: roundName,
         isScoresHidden: placaresOcultos,
         dateUpdated: serverTimestamp(),
-        dateCreated: serverTimestamp(),
+        dateCreated: roundData?.dateCreated || serverTimestamp(),
       }, { merge: true });
 
-      // Save current user's predictions
       const userBets = predictions[user.displayName!];
       userBets.forEach((pred, idx) => {
         if (pred.homeScore === "" || pred.awayScore === "") return;
         
-        const betId = `bet_${currentRound}_${idx}`;
-        const betRef = doc(db, "users", user.uid, "bets", betId);
+        // Novo ID: combina UID e índice da partida para evitar duplicatas
+        const betId = `${user.uid}_${idx}`;
+        const betRef = doc(db, "rounds", roundId, "bets", betId);
         
         setDocumentNonBlocking(betRef, {
           id: betId,
           userId: user.uid,
-          username: user.displayName, // Store username for easier retrieval
-          roundId: roundId, // Store roundId for collectionGroup querying
+          username: user.displayName,
           matchId: matches[idx]?.id || idx,
           homeScorePrediction: parseInt(pred.homeScore),
           awayScorePrediction: parseInt(pred.awayScore),
@@ -231,7 +215,6 @@ export default function Home() {
     setMatchDescriptions(prev => prev.map((d, i) => i === idx ? value : d));
   };
 
-  // Calculate scores and winners
   const scores = useMemo((): PlayerScore[] => {
     const activeIndices = matchDescriptions
       .map((d, i) => (d && d !== "" ? i : -1))
@@ -276,7 +259,7 @@ export default function Home() {
       };
     });
 
-    const isRoundFinished = activeIndices.every(idx => results[idx].homeScore !== "" && results[idx].awayScore !== "");
+    const isRoundFinished = activeIndices.length > 0 && activeIndices.every(idx => results[idx].homeScore !== "" && results[idx].awayScore !== "");
     
     const finalScores: PlayerScore[] = playerStats.map(p => ({
       name: p.name,
@@ -312,7 +295,6 @@ export default function Home() {
     return finalScores;
   }, [matchDescriptions, results, predictions]);
 
-  // Sync Automatic Winners to Championship History
   useEffect(() => {
     if (!currentRound) return;
 
@@ -333,7 +315,7 @@ export default function Home() {
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
-  const isAdmin = user?.displayName === "Jardel";
+  const isAdminUser = user?.displayName === "Jardel";
 
   if (isUserLoading) {
     return (
@@ -369,7 +351,7 @@ export default function Home() {
           </h1>
           <div className="flex items-center gap-3">
             <p className="text-white/80 font-medium tracking-widest uppercase">Liga de Apostas Profissional</p>
-            {isAdmin && (
+            {isAdminUser && (
               <Badge className="bg-accent text-accent-foreground font-black italic flex gap-1 px-3">
                 <Shield className="h-3 w-3" />
                 ADMIN
@@ -401,7 +383,7 @@ export default function Home() {
           </div>
           <div className="flex gap-2 ml-auto">
             {(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
-            {isAdmin && (
+            {isAdminUser && (
               <Button variant="outline" size="sm" onClick={() => setPlacaresOcultos(!placaresOcultos)} className="gap-2 border-primary/30 text-primary hover:bg-primary/5">
                 <Shield className="h-4 w-4" />
                 {placaresOcultos ? "Revelar Placares" : "Ocultar Placares"}

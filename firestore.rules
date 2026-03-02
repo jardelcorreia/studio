@@ -1,13 +1,9 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * AlphaBet League - Regras de Segurança Consolidadas
-     */
-
-    // Função de Administrador: Identificação direta por UID (Jardel)
-    // Usamos o UID para garantir acesso instantâneo sem depender de propagação de token ou existência de documentos.
+    // FUNÇÃO MESTRE: Jardel tem acesso total e irrestrito
     function isAdmin() {
       return request.auth != null && (
         request.auth.uid == "TquLV2ai1yRgfWPJHZGrHKifgc72" || 
@@ -15,68 +11,36 @@ service cloud.firestore {
       );
     }
 
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // --- REGRA MESTRE PARA ADMINISTRADORES ---
-    // Esta regra garante que o Jardel possa realizar QUALQUER operação (get, list, create, update, delete)
-    // em QUALQUER documento ou consulta global (Collection Group).
-    match /{allPaths=**} {
+    match /{document=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- REGRAS PARA USUÁRIOS COMUNS ---
-
-    // Regras globais para apostas e placares (usadas em buscas de todos os jogadores)
-    match /{path=**}/bets/{betId} {
-      allow read: if request.auth != null && (
-        isOwner(resource.data.userId) || 
-        resource.data.isScoresHidden == false
-      );
-    }
-
-    match /{path=**}/player_scores/{userId} {
-      allow read: if request.auth != null && (
-        isOwner(userId) || 
-        resource.data.isScoresHidden == false
-      );
-    }
-
-    // Regras de caminho específico para o perfil e dados do próprio usuário
+    // Regras para usuários comuns
     match /users/{userId} {
-      allow get, create, update: if isOwner(userId);
+      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /rounds/{roundId} {
+      allow read: if request.auth != null;
       
       match /bets/{betId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /overall_stats {
-        allow get, list: if isOwner(userId);
+        // Usuário pode ler sua própria aposta, ou qualquer uma se não estiverem ocultas
+        allow read: if request.auth != null && (
+          betId.startsWith(request.auth.uid) || 
+          resource.data.isScoresHidden == false
+        );
+        // Usuário pode criar/atualizar apenas sua própria aposta
+        allow write: if request.auth != null && betId.startsWith(request.auth.uid);
       }
     }
 
-    // Dados públicos (Rodadas e Classificação)
-    match /rounds/{roundId} {
-      allow get, list: if request.auth != null;
-      
-      match /matches/{matchId} {
-        allow get, list: if request.auth != null;
-      }
-      
-      match /player_scores/{userId} {
-        allow get, list: if isOwner(userId) || resource.data.isScoresHidden == false;
-      }
+    match /roles_admin/{userId} {
+      allow get: if request.auth != null;
+      allow create: if request.auth != null && request.auth.token.email == "jardel@alphabet.com";
     }
 
     match /app_settings/{docId} {
-      allow get: if request.auth != null;
-    }
-    
-    match /roles_admin/{userId} {
-      allow get: if request.auth != null;
-      // Permite que o primeiro admin se registre
-      allow create: if request.auth != null && request.auth.token.email == "jardel@alphabet.com";
+      allow read: if request.auth != null;
     }
   }
 }
