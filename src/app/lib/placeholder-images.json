@@ -1,0 +1,23 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "soccer-stadium",
+      "description": "Aerial view of a packed football stadium at night",
+      "imageUrl": "https://picsum.photos/seed/soccer-stadium/1200/800",
+      "imageHint": "soccer stadium"
+    },
+    {
+      "id": "football-action",
+      "description": "Action shot of a football match",
+      "imageUrl": "https://picsum.photos/seed/football-action/800/600",
+      "imageHint": "football match"
+    },
+    {
+      "id": "team-celebration",
+      "description": "Football team celebrating a goal",
+      "imageUrl": "https://picsum.photos/seed/team-celebration/800/600",
+      "imageHint": "football celebration"
+    }
+  ]
+}

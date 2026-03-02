@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -10,8 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['Kanit', 'sans-serif'],
+        headline: ['Kanit', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -88,10 +89,16 @@ export default {
             height: '0',
           },
         },
+        'letter-reveal': {
+          '0%': { opacity: '0', transform: 'translateY(50px) rotateX(90deg) scale(0.6)' },
+          '70%': { opacity: '0.7', transform: 'translateY(-5px) rotateX(-20deg) scale(1.1)' },
+          '100%': { opacity: '1', transform: 'translateY(0) rotateX(0) scale(1)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'letter-reveal': 'letter-reveal 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
       },
     },
   },
