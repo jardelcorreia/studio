@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo } from "react";
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, TrendingUp, TrendingDown, Users, CheckCircle2, Award, Wallet } from "lucide-react";
+import { Trophy, Medal, Users, Award, Wallet, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChampionshipRankingProps {
@@ -35,10 +36,14 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
       if (winnersList.length === 1) {
         const winner = winnersList[0];
         stats[winner].wins += 1;
+        stats[winner].points += 3; // Vitória solo vale 3 pontos no ranking geral
         stats[winner].balance += roundValue * (numPlayers - 1);
         PLAYERS.forEach(p => { if (p !== winner) stats[p].balance -= roundValue; });
       } else {
-        winnersList.forEach((w) => { stats[w].draws += 1; });
+        winnersList.forEach((w) => { 
+          stats[w].draws += 1; 
+          stats[w].points += 1; // Empate vale 1 ponto no ranking geral
+        });
         const losers = PLAYERS.filter(p => !winnersList.includes(p));
         const totalPot = losers.length * roundValue;
         const prizePerWinner = totalPot / winnersList.length;
@@ -48,8 +53,13 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
     });
 
     return Object.values(stats).sort((a, b) => {
+      // Critério 1: Vitórias
       if (b.wins !== a.wins) return b.wins - a.wins;
+      // Critério 2: Empates
       if (b.draws !== a.draws) return b.draws - a.draws;
+      // Critério 3: Pontos
+      if (b.points !== a.points) return b.points - a.points;
+      // Critério Extra: Saldo financeiro
       return b.balance - a.balance;
     });
   }, [roundWinners]);
@@ -82,21 +92,30 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
                        )}
                     </div>
                     <h3 className="text-xl font-black italic uppercase text-primary leading-none mb-1">{player.name}</h3>
-                    <Badge variant="outline" className="rounded-full text-[8px] font-black uppercase tracking-widest border-primary/20">
-                       {index === 0 ? "Líder Alpha" : `Top ${index + 1} Elite`}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Badge variant="outline" className="rounded-full text-[8px] font-black uppercase tracking-widest border-primary/20">
+                         {index === 0 ? "Líder Alpha" : `Top ${index + 1} Elite`}
+                      </Badge>
+                      <Badge className="rounded-full bg-primary text-white text-[8px] font-black uppercase px-2">
+                        {player.points} PTS
+                      </Badge>
+                    </div>
                  </div>
 
-                 <div className="p-6 grid grid-cols-2 gap-4">
+                 <div className="p-6 grid grid-cols-3 gap-2">
                     <div className="text-center">
-                       <div className="text-2xl font-black">{player.wins}</div>
-                       <div className="text-[9px] font-bold text-muted-foreground uppercase">Vitórias</div>
+                       <div className="text-xl font-black">{player.wins}</div>
+                       <div className="text-[8px] font-bold text-muted-foreground uppercase">Vitórias</div>
                     </div>
                     <div className="text-center">
-                       <div className="text-2xl font-black">{player.draws}</div>
-                       <div className="text-[9px] font-bold text-muted-foreground uppercase">Empates</div>
+                       <div className="text-xl font-black">{player.draws}</div>
+                       <div className="text-[8px] font-bold text-muted-foreground uppercase">Empates</div>
                     </div>
-                    <div className="col-span-2 pt-4 border-t border-dashed flex items-center justify-between">
+                    <div className="text-center">
+                       <div className="text-xl font-black text-primary">{player.points}</div>
+                       <div className="text-[8px] font-bold text-muted-foreground uppercase">Pontos</div>
+                    </div>
+                    <div className="col-span-3 pt-4 border-t border-dashed flex items-center justify-between mt-2">
                        <div className="flex items-center gap-2">
                           <Wallet className="h-4 w-4 text-muted-foreground" />
                           <span className="text-[9px] font-bold text-muted-foreground uppercase">Saldo</span>
