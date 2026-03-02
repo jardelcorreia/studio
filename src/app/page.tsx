@@ -11,52 +11,67 @@ import { AiBetAssistant } from "@/components/ai-bet-assistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard } from "lucide-react";
+import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock match data for Brazileirão
-const MOCK_MATCHES: Match[] = [
-  { id: 1, homeTeam: "SE Palmeiras", awayTeam: "Botafogo FR", utcDate: "2025-05-15T21:00:00Z", status: "SCHEDULED", matchday: 1 },
-  { id: 2, homeTeam: "CR Flamengo", awayTeam: "Fluminense FC", utcDate: "2025-05-15T21:30:00Z", status: "SCHEDULED", matchday: 1 },
-  { id: 3, homeTeam: "Grêmio FBPA", awayTeam: "São Paulo FC", utcDate: "2025-05-16T19:00:00Z", status: "SCHEDULED", matchday: 1 },
-  { id: 4, homeTeam: "CA Mineiro", awayTeam: "Cruzeiro EC", utcDate: "2025-05-16T21:00:00Z", status: "SCHEDULED", matchday: 1 },
-  { id: 5, homeTeam: "SC Internacional", awayTeam: "SC Corinthians Paulista", utcDate: "2025-05-17T16:00:00Z", status: "SCHEDULED", matchday: 1 },
-  { id: 6, homeTeam: "EC Bahia", awayTeam: "CR Vasco da Gama", utcDate: "2025-05-17T18:30:00Z", status: "SCHEDULED", matchday: 1 },
-  { id: 7, homeTeam: "Fortaleza EC", awayTeam: "RB Bragantino", utcDate: "2025-05-17T21:00:00Z", status: "SCHEDULED", matchday: 1 },
-  { id: 8, homeTeam: "EC Vitória", awayTeam: "CA Paranaense", utcDate: "2025-05-18T16:00:00Z", status: "SCHEDULED", matchday: 1 },
-];
+import { getBrasileiraoMatches } from "@/lib/football-api";
 
 export default function Home() {
   const { toast } = useToast();
-  // Bypass login for development
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [currentUser, setCurrentUser] = useState("Jardel");
   const [password, setPassword] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   
-  // Initialize match descriptions from MOCK_MATCHES
-  const initialMatchDescriptions = useMemo(() => {
-    const descs = Array(10).fill("");
-    MOCK_MATCHES.forEach((match, idx) => {
-      if (idx < 10) {
-        const home = TEAMS[match.homeTeam]?.abrev || match.homeTeam.substring(0, 3).toUpperCase();
-        const away = TEAMS[match.awayTeam]?.abrev || match.awayTeam.substring(0, 3).toUpperCase();
-        descs[idx] = `${home} x ${away}`;
-      }
-    });
-    return descs;
-  }, []);
-
   // App state
+  const [currentRound, setCurrentRound] = useState(1);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
   const [roundName, setRoundName] = useState("Rodada 1");
-  const [matchDescriptions, setMatchDescriptions] = useState<string[]>(initialMatchDescriptions);
+  const [matchDescriptions, setMatchDescriptions] = useState<string[]>(Array(10).fill(""));
   const [predictions, setPredictions] = useState<PlayerPredictions>(
     Object.fromEntries(PLAYERS.map(p => [p, Array(10).fill({ homeScore: "", awayScore: "" })]))
   );
   const [results, setResults] = useState<Prediction[]>(Array(10).fill({ homeScore: "", awayScore: "" }));
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
-  const [currentRound, setCurrentRound] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch data from API
+  useEffect(() => {
+    async function loadMatches() {
+      setLoadingMatches(true);
+      const data = await getBrasileiraoMatches(currentRound);
+      setMatches(data);
+      
+      if (data.length > 0) {
+        setRoundName(`Rodada ${currentRound}`);
+        
+        // Atualiza as descrições dos confrontos na tabela
+        const newDescriptions = Array(10).fill("");
+        const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
+        
+        data.forEach((match, idx) => {
+          if (idx < 10) {
+            const home = TEAMS[match.homeTeam]?.abrev || match.homeTeam.substring(0, 3).toUpperCase();
+            const away = TEAMS[match.awayTeam]?.abrev || match.awayTeam.substring(0, 3).toUpperCase();
+            newDescriptions[idx] = `${home} x ${away}`;
+            
+            // Se o jogo já terminou, preenche o resultado oficial
+            if (match.status === 'FINISHED') {
+              newResults[idx] = {
+                homeScore: match.homeScore?.toString() || "",
+                awayScore: match.awayScore?.toString() || ""
+              };
+            }
+          }
+        });
+        
+        setMatchDescriptions(newDescriptions);
+        setResults(newResults);
+      }
+      setLoadingMatches(false);
+    }
+    loadMatches();
+  }, [currentRound]);
 
   // Authentication
   const handleLogin = () => {
@@ -99,7 +114,7 @@ export default function Home() {
 
       for (let i = 0; i < 10; i++) {
         const desc = matchDescriptions[i];
-        if (!desc || desc.toLowerCase().includes("sem jogo")) continue;
+        if (!desc || desc.toLowerCase().includes("sem jogo") || desc === "") continue;
 
         const res = results[i];
         const pred = predictions[player][i];
@@ -214,6 +229,7 @@ export default function Home() {
             <span className="font-bold">Painel Alpha</span>
           </div>
           <div className="flex gap-2 ml-auto">
+            {loadingMatches && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
             {currentUser === "Jardel" && (
               <Button 
                 variant="outline" 
@@ -277,7 +293,7 @@ export default function Home() {
                 Calendário Brasileirão
               </h2>
               <MatchCalendar 
-                matches={MOCK_MATCHES}
+                matches={matches}
                 round={currentRound}
                 totalRounds={38}
                 onPrev={() => setCurrentRound(prev => Math.max(1, prev - 1))}
