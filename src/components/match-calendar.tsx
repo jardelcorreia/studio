@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -24,7 +23,8 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
     
     // Limpeza de fallback para nomes que não estão no mapeamento
     const cleanName = name
-      .replace(/\s(FC|EC|SC|AC|AF|FR|FBPA|CR|SE|RB|Club|Clube|Paulista|da Gama)$|^(SE|SC|EC|CR|RB)\s/gi, '')
+      .replace(/^(Clube\sdo\s|SE\s|SC\s|EC\s|CR\s|RB\s|CA\s)/gi, '')
+      .replace(/\s(FC|EC|SC|AC|AF|FR|FBPA|FBC|FBPC|CR|SE|RB|Club|Clube|Paulista|da Gama|Foot\sBall\sClub)$/gi, '')
       .trim();
 
     return {

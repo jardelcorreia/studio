@@ -84,7 +84,8 @@ export default function Home() {
   const cleanName = (name: string) => {
     if (TEAMS[name]) return TEAMS[name].nome;
     return name
-      .replace(/\s(FC|EC|SC|AC|AF|FR|FBPA|CR|SE|RB|Club|Clube|Paulista|da Gama)$|^(SE|SC|EC|CR|RB)\s/gi, '')
+      .replace(/^(Clube\sdo\s|SE\s|SC\s|EC\s|CR\s|RB\s|CA\s)/gi, '')
+      .replace(/\s(FC|EC|SC|AC|AF|FR|FBPA|FBC|FBPC|CR|SE|RB|Club|Clube|Paulista|da Gama|Foot\sBall\sClub)$/gi, '')
       .trim();
   };
 

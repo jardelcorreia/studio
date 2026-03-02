@@ -23,7 +23,7 @@ export const TEAMS: Record<string, TeamInfo> = {
   "EC Juventude": { abrev: "JUV", nome: "Juventude", escudo: "https://logodetimes.com/times/juventude/logo-juventude-256.png" },
   "Atlético Clube Goianiense": { abrev: "ACG", nome: "Atlético-GO", escudo: "https://logodetimes.com/times/atletico-goianiense/logo-atletico-goianiense-256.png" },
   
-  // Série B / Outros
+  // Outros
   "Santos FC": { abrev: "SAN", nome: "Santos", escudo: "https://logodetimes.com/times/santos/logo-santos-256.png" },
   "Chapecoense AF": { abrev: "CHA", nome: "Chapecoense", escudo: "https://logodetimes.com/times/chapecoense/logo-chapecoense-256.png" },
   "Mirassol FC": { abrev: "MIR", nome: "Mirassol", escudo: "https://logodetimes.com/times/mirassol/logo-mirassol-256.png" },
@@ -31,7 +31,10 @@ export const TEAMS: Record<string, TeamInfo> = {
   "Ceará SC": { abrev: "CEA", nome: "Ceará", escudo: "https://logodetimes.com/times/ceara/logo-ceara-256.png" },
   "Goiás EC": { abrev: "GOI", nome: "Goiás", escudo: "https://logodetimes.com/times/goias/logo-goias-256.png" },
   "Coritiba FC": { abrev: "COR", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
+  "Coritiba FBPC": { abrev: "COR", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
+  "Coritiba FBC": { abrev: "COR", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
   "América FC MG": { abrev: "AME", nome: "América-MG", escudo: "https://logodetimes.com/times/america-mineiro/logo-america-mineiro-256.png" },
+  "Clube do Remo": { abrev: "REM", nome: "Remo", escudo: "https://logodetimes.com/times/remo/logo-remo-256.png" },
 };
 
 export const PLAYERS = ["Jardel", "Werbet", "Nailton", "Phillipe"];
