@@ -12,12 +12,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Admin: Verificação por UID (Jardel), E-mail ou registro na coleção roles_admin
+    // Admin: Verificação direta por UID ou E-mail para máxima performance e confiabilidade
     function isAdmin() {
       return isSignedIn() && (
         request.auth.uid == "TquLV2ai1yRgfWPJHZGrHKifgc72" || 
-        request.auth.token.email == "jardel@alphabet.com" ||
-        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+        request.auth.token.email == "jardel@alphabet.com"
       );
     }
 
@@ -26,16 +25,16 @@ service cloud.firestore {
     }
 
     // --- REGRA MESTRE (ADMIN) ---
-    // Permite que o administrador (Jardel) faça QUALQUER operação em QUALQUER lugar.
-    // Isso resolve erros de 'list' em caminhos de raiz e Collection Groups.
+    // Administradores têm permissão total em qualquer documento ou consulta (incluindo Collection Groups)
     match /{document=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- Regras de Grupo (Para usuários comuns) ---
+    // --- Regras de Collection Group (Para usuários comuns) ---
+    // Essencial para a consulta de palpites de todos os jogadores na tabela
     
     match /{path=**}/bets/{betId} {
-      // Usuários comuns só podem ver se forem donos ou se a rodada não estiver oculta
+      // Usuários comuns podem ver palpites se forem donos ou se a rodada não estiver oculta
       allow read: if isSignedIn() && (
         isOwner(resource.data.userId) || 
         (resource.data.isScoresHidden == false)
