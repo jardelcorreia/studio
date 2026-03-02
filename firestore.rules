@@ -3,88 +3,80 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * AlphaBet League Security Rules
+     * AlphaBet League - Regras de Segurança Consolidadas
      */
 
-    // --- Funções Auxiliares ---
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Admin: Verificação direta por UID ou E-mail para máxima performance e confiabilidade
+    // Função de Administrador: Identificação direta por UID (Jardel)
+    // Usamos o UID para garantir acesso instantâneo sem depender de propagação de token ou existência de documentos.
     function isAdmin() {
-      return isSignedIn() && (
+      return request.auth != null && (
         request.auth.uid == "TquLV2ai1yRgfWPJHZGrHKifgc72" || 
         request.auth.token.email == "jardel@alphabet.com"
       );
     }
 
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // --- REGRA MESTRE (ADMIN) ---
-    // Administradores têm permissão total em qualquer documento ou consulta (incluindo Collection Groups)
-    match /{document=**} {
+    // --- REGRA MESTRE PARA ADMINISTRADORES ---
+    // Esta regra garante que o Jardel possa realizar QUALQUER operação (get, list, create, update, delete)
+    // em QUALQUER documento ou consulta global (Collection Group).
+    match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- Regras de Collection Group (Para usuários comuns) ---
-    // Essencial para a consulta de palpites de todos os jogadores na tabela
-    
+    // --- REGRAS PARA USUÁRIOS COMUNS ---
+
+    // Regras globais para apostas e placares (usadas em buscas de todos os jogadores)
     match /{path=**}/bets/{betId} {
-      // Usuários comuns podem ver palpites se forem donos ou se a rodada não estiver oculta
-      allow read: if isSignedIn() && (
+      allow read: if request.auth != null && (
         isOwner(resource.data.userId) || 
-        (resource.data.isScoresHidden == false)
+        resource.data.isScoresHidden == false
       );
     }
 
     match /{path=**}/player_scores/{userId} {
-      allow read: if isSignedIn() && (
+      allow read: if request.auth != null && (
         isOwner(userId) || 
-        (resource.data.isScoresHidden == false)
+        resource.data.isScoresHidden == false
       );
     }
 
-    // --- Regras de Caminhos Específicos (Para usuários comuns) ---
-
+    // Regras de caminho específico para o perfil e dados do próprio usuário
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-
+      allow get, create, update: if isOwner(userId);
+      
       match /bets/{betId} {
         allow read, write: if isOwner(userId);
       }
-
+      
       match /overall_stats {
         allow get, list: if isOwner(userId);
       }
     }
 
-    match /roles_admin/{userId} {
-      allow get: if isSignedIn();
-      allow create: if isSignedIn() && (
-        request.auth.token.email == "jardel@alphabet.com" && userId == request.auth.uid
-      );
-    }
-
-    match /app_settings/{docId} {
-      allow get: if isSignedIn();
-    }
-
+    // Dados públicos (Rodadas e Classificação)
     match /rounds/{roundId} {
-      allow get, list: if isSignedIn();
-
+      allow get, list: if request.auth != null;
+      
       match /matches/{matchId} {
-        allow get, list: if isSignedIn();
+        allow get, list: if request.auth != null;
       }
-
+      
       match /player_scores/{userId} {
         allow get, list: if isOwner(userId) || resource.data.isScoresHidden == false;
       }
+    }
+
+    match /app_settings/{docId} {
+      allow get: if request.auth != null;
+    }
+    
+    match /roles_admin/{userId} {
+      allow get: if request.auth != null;
+      // Permite que o primeiro admin se registre
+      allow create: if request.auth != null && request.auth.token.email == "jardel@alphabet.com";
     }
   }
 }
