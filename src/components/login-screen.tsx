@@ -13,7 +13,12 @@ import { Label } from "./ui/label";
 import { Shield, Loader2, Trophy, AlertCircle, KeyRound, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  onPasswordChangeRequired?: () => void;
+  onPasswordChanged?: () => void;
+}
+
+export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged }: LoginScreenProps) {
   const auth = useAuth();
   const { toast } = useToast();
   
@@ -46,6 +51,7 @@ export function LoginScreen() {
       // Se logou com a senha padrão, força a troca
       if (password === "alphabet123") {
         setShowPasswordChange(true);
+        onPasswordChangeRequired?.();
       } else {
         toast({
           title: `Bem-vindo de volta, ${playerName}!`,
@@ -63,6 +69,7 @@ export function LoginScreen() {
           
           // Após criar com a padrão, obriga a trocar
           setShowPasswordChange(true);
+          onPasswordChangeRequired?.();
           toast({
             title: "Primeiro Acesso!",
             description: "Agora, por favor, defina uma senha segura.",
@@ -103,7 +110,8 @@ export function LoginScreen() {
           title: "Senha Alterada!",
           description: "Sua conta está segura e pronta para o jogo.",
         });
-        // O estado do Firebase vai atualizar e o layout vai liberar o acesso
+        setShowPasswordChange(false);
+        onPasswordChanged?.();
       }
     } catch (err: any) {
       setError("Erro ao atualizar senha. Tente deslogar e logar novamente.");

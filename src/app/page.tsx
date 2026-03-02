@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal, UserCheck } from "lucide-react";
+import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
 import { useUser, useAuth } from "@/firebase";
@@ -27,6 +27,7 @@ export default function Home() {
   const auth = useAuth();
   
   const [darkMode, setDarkMode] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   
   // App state
   const [currentRound, setCurrentRound] = useState<number | null>(null);
@@ -99,7 +100,10 @@ export default function Home() {
     loadMatches();
   }, [currentRound]);
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = () => {
+    setMustChangePassword(false);
+    signOut(auth);
+  };
 
   // State managers
   const updatePrediction = (player: string, idx: number, type: 'home' | 'away', value: string) => {
@@ -229,8 +233,11 @@ export default function Home() {
     );
   }
 
-  if (!user) {
-    return <LoginScreen />;
+  if (!user || mustChangePassword) {
+    return <LoginScreen 
+      onPasswordChangeRequired={() => setMustChangePassword(true)} 
+      onPasswordChanged={() => setMustChangePassword(false)} 
+    />;
   }
 
   return (
