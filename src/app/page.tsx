@@ -246,7 +246,10 @@ export default function Home() {
                   <span className="h-8 w-2 bg-accent" />
                   Ranking AlphaBet 2026
                 </h2>
-                <ChampionshipRanking />
+                <ChampionshipRanking 
+                  currentRoundScores={scores} 
+                  currentRoundNumber={currentRound} 
+                />
               </TabsContent>
 
               <TabsContent value="standings" className="space-y-4">

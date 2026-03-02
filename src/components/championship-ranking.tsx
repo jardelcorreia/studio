@@ -3,15 +3,23 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { PLAYERS } from "@/lib/constants";
-import { ChampionshipWinner, PlayerOverallStats } from "@/lib/types";
+import { ChampionshipWinner, PlayerOverallStats, PlayerScore } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, Star, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { Button } from "./ui/button";
+import { Trophy, Medal, Star, TrendingUp, TrendingDown, Users, Sparkles, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
-export function ChampionshipRanking() {
+interface ChampionshipRankingProps {
+  currentRoundScores?: PlayerScore[];
+  currentRoundNumber?: number | null;
+}
+
+export function ChampionshipRanking({ currentRoundScores, currentRoundNumber }: ChampionshipRankingProps) {
+  const { toast } = useToast();
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
     Array.from({ length: 38 }, (_, i) => ({
       round: i + 1,
@@ -20,9 +28,22 @@ export function ChampionshipRanking() {
     }))
   );
 
-  const updateWinner = (roundIndex: number, winners: string) => {
+  const toggleWinner = (roundIndex: number, playerName: string) => {
     setRoundWinners((prev) =>
-      prev.map((rw, i) => (i === roundIndex ? { ...rw, winners } : rw))
+      prev.map((rw, i) => {
+        if (i !== roundIndex) return rw;
+        
+        const winnersList = rw.winners.split(",").map(s => s.trim()).filter(s => s !== "");
+        let newWinners: string[];
+        
+        if (winnersList.includes(playerName)) {
+          newWinners = winnersList.filter(w => w !== playerName);
+        } else {
+          newWinners = [...winnersList, playerName];
+        }
+        
+        return { ...rw, winners: newWinners.join(", ") };
+      })
     );
   };
 
@@ -30,6 +51,40 @@ export function ChampionshipRanking() {
     setRoundWinners((prev) =>
       prev.map((rw, i) => (i === roundIndex ? { ...rw, value } : rw))
     );
+  };
+
+  const autoDetectWinner = () => {
+    if (!currentRoundNumber || !currentRoundScores) {
+      toast({
+        variant: "destructive",
+        title: "Dados insuficientes",
+        description: "Não há scores calculados para a rodada atual."
+      });
+      return;
+    }
+
+    const winners = currentRoundScores
+      .filter(s => s.isWinner)
+      .map(s => s.name)
+      .join(", ");
+
+    if (!winners) {
+      toast({
+        variant: "destructive",
+        title: "Nenhum vencedor",
+        description: "Nenhum jogador atingiu a pontuação mínima para vencer."
+      });
+      return;
+    }
+
+    setRoundWinners(prev => 
+      prev.map((rw, i) => (i === currentRoundNumber - 1 ? { ...rw, winners } : rw))
+    );
+
+    toast({
+      title: "Ganhadores detectados!",
+      description: `Vencedores da rodada ${currentRoundNumber} foram atualizados: ${winners}`
+    });
   };
 
   const overallStats = useMemo(() => {
@@ -91,35 +146,60 @@ export function ChampionshipRanking() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <Card className="lg:col-span-1 shadow-xl border-none overflow-hidden">
-        <CardHeader className="bg-primary text-primary-foreground py-4">
+        <CardHeader className="bg-primary text-primary-foreground py-4 flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="h-5 w-5" />
-            <CardTitle className="text-lg uppercase italic font-black">Vencedores por Rodada</CardTitle>
+            <CardTitle className="text-lg uppercase italic font-black">Histórico</CardTitle>
           </div>
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            className="h-7 text-[10px] gap-1 px-2"
+            onClick={autoDetectWinner}
+          >
+            <Sparkles className="h-3 w-3" />
+            Auto-Detectar
+          </Button>
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[600px] p-4">
-            <div className="space-y-3">
+            <div className="space-y-4">
               {roundWinners.map((rw, idx) => (
-                <div key={rw.round} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group">
-                  <div className="h-8 w-8 rounded bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                    {rw.round}
+                <div key={rw.round} className="space-y-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group border-b border-dashed last:border-0 pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-6 w-6 rounded bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                        {rw.round}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-muted-foreground">R$</span>
+                        <Input
+                          type="number"
+                          value={rw.value}
+                          onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
+                          className="w-10 h-6 p-1 text-center font-bold text-[10px] border-none bg-muted/30"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] font-bold text-muted-foreground">R$</span>
-                    <Input
-                      type="number"
-                      value={rw.value}
-                      onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
-                      className="w-12 h-8 p-1 text-center font-bold text-xs"
-                    />
+                  <div className="flex flex-wrap gap-1">
+                    {PLAYERS.map(player => {
+                      const isWinner = rw.winners.split(",").map(s => s.trim()).includes(player);
+                      return (
+                        <Badge 
+                          key={player}
+                          variant={isWinner ? "default" : "outline"}
+                          className={cn(
+                            "cursor-pointer text-[9px] px-2 h-5 transition-all select-none",
+                            isWinner ? "bg-primary border-primary" : "text-muted-foreground hover:bg-primary/10"
+                          )}
+                          onClick={() => toggleWinner(idx, player)}
+                        >
+                          {player.substring(0, 3).toUpperCase()}
+                        </Badge>
+                      );
+                    })}
                   </div>
-                  <Input
-                    placeholder="Vencedor(es)..."
-                    value={rw.winners}
-                    onChange={(e) => updateWinner(idx, e.target.value)}
-                    className="h-8 text-xs italic"
-                  />
                 </div>
               ))}
             </div>
@@ -137,7 +217,7 @@ export function ChampionshipRanking() {
           {overallStats.map((player, index) => (
             <Card key={player.name} className={cn(
               "relative overflow-hidden border-none shadow-lg transition-all hover:scale-[1.02]",
-              index === 0 ? "bg-gradient-to-br from-primary/10 to-accent/10 border-l-4 border-l-accent" : ""
+              index === 0 ? "bg-gradient-to-br from-primary/10 to-accent/10 border-l-4 border-l-accent" : "bg-white dark:bg-card"
             )}>
               <div className={cn(
                 "absolute top-0 right-0 h-10 w-10 flex items-center justify-center font-black text-white rounded-bl-xl",
@@ -148,7 +228,7 @@ export function ChampionshipRanking() {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center mb-4">
                   <div className="text-xl font-black italic uppercase text-primary mb-1">{player.name}</div>
-                  {index === 0 && <Badge className="bg-accent hover:bg-accent animate-pulse">Líder Alpha</Badge>}
+                  {index === 0 && <Badge className="bg-accent hover:bg-accent animate-pulse text-[10px]">Líder Alpha</Badge>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
