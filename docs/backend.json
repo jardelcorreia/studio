@@ -5,19 +5,19 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a participant in the AlphaBet League.",
+      "description": "Representa um participante da AlphaBet League.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the User entity."
+          "description": "Identificador único do usuário."
         },
         "username": {
           "type": "string",
-          "description": "The user's chosen display name or handle within the application."
+          "description": "Nome de exibição escolhido pelo usuário."
         },
         "isAdmin": {
           "type": "boolean",
-          "description": "Indicates if the user has administrative privileges."
+          "description": "Indica se o usuário tem privilégios de administrador."
         }
       },
       "required": [
@@ -30,23 +30,23 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Round",
       "type": "object",
-      "description": "Represents a specific betting 'rodada' or matchday in the league.",
+      "description": "Representa uma rodada específica do campeonato.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Round entity."
+          "description": "Identificador único da rodada (ex: round_1)."
         },
         "roundNumber": {
           "type": "number",
-          "description": "The sequential number of the round."
+          "description": "O número sequencial da rodada."
         },
         "name": {
           "type": "string",
-          "description": "The descriptive name of the round."
+          "description": "Nome descritivo da rodada."
         },
         "isScoresHidden": {
           "type": "boolean",
-          "description": "Indicates whether player scores are hidden."
+          "description": "Indica se os palpites dos outros jogadores estão ocultos."
         },
         "dateCreated": {
           "type": "string",
@@ -70,10 +70,11 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "PlayerBet",
       "type": "object",
-      "description": "A specific score prediction for a match.",
+      "description": "Um palpite específico de placar para uma partida.",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Formato: userId_matchIndex"
         },
         "userId": {
           "type": "string"
@@ -89,9 +90,6 @@
         },
         "awayScorePrediction": {
           "type": "number"
-        },
-        "isScoresHidden": {
-          "type": "boolean"
         },
         "dateSubmitted": {
           "type": "string",
@@ -123,14 +121,14 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "User profiles."
+          "description": "Perfis de usuário."
         }
       },
       {
         "path": "/roles_admin/{userId}",
         "definition": {
           "entityName": "User",
-          "description": "Admin privileges marker."
+          "description": "Marcador de privilégios de administrador."
         }
       },
       {
@@ -140,7 +138,7 @@
           "schema": {
             "$ref": "#/backend/entities/Round"
           },
-          "description": "Round metadata."
+          "description": "Metadados da rodada."
         }
       },
       {
@@ -150,10 +148,10 @@
           "schema": {
             "$ref": "#/backend/entities/PlayerBet"
           },
-          "description": "Bets within a round. betId format: userId_matchIdx"
+          "description": "Apostas dentro de uma rodada específica."
         }
       }
     ],
-    "reasoning": "Moving bets under rounds to avoid Collection Group index requirements and simplify real-time syncing."
+    "reasoning": "Estrutura de subcoleções sob rodadas escolhida para evitar a necessidade de índices compostos em consultas de Collection Group, melhorando a performance e simplicidade."
   }
 }

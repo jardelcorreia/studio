@@ -3,32 +3,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // FUNÇÃO MESTRE: Jardel tem acesso total e irrestrito
-    function isAdmin() {
-      return request.auth != null && (
+    /**
+     * AlphaBet League Security Rules - Optimized for Subcollections
+     */
+
+    // --- MESTRE: Jardel (TquLV2ai1yRgfWPJHZGrHKifgc72) tem acesso total ---
+    match /{document=**} {
+      allow read, write: if request.auth != null && (
         request.auth.uid == "TquLV2ai1yRgfWPJHZGrHKifgc72" || 
         request.auth.token.email == "jardel@alphabet.com"
       );
     }
 
-    match /{document=**} {
-      allow read, write: if isAdmin();
-    }
-
     // Regras para usuários comuns
+    
     match /users/{userId} {
       allow get, create, update: if request.auth != null && request.auth.uid == userId;
     }
 
     match /rounds/{roundId} {
+      // Todos logados podem ver metadados da rodada
       allow read: if request.auth != null;
       
+      // Regras para apostas dentro da rodada
       match /bets/{betId} {
-        // Usuário pode ler sua própria aposta, ou qualquer uma se não estiverem ocultas
+        // Usuário pode ler sua própria aposta OU qualquer uma se a rodada não estiver oculta
         allow read: if request.auth != null && (
           betId.startsWith(request.auth.uid) || 
-          resource.data.isScoresHidden == false
+          get(/databases/$(database)/documents/rounds/$(roundId)).data.isScoresHidden == false
         );
+        
         // Usuário pode criar/atualizar apenas sua própria aposta
         allow write: if request.auth != null && betId.startsWith(request.auth.uid);
       }
