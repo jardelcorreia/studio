@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, updatePassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, serverTimestamp } from "firebase/firestore";
 import { PLAYERS } from "@/lib/constants";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -53,8 +53,17 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
     const email = formatEmail(playerName);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
+      // Se for o Jardel, garantimos que ele tenha o registro de admin no Firestore
+      if (playerName === "Jardel") {
+        const adminRef = doc(db, "roles_admin", userCredential.user.uid);
+        setDocumentNonBlocking(adminRef, {
+          userId: userCredential.user.uid,
+          grantedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+
       if (password === "alphabet123") {
         onPasswordChangeRequired?.();
         setShowPasswordChange(true);
@@ -65,12 +74,13 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         });
       }
     } catch (err: any) {
+      // Se o usuário não existir ou a credencial for inválida e for a senha padrão, tentamos criar a conta
       if ((err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") && password === "alphabet123") {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName: playerName });
           
-          // Cria o documento do usuário no Firestore (Gera a coleção 'users')
+          // Cria o documento do usuário
           const userRef = doc(db, "users", userCredential.user.uid);
           setDocumentNonBlocking(userRef, {
             id: userCredential.user.uid,
@@ -78,6 +88,15 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
             isAdmin: playerName === "Jardel",
             dateCreated: serverTimestamp(),
           }, { merge: true });
+
+          // Se for o Jardel, cria o registro de admin
+          if (playerName === "Jardel") {
+            const adminRef = doc(db, "roles_admin", userCredential.user.uid);
+            setDocumentNonBlocking(adminRef, {
+              userId: userCredential.user.uid,
+              grantedAt: serverTimestamp(),
+            }, { merge: true });
+          }
 
           toast({
             title: "Primeiro Acesso!",
