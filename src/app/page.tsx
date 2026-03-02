@@ -15,12 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal } from "lucide-react";
+import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
-import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
-import { doc, collection, serverTimestamp, writeBatch } from "firebase/firestore";
+import { doc, collection, serverTimestamp, query, where, collectionGroup } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function Home() {
@@ -55,20 +55,38 @@ export default function Home() {
     }))
   );
 
-  // Initial fetch
+  // Firestore Sync - Current Round Config
+  const roundId = currentRound ? `round_${currentRound}` : null;
+  const roundDocRef = useMemoFirebase(() => roundId ? doc(db, "rounds", roundId) : null, [db, roundId]);
+  const { data: roundData } = useDoc(roundDocRef);
+
+  // Firestore Sync - User's Bets (using collectionGroup for broader visibility if permissions allow)
+  const betsQuery = useMemoFirebase(() => {
+    if (!roundId) return null;
+    return query(collectionGroup(db, "bets"), where("roundId", "==", roundId));
+  }, [db, roundId]);
+  const { data: allBets, isLoading: isLoadingBets } = useCollection(betsQuery);
+
+  // Initial fetch from External API
   useEffect(() => {
     async function init() {
       const matchday = await getBrasileiraoCurrentMatchday();
       setCurrentRound(matchday);
-      setRoundName(`Rodada ${matchday}`);
-      
-      const leagueTable = await getLeagueStandings();
-      setStandings(leagueTable);
     }
     init();
   }, []);
 
-  // Fetch data from API when round changes
+  // Sync Round Settings from Firestore
+  useEffect(() => {
+    if (roundData) {
+      if (roundData.name) setRoundName(roundData.name);
+      if (roundData.isScoresHidden !== undefined) setPlacaresOcultos(roundData.isScoresHidden);
+    } else if (currentRound) {
+      setRoundName(`Rodada ${currentRound}`);
+    }
+  }, [roundData, currentRound]);
+
+  // Load matches and sync with predictions
   useEffect(() => {
     if (currentRound === null) return;
 
@@ -77,8 +95,10 @@ export default function Home() {
       const data = await getBrasileiraoMatches(currentRound!);
       setMatches(data);
       
+      const leagueTable = await getLeagueStandings();
+      setStandings(leagueTable);
+
       if (data.length > 0) {
-        setRoundName(`Rodada ${currentRound}`);
         const newDescriptions = Array(10).fill("");
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
         
@@ -87,6 +107,8 @@ export default function Home() {
             const home = TEAMS[match.homeTeam]?.abrev || match.homeTeam.substring(0, 3).toUpperCase();
             const away = TEAMS[match.awayTeam]?.abrev || match.awayTeam.substring(0, 3).toUpperCase();
             newDescriptions[idx] = `${home} x ${away}`;
+            
+            // Priority: Finished API results, but we'll merge them
             if (match.status === 'FINISHED') {
               newResults[idx] = {
                 homeScore: match.homeScore?.toString() || "",
@@ -103,6 +125,37 @@ export default function Home() {
     loadMatches();
   }, [currentRound]);
 
+  // Sync Bets from Firestore into local state
+  useEffect(() => {
+    if (!allBets || !currentRound) return;
+
+    setPredictions(prev => {
+      const next = { ...prev };
+      // Reset for this round before filling
+      PLAYERS.forEach(p => {
+        next[p] = Array(10).fill({ homeScore: "", awayScore: "" });
+      });
+
+      allBets.forEach(bet => {
+        // We need to find which match index this bet belongs to.
+        // We stored it as `bet_{round}_{idx}` in our save function.
+        const matchIdx = parseInt(bet.id.split('_').pop() || "-1");
+        
+        // Find player name by searching their UID in our user docs? 
+        // For simplicity, let's assume we saved 'username' in the bet doc.
+        const player = bet.username || PLAYERS.find(p => bet.id.includes(p)); // fallback
+        
+        if (player && matchIdx >= 0 && matchIdx < 10) {
+          next[player][matchIdx] = {
+            homeScore: bet.homeScorePrediction?.toString() || "",
+            awayScore: bet.awayScorePrediction?.toString() || ""
+          };
+        }
+      });
+      return next;
+    });
+  }, [allBets, currentRound]);
+
   const handleLogout = () => {
     setMustChangePassword(false);
     signOut(auth);
@@ -116,7 +169,7 @@ export default function Home() {
       const roundId = `round_${currentRound}`;
       const roundRef = doc(db, "rounds", roundId);
 
-      // Salva dados da Rodada
+      // Save Round Metadata
       setDocumentNonBlocking(roundRef, {
         id: roundId,
         roundNumber: currentRound,
@@ -126,28 +179,20 @@ export default function Home() {
         dateCreated: serverTimestamp(),
       }, { merge: true });
 
-      // Salva as partidas da rodada no Firestore
-      matches.forEach((match, idx) => {
-        if (idx >= 10) return;
-        const matchId = `match_${match.id}`;
-        const matchRef = doc(db, "rounds", roundId, "matches", matchId);
-        setDocumentNonBlocking(matchRef, {
-          ...match,
-          roundId,
-          id: matchId,
-          dateUpdated: serverTimestamp(),
-        }, { merge: true });
-      });
-
-      // Salva apostas do usuário atual
-      predictions[user.displayName!].forEach((pred, idx) => {
+      // Save current user's predictions
+      const userBets = predictions[user.displayName!];
+      userBets.forEach((pred, idx) => {
         if (pred.homeScore === "" || pred.awayScore === "") return;
+        
         const betId = `bet_${currentRound}_${idx}`;
         const betRef = doc(db, "users", user.uid, "bets", betId);
+        
         setDocumentNonBlocking(betRef, {
           id: betId,
           userId: user.uid,
-          matchId: `match_${matches[idx]?.id || idx}`,
+          username: user.displayName, // Store username for easier retrieval
+          roundId: roundId, // Store roundId for collectionGroup querying
+          matchId: matches[idx]?.id || idx,
           homeScorePrediction: parseInt(pred.homeScore),
           awayScorePrediction: parseInt(pred.awayScore),
           isScoresHidden: placaresOcultos,
@@ -171,7 +216,6 @@ export default function Home() {
     }
   };
 
-  // State managers
   const updatePrediction = (player: string, idx: number, type: 'home' | 'away', value: string) => {
     setPredictions(prev => ({
       ...prev,
@@ -356,7 +400,7 @@ export default function Home() {
             </div>
           </div>
           <div className="flex gap-2 ml-auto">
-            {loadingMatches && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+            {(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
             {isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setPlacaresOcultos(!placaresOcultos)} className="gap-2 border-primary/30 text-primary hover:bg-primary/5">
                 <Shield className="h-4 w-4" />
