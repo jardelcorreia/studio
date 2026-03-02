@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -81,6 +80,14 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
+  // Função auxiliar para limpar nomes de times vindos da API
+  const cleanName = (name: string) => {
+    if (TEAMS[name]) return TEAMS[name].nome;
+    return name
+      .replace(/\s(FC|EC|SC|AC|AF|FR|FBPA|CR|SE|RB|Club|Clube|Paulista|da Gama)$|^(SE|SC|EC|CR|RB)\s/gi, '')
+      .trim();
+  };
+
   useEffect(() => {
     if (currentRound === null) return;
     async function loadMatches() {
@@ -94,8 +101,8 @@ export default function Home() {
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
         data.forEach((match, idx) => {
           if (idx < 10) {
-            const home = TEAMS[match.homeTeam]?.nome || match.homeTeam;
-            const away = TEAMS[match.awayTeam]?.nome || match.awayTeam;
+            const home = cleanName(match.homeTeam);
+            const away = cleanName(match.awayTeam);
             newDescriptions[idx] = `${home} x ${away}`;
             if (match.status === 'FINISHED') {
               newResults[idx] = {
