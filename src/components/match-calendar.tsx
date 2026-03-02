@@ -6,7 +6,7 @@ import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { CalendarDays, Clock, ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, cleanTeamName } from "@/lib/utils";
 import { Button } from "./ui/button";
 
 interface MatchCalendarProps {
@@ -21,15 +21,11 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
   const getTeamInfo = (name: string) => {
     if (TEAMS[name]) return TEAMS[name];
     
-    // Limpeza de fallback para nomes que não estão no mapeamento
-    const cleanName = name
-      .replace(/^(Clube\sdo\s|SE\s|SC\s|EC\s|CR\s|RB\s|CA\s)/gi, '')
-      .replace(/\s(FC|EC|SC|AC|AF|FR|FBPA|FBC|FBPC|CR|SE|RB|Club|Clube|Paulista|da Gama|Foot\sBall\sClub)$/gi, '')
-      .trim();
+    const cleaned = cleanTeamName(name);
 
     return {
-      abrev: cleanName.substring(0, 3).toUpperCase(),
-      nome: cleanName,
+      abrev: cleaned.substring(0, 3).toUpperCase(),
+      nome: cleaned,
       escudo: "https://logodetimes.com/imagens/generico-256.png"
     };
   };

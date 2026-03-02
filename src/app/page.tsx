@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { PLAYERS, TEAMS } from "@/lib/constants";
+import { PLAYERS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
 import { BettingTable } from "@/components/betting-table";
@@ -21,7 +21,7 @@ import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection, useDoc 
 import { signOut } from "firebase/auth";
 import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { cn } from "@/lib/utils";
+import { cn, cleanTeamName } from "@/lib/utils";
 
 export default function Home() {
   const { toast } = useToast();
@@ -80,14 +80,6 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
-  const cleanName = (name: string) => {
-    if (TEAMS[name]) return TEAMS[name].nome;
-    return name
-      .replace(/^(Clube\sdo\s|SE\s|SC\s|EC\s|CR\s|RB\s|CA\s)/gi, '')
-      .replace(/\s(FC|EC|SC|AC|AF|FR|FBPA|FBC|FBPC|CR|SE|RB|Club|Clube|Paulista|da Gama|Foot\sBall\sClub)$/gi, '')
-      .trim();
-  };
-
   useEffect(() => {
     if (currentRound === null) return;
     async function loadMatches() {
@@ -101,8 +93,8 @@ export default function Home() {
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
         data.forEach((match, idx) => {
           if (idx < 10) {
-            const home = cleanName(match.homeTeam);
-            const away = cleanName(match.awayTeam);
+            const home = cleanTeamName(match.homeTeam);
+            const away = cleanTeamName(match.awayTeam);
             newDescriptions[idx] = `${home} x ${away}`;
             if (match.status === 'FINISHED') {
               newResults[idx] = {

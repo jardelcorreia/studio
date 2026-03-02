@@ -5,6 +5,7 @@ import { StandingEntry } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
+import { cleanTeamName, cn } from "@/lib/utils";
 
 interface LeagueStandingsProps {
   standings: StandingEntry[];
@@ -52,7 +53,9 @@ export function LeagueStandings({ standings }: LeagueStandingsProps) {
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <img src={entry.teamCrest} alt={entry.teamName} className="w-8 h-8 object-contain drop-shadow-sm" />
-                    <span className="font-black italic uppercase text-[11px] sm:text-sm whitespace-nowrap">{entry.teamName}</span>
+                    <span className="font-black italic uppercase text-[11px] sm:text-sm whitespace-nowrap">
+                      {cleanTeamName(entry.teamName)}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell className="text-center font-bold">{entry.playedGames}</TableCell>
@@ -78,5 +81,3 @@ export function LeagueStandings({ standings }: LeagueStandingsProps) {
     </Card>
   );
 }
-
-const cn = (...inputs: any[]) => inputs.filter(Boolean).join(" ");
