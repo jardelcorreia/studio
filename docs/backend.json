@@ -1,0 +1,449 @@
+{
+  "entities": {
+    "Championship": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Championship",
+      "type": "object",
+      "description": "Represents a single season or instance of the AlphaBet betting championship, holding overall configuration and state.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Championship entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the betting championship (e.g., 'Brasileirão AlphaBet 2026')."
+        },
+        "currentRoundNumber": {
+          "type": "number",
+          "description": "The number of the round currently being displayed or actively bet on within this championship."
+        },
+        "defaultRoundValue": {
+          "type": "number",
+          "description": "The default monetary or point value associated with winning a round, applied if no specific value is set for an individual round."
+        },
+        "placaresOcultos": {
+          "type": "boolean",
+          "description": "Indicates whether individual player betting scores are hidden from other users in the main betting table view."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "Timestamp of the last significant update to the championship's overall state.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "currentRoundNumber",
+        "defaultRoundValue",
+        "placaresOcultos",
+        "lastUpdated"
+      ]
+    },
+    "Player": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Player",
+      "type": "object",
+      "description": "Represents a participant in the AlphaBet betting championship.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Player entity (e.g., 'Jardel')."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the player."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Round": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Round",
+      "type": "object",
+      "description": "Represents a single round of matches and betting within a championship.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Round entity."
+        },
+        "championshipId": {
+          "type": "string",
+          "description": "Reference to the Championship this round belongs to. (Relationship: Championship 1:N Round)"
+        },
+        "roundNumber": {
+          "type": "number",
+          "description": "The sequential number of the round within the championship (e.g., 1, 2, ..., 38)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Descriptive name for the round (e.g., 'Rodada 1')."
+        },
+        "roundValue": {
+          "type": "number",
+          "description": "The specific monetary or point value for winning this round, overriding the championship's default value if set."
+        },
+        "winnerIds": {
+          "type": "array",
+          "description": "References to Players who won this round. Multiple IDs indicate a tie. (Relationship: Player N:N Round)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "isComplete": {
+          "type": "boolean",
+          "description": "Indicates if all matches in the round are finished and results are processed for scoring."
+        }
+      },
+      "required": [
+        "id",
+        "championshipId",
+        "roundNumber",
+        "name",
+        "roundValue",
+        "winnerIds",
+        "isComplete"
+      ]
+    },
+    "Match": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Match",
+      "type": "object",
+      "description": "Represents a single football match that players can bet on.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Match entity."
+        },
+        "roundId": {
+          "type": "string",
+          "description": "Reference to the Round this match belongs to. (Relationship: Round 1:N Match)"
+        },
+        "homeTeamAbbreviation": {
+          "type": "string",
+          "description": "Abbreviated name of the home team (e.g., 'PAL')."
+        },
+        "awayTeamAbbreviation": {
+          "type": "string",
+          "description": "Abbreviated name of the away team (e.g., 'BOT')."
+        },
+        "homeTeamScore": {
+          "type": "number",
+          "description": "Final score for the home team. This value is null/empty if the match is not yet finished."
+        },
+        "awayTeamScore": {
+          "type": "number",
+          "description": "Final score for the away team. This value is null/empty if the match is not yet finished."
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the match (e.g., 'SCHEDULED', 'LIVE', 'FINISHED')."
+        },
+        "matchDate": {
+          "type": "string",
+          "description": "UTC date and time of the match.",
+          "format": "date-time"
+        },
+        "externalId": {
+          "type": "string",
+          "description": "Identifier from the external sports data API for this match."
+        }
+      },
+      "required": [
+        "id",
+        "roundId",
+        "homeTeamAbbreviation",
+        "awayTeamAbbreviation",
+        "status",
+        "matchDate",
+        "externalId"
+      ]
+    },
+    "Bet": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bet",
+      "type": "object",
+      "description": "Represents a player's score prediction for a specific match.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Bet entity."
+        },
+        "playerId": {
+          "type": "string",
+          "description": "Reference to the Player who made this bet. (Relationship: Player 1:N Bet)"
+        },
+        "matchId": {
+          "type": "string",
+          "description": "Reference to the Match this bet is for. (Relationship: Match 1:N Bet)"
+        },
+        "homeScorePrediction": {
+          "type": "number",
+          "description": "Predicted score for the home team."
+        },
+        "awayScorePrediction": {
+          "type": "number",
+          "description": "Predicted score for the away team."
+        },
+        "pointsAwarded": {
+          "type": "number",
+          "description": "Points awarded to the player for this specific bet (e.g., 0, 1, 3), calculated after the match result is known."
+        }
+      },
+      "required": [
+        "id",
+        "playerId",
+        "matchId",
+        "homeScorePrediction",
+        "awayScorePrediction",
+        "pointsAwarded"
+      ]
+    },
+    "PlayerRoundScore": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PlayerRoundScore",
+      "type": "object",
+      "description": "Stores the total points a player earned in a specific round of the championship.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PlayerRoundScore entity."
+        },
+        "playerId": {
+          "type": "string",
+          "description": "Reference to the Player. (Relationship: Player 1:N PlayerRoundScore)"
+        },
+        "roundId": {
+          "type": "string",
+          "description": "Reference to the Round. (Relationship: Round 1:N PlayerRoundScore)"
+        },
+        "totalPoints": {
+          "type": "number",
+          "description": "Total points earned by the player in this specific round."
+        }
+      },
+      "required": [
+        "id",
+        "playerId",
+        "roundId",
+        "totalPoints"
+      ]
+    },
+    "OverallPlayerChampionshipStats": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OverallPlayerChampionshipStats",
+      "type": "object",
+      "description": "Stores the cumulative statistics for each player across an entire championship, used for the main leaderboard.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OverallPlayerChampionshipStats entity."
+        },
+        "championshipId": {
+          "type": "string",
+          "description": "Reference to the Championship. (Relationship: Championship 1:N OverallPlayerChampionshipStats)"
+        },
+        "playerId": {
+          "type": "string",
+          "description": "Reference to the Player. (Relationship: Player 1:N OverallPlayerChampionshipStats)"
+        },
+        "wins": {
+          "type": "number",
+          "description": "Total number of rounds where the player was the sole winner."
+        },
+        "draws": {
+          "type": "number",
+          "description": "Total number of rounds where the player tied for first place (shared win)."
+        },
+        "balance": {
+          "type": "number",
+          "description": "Monetary or points balance accumulated by the player across the championship."
+        },
+        "totalChampionshipPoints": {
+          "type": "number",
+          "description": "Sum of all points earned by the player across all rounds in the championship."
+        }
+      },
+      "required": [
+        "id",
+        "championshipId",
+        "playerId",
+        "wins",
+        "draws",
+        "balance",
+        "totalChampionshipPoints"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "Player",
+          "schema": {
+            "$ref": "#/backend/entities/Player"
+          },
+          "description": "User profile data for a player. The `userId` parameter corresponds to `request.auth.uid` for authenticated Firebase users. All data for a player is typically nested under this path.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user (Firebase Authentication UID)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/championships/{championshipId}",
+        "definition": {
+          "entityName": "Championship",
+          "schema": {
+            "$ref": "#/backend/entities/Championship"
+          },
+          "description": "Top-level collection for a betting championship. Contains global configurations like `placaresOcultos` and `defaultRoundValue`. Authorization for subcollections often refers back to `championshipId` in their paths. All authenticated users can read. Admins can manage.",
+          "params": [
+            {
+              "name": "championshipId",
+              "description": "The unique identifier for a specific championship (e.g., 'brasilerao_2026')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/championships/{championshipId}/rounds/{roundId}",
+        "definition": {
+          "entityName": "Round",
+          "schema": {
+            "$ref": "#/backend/entities/Round"
+          },
+          "description": "Subcollection containing details for each betting round within a championship. Includes denormalized `winnerIds` (array of player UIDs) for authorization independence when checking round winners. All authenticated users can read. Admins can manage.",
+          "params": [
+            {
+              "name": "championshipId",
+              "description": "The unique identifier of the parent championship."
+            },
+            {
+              "name": "roundId",
+              "description": "The unique identifier for the specific round (e.g., 'round_1')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/championships/{championshipId}/rounds/{roundId}/matches/{matchId}",
+        "definition": {
+          "entityName": "Match",
+          "schema": {
+            "$ref": "#/backend/entities/Match"
+          },
+          "description": "Subcollection for individual football matches within a specific round. Publicly readable data. Admins update match results and status.",
+          "params": [
+            {
+              "name": "championshipId",
+              "description": "The unique identifier of the parent championship."
+            },
+            {
+              "name": "roundId",
+              "description": "The unique identifier of the parent round."
+            },
+            {
+              "name": "matchId",
+              "description": "The unique identifier for the specific match."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/championships/{championshipId}/bets/{matchId}",
+        "definition": {
+          "entityName": "Bet",
+          "schema": {
+            "$ref": "#/backend/entities/Bet"
+          },
+          "description": "Stores a player's score prediction for a specific match. The `matchId` serves as the document ID. Includes denormalized `isScoresVisible` (true/false) based on the parent Championship's `placaresOcultos` setting for authorization independence. Only the `userId` owner can read/write their own bets. Admins can read all bets.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user (Firebase Authentication UID) who made the bet."
+            },
+            {
+              "name": "championshipId",
+              "description": "The unique identifier of the parent championship."
+            },
+            {
+              "name": "matchId",
+              "description": "The unique identifier of the match the bet is for, also used as the document ID for single bet lookup."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/championships/{championshipId}/playerRoundScores/{playerId}_{roundId}",
+        "definition": {
+          "entityName": "PlayerRoundScore",
+          "schema": {
+            "$ref": "#/backend/entities/PlayerRoundScore"
+          },
+          "description": "Stores the total points a player earned in a specific round of a championship. Document ID combines `playerId` and `roundId`. Publicly readable. Calculated and updated by backend processes (e.g., Cloud Functions).",
+          "params": [
+            {
+              "name": "championshipId",
+              "description": "The unique identifier of the parent championship."
+            },
+            {
+              "name": "playerId_roundId",
+              "description": "A composite identifier for the document, typically `${playerId}_${roundId}`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/championships/{championshipId}/overallPlayerChampionshipStats/{playerId}",
+        "definition": {
+          "entityName": "OverallPlayerChampionshipStats",
+          "schema": {
+            "$ref": "#/backend/entities/OverallPlayerChampionshipStats"
+          },
+          "description": "Stores cumulative statistics for each player across an entire championship. This collection forms the basis of the main leaderboard. The `playerId` is the document ID. Publicly readable. Calculated and updated by backend processes (e.g., Cloud Functions).",
+          "params": [
+            {
+              "name": "championshipId",
+              "description": "The unique identifier of the parent championship."
+            },
+            {
+              "name": "playerId",
+              "description": "The unique identifier of the player, used as the document ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "Admin Role Marker",
+          "schema": {
+            "$ref": "#/backend/entities/Player"
+          },
+          "description": "A collection used for Database Access Control (DBAC). The mere existence of a document with a `userId` in this collection indicates that the user is an administrator. This is crucial for securely defining admin permissions in Firestore rules without custom claims.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user (Firebase Authentication UID) who has admin privileges."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The proposed Firestore data structure is designed to be secure, scalable, and debuggable, strictly adhering to the core design principles and strategy mandates. It leverages deep nested subcollections for hierarchical data and denormalization for authorization independence, eliminating the need for `get()` calls in security rules for authorization decisions.\n\n**Authorization Independence (CRITICAL):**\n\n1.  **Bets (`/users/{userId}/championships/{championshipId}/bets/{matchId}`):** Each `Bet` document explicitly contains `isScoresVisible` (denormalized from the `Championship` setting `placaresOcultos`). This allows security rules to decide read access for non-owners without needing to `get()` the parent `Championship` document. The `userId` and `championshipId` are also directly present in the path, making ownership checks atomic and clear.\n2.  **Rounds (`/championships/{championshipId}/rounds/{roundId}`):** The `Round` documents include `winnerIds` directly. This means when determining round winners or displaying them, no cross-document `get()` is needed to link players or their scores.\n3.  **Player Scores (`/championships/{championshipId}/playerRoundScores/{playerId}_{roundId}` and `/championships/{championshipId}/overallPlayerChampionshipStats/{playerId}`):** These collections store aggregated and derived scores. Each document contains the `playerId` and `championshipId` (either in the document ID or explicitly as fields), allowing for direct read/write access checks based on these fields, without needing to traverse a complex hierarchy.\n4.  **Admin Roles (`/roles_admin/{userId}`):** Admin authorization is determined by the *existence* of a document with the user's `uid` in this collection, avoiding `get()` on user profiles or custom claims. This makes admin checks robust and efficient.\n\n**QAPs (Rules are not Filters):**\n\n1.  **Structural Segregation:** Data with different security postures is segregated. For example, public match data (`/championships/{championshipId}/rounds/{roundId}/matches`) is separated from private user bets (`/users/{userId}/championships/{championshipId}/bets`). This allows `list` operations on public data to be inherently secure without requiring complex filtering logic in rules.\n2.  **Explicit Path-Based Ownership:** For user-owned data like `bets`, the path structure `/users/{userId}/championships/{championshipId}/bets` ensures that a user can only query and access their own `bets`. The security rules will directly enforce `request.auth.uid == userId`, making it impossible for a query to return data belonging to other users. This means the client receives exactly what it's authorized to see, adhering to the QAPs principle.\n3.  **Denormalized Visibility Control:** By denormalizing `isScoresVisible` into each `Bet` document, security rules can directly evaluate if a non-owner can read a particular bet's score. For example, a rule could be `allow read: if request.auth.uid == userId || resource.data.isScoresVisible == true || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))`. This allows the server to filter out non-visible scores at the read level, rather than relying on the client to filter after fetching, ensuring secure `list` queries for bets as well."
+  }
+}
