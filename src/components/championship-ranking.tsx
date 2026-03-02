@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from "react";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, Award, Wallet, Star } from "lucide-react";
+import { Trophy, Medal, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChampionshipRankingProps {
@@ -27,14 +26,12 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
     );
 
     roundWinners.forEach((rw) => {
-      // 1. Somar pontos de cada jogador nesta rodada (Soma Técnica Total)
       if (rw.pointsMap) {
         PLAYERS.forEach(p => {
           stats[p].points += rw.pointsMap?.[p] || 0;
         });
       }
 
-      // 2. Calcular Vitórias/Empates na liderança da rodada e Saldo Financeiro
       if (!rw.winners || !rw.winners.trim()) return;
       const winnersList = rw.winners.split(",").map((s) => s.trim()).filter((s) => PLAYERS.includes(s));
       if (winnersList.length === 0) return;
@@ -60,20 +57,15 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
     });
 
     return Object.values(stats).sort((a, b) => {
-      // Critério 1: Vitórias (Rodadas ganhas)
       if (b.wins !== a.wins) return b.wins - a.wins;
-      // Critério 2: Empates (Rodadas empatadas na liderança)
       if (b.draws !== a.draws) return b.draws - a.draws;
-      // Critério 3: Pontos (Soma total de pontos técnicos de todas as rodadas)
       if (b.points !== a.points) return b.points - a.points;
-      // Critério Extra: Saldo financeiro
       return b.balance - a.balance;
     });
   }, [roundWinners]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      {/* Esquerda: Ranking Cards */}
       <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
          {overallStats.map((player, index) => (
             <Card key={player.name} className={cn(
@@ -106,16 +98,16 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
 
                  <div className="p-6 grid grid-cols-3 gap-2">
                     <div className="text-center">
-                       <div className="text-xl font-black">{player.wins}</div>
-                       <div className="text-[8px] font-bold text-muted-foreground uppercase">Vitórias</div>
+                       <div className="text-3xl font-black text-primary leading-none">{player.wins}</div>
+                       <div className="text-[8px] font-bold text-muted-foreground uppercase mt-1">Vitórias</div>
                     </div>
                     <div className="text-center">
                        <div className="text-xl font-black">{player.draws}</div>
-                       <div className="text-[8px] font-bold text-muted-foreground uppercase">Empates</div>
+                       <div className="text-[8px] font-bold text-muted-foreground uppercase mt-1">Empates</div>
                     </div>
                     <div className="text-center">
-                       <div className="text-xl font-black text-primary">{player.points}</div>
-                       <div className="text-[8px] font-bold text-muted-foreground uppercase">Total Pts</div>
+                       <div className="text-xl font-black">{player.points}</div>
+                       <div className="text-[8px] font-bold text-muted-foreground uppercase mt-1">Total Pts</div>
                     </div>
                     <div className="col-span-3 pt-4 border-t border-dashed flex items-center justify-between mt-2">
                        <div className="flex items-center gap-2">
@@ -135,7 +127,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
          ))}
       </div>
 
-      {/* Direita: Histórico */}
       <div className="lg:col-span-4 space-y-4">
         <Card className="glass-card border-none rounded-3xl overflow-hidden h-full">
            <CardHeader className="bg-primary p-6">
