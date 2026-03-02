@@ -52,11 +52,6 @@ export const TEAMS: Record<string, TeamInfo> = {
     nome: "Corinthians",
     escudo: "https://logodetimes.com/times/corinthians/logo-corinthians-256.png",
   },
-  "Santos FC": {
-    abrev: "SAN",
-    nome: "Santos",
-    escudo: "https://logodetimes.com/times/santos/logo-santos-256.png",
-  },
   "EC Bahia": {
     abrev: "BAH",
     nome: "Bahia",
@@ -74,7 +69,7 @@ export const TEAMS: Record<string, TeamInfo> = {
   },
   "RB Bragantino": {
     abrev: "RBB",
-    nome: "RB Bragantino",
+    nome: "Bragantino",
     escudo: "https://logodetimes.com/times/red-bull-bragantino/logo-red-bull-bragantino-256.png",
   },
   "EC Vitória": {
@@ -86,6 +81,26 @@ export const TEAMS: Record<string, TeamInfo> = {
     abrev: "CAP",
     nome: "Athletico-PR",
     escudo: "https://logodetimes.com/times/atletico-paranaense/logo-atletico-paranaense-256.png",
+  },
+  "Cuiabá EC": {
+    abrev: "CUI",
+    nome: "Cuiabá",
+    escudo: "https://logodetimes.com/times/cuiaba/logo-cuiaba-256.png",
+  },
+  "Criciúma EC": {
+    abrev: "CRI",
+    nome: "Criciúma",
+    escudo: "https://logodetimes.com/times/criciuma/logo-criciuma-256.png",
+  },
+  "EC Juventude": {
+    abrev: "JUV",
+    nome: "Juventude",
+    escudo: "https://logodetimes.com/times/juventude/logo-juventude-256.png",
+  },
+  "Atlético Clube Goianiense": {
+    abrev: "ACG",
+    nome: "Atlético-GO",
+    escudo: "https://logodetimes.com/times/atletico-goianiense/logo-atletico-goianiense-256.png",
   },
 };
 

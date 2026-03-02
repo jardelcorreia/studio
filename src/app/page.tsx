@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -54,11 +55,9 @@ export default function Home() {
 
   const roundId = currentRound ? `round_${currentRound}` : null;
   
-  // Só ativa a referência do documento se o usuário estiver logado e a rodada definida
   const roundDocRef = useMemoFirebase(() => (roundId && user) ? doc(db, "rounds", roundId) : null, [db, roundId, user]);
   const { data: roundData } = useDoc(roundDocRef);
 
-  // Só ativa a coleção de apostas se o usuário estiver logado e a rodada definida
   const betsCollectionRef = useMemoFirebase(() => {
     if (!roundId || !user) return null;
     return collection(db, "rounds", roundId, "bets");
@@ -95,8 +94,8 @@ export default function Home() {
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
         data.forEach((match, idx) => {
           if (idx < 10) {
-            const home = TEAMS[match.homeTeam]?.abrev || match.homeTeam.substring(0, 3).toUpperCase();
-            const away = TEAMS[match.awayTeam]?.abrev || match.awayTeam.substring(0, 3).toUpperCase();
+            const home = TEAMS[match.homeTeam]?.nome || match.homeTeam;
+            const away = TEAMS[match.awayTeam]?.nome || match.awayTeam;
             newDescriptions[idx] = `${home} x ${away}`;
             if (match.status === 'FINISHED') {
               newResults[idx] = {
@@ -237,7 +236,6 @@ export default function Home() {
 
   return (
     <div className="flex-1 min-h-screen bg-background">
-      {/* Header Premium */}
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -280,7 +278,6 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-        {/* Sumário de Destaque */}
         <section className="space-y-4">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -293,7 +290,6 @@ export default function Home() {
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Coluna Principal */}
           <div className="lg:col-span-8 space-y-8">
             <Tabs defaultValue="betting" className="space-y-6">
               <TabsList className="w-full bg-muted/50 p-1 rounded-2xl h-14">
@@ -366,7 +362,6 @@ export default function Home() {
             </Tabs>
           </div>
 
-          {/* Lateral */}
           <div className="lg:col-span-4 space-y-8">
             <AiBetAssistant />
             
