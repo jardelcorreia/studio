@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { PLAYERS, TEAMS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
@@ -10,18 +10,22 @@ import { MatchCalendar } from "@/components/match-calendar";
 import { LeagueStandings } from "@/components/league-standings";
 import { ChampionshipRanking } from "@/components/championship-ranking";
 import { AiBetAssistant } from "@/components/ai-bet-assistant";
+import { LoginScreen } from "@/components/login-screen";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal, UserCheck } from "lucide-react";
+import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
+import { useUser, useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 export default function Home() {
   const { toast } = useToast();
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [currentUser, setCurrentUser] = useState("Jardel");
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  
   const [darkMode, setDarkMode] = useState(false);
   
   // App state
@@ -95,7 +99,7 @@ export default function Home() {
     loadMatches();
   }, [currentRound]);
 
-  const handleLogout = () => setIsLoggedIn(false);
+  const handleLogout = () => signOut(auth);
 
   // State managers
   const updatePrediction = (player: string, idx: number, type: 'home' | 'away', value: string) => {
@@ -113,7 +117,7 @@ export default function Home() {
     setMatchDescriptions(prev => prev.map((d, i) => i === idx ? value : d));
   };
 
-  // Calculate scores and winners with mathematical certainty
+  // Calculate scores and winners
   const scores = useMemo((): PlayerScore[] => {
     const activeIndices = matchDescriptions
       .map((d, i) => (d && d !== "" ? i : -1))
@@ -176,7 +180,6 @@ export default function Home() {
         if (s.points === maxPts && s.exactScores === maxExs && maxPts > 0) s.isWinner = true;
       });
     } else {
-      // Mathematical certainty logic: A player is a winner if they are unreachable
       finalScores.forEach(p => {
         const pStat = playerStats.find(s => s.name === p.name)!;
         if (pStat.points === 0) return;
@@ -216,7 +219,19 @@ export default function Home() {
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
-  const isAdmin = currentUser === "Jardel";
+  const isAdmin = user?.displayName === "Jardel";
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
 
   return (
     <div className="flex-1 space-y-8 pb-20">
@@ -258,12 +273,12 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 space-y-12">
         <div className="flex flex-wrap items-center gap-4 bg-white dark:bg-card p-4 rounded-xl shadow-sm border">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <UserCheck className="h-6 w-6" />
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black italic">
+              {user?.displayName?.substring(0, 1) || "U"}
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Logado como</span>
-              <span className="font-black italic text-primary uppercase leading-tight">{currentUser}</span>
+              <span className="font-black italic text-primary uppercase leading-tight">{user?.displayName}</span>
             </div>
           </div>
           <div className="flex gap-2 ml-auto">
@@ -334,7 +349,7 @@ export default function Home() {
                   results={results}
                   setResult={updateResult}
                   placaresOcultos={placaresOcultos}
-                  currentPlayer={currentUser}
+                  currentPlayer={user?.displayName || ""}
                 />
               </TabsContent>
 
