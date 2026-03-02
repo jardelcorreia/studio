@@ -82,6 +82,10 @@ export function BettingTable({
               </td>
               {PLAYERS.map(player => {
                 const isHidden = placaresOcultos && currentPlayer !== player;
+                // Os palpites ficam desabilitados se:
+                // 1. Os placares estiverem revelados (!placaresOcultos)
+                // 2. O palpite for de outro jogador (isHidden)
+                const isDisabled = !placaresOcultos || isHidden;
                 const points = getPoints(player, idx);
                 
                 return (
@@ -89,7 +93,7 @@ export function BettingTable({
                     <div className="flex items-center justify-center gap-1 relative">
                       <Input
                         type="number"
-                        disabled={isHidden}
+                        disabled={isDisabled}
                         value={isHidden ? "" : predictions[player][idx].homeScore}
                         onChange={(e) => setPrediction(player, idx, 'home', e.target.value)}
                         className={cn(
@@ -101,7 +105,7 @@ export function BettingTable({
                       <span className="text-muted-foreground font-light text-xs">x</span>
                       <Input
                         type="number"
-                        disabled={isHidden}
+                        disabled={isDisabled}
                         value={isHidden ? "" : predictions[player][idx].awayScore}
                         onChange={(e) => setPrediction(player, idx, 'away', e.target.value)}
                         className={cn(
