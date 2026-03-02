@@ -112,66 +112,105 @@ export default function Home() {
     setMatchDescriptions(prev => prev.map((d, i) => i === idx ? value : d));
   };
 
-  // Calculate scores for the current visible round
+  // Calculate scores and winners with mathematical certainty
   const scores = useMemo((): PlayerScore[] => {
-    const calculated = PLAYERS.map(player => {
-      let points = 0;
-      let exactScores = 0;
+    const activeIndices = matchDescriptions
+      .map((d, i) => (d && d !== "" ? i : -1))
+      .filter((i) => i !== -1);
+
+    if (activeIndices.length === 0) {
+      return PLAYERS.map(p => ({ name: p, points: 0, exactScores: 0, betsCompleted: false }));
+    }
+
+    const playerStats = PLAYERS.map(player => {
+      let pts = 0;
+      let exs = 0;
+      let pending = 0;
       let completed = true;
 
-      for (let i = 0; i < 10; i++) {
-        const desc = matchDescriptions[i];
-        if (!desc || desc === "") continue;
-        const res = results[i];
-        const pred = predictions[player][i];
-        if (!pred.homeScore || !pred.awayScore) completed = false;
-        if (!res.homeScore || !res.awayScore) continue;
-        const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
-        const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
-        if (ph === rh && pa === ra) { points += 3; exactScores += 1; }
-        else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { points += 1; }
-      }
-      return { name: player, points, exactScores, betsCompleted: completed };
+      activeIndices.forEach(idx => {
+        const res = results[idx];
+        const pred = predictions[player][idx];
+        const hasRes = res.homeScore !== "" && res.awayScore !== "";
+        const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
+
+        if (!hasPred) completed = false;
+
+        if (hasRes && hasPred) {
+          const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
+          const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
+          if (ph === rh && pa === ra) { pts += 3; exs += 1; }
+          else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
+        } else if (!hasRes && hasPred) {
+          pending++;
+        }
+      });
+
+      return { 
+        name: player, 
+        points: pts, 
+        exactScores: exs, 
+        pending, 
+        maxPossiblePts: pts + (pending * 3), 
+        maxPossibleExs: exs + pending,
+        betsCompleted: completed 
+      };
     });
 
-    const maxPoints = Math.max(...calculated.map(s => s.points));
-    const playersWithMaxPoints = calculated.filter(s => s.points === maxPoints && maxPoints > 0);
+    const isRoundFinished = activeIndices.every(idx => results[idx].homeScore !== "" && results[idx].awayScore !== "");
     
-    if (playersWithMaxPoints.length > 0) {
-      const maxExact = Math.max(...playersWithMaxPoints.map(p => p.exactScores));
-      calculated.forEach(s => { 
-        if (s.points === maxPoints && s.exactScores === maxExact && maxPoints > 0) {
-          s.isWinner = true; 
-        }
+    const finalScores: PlayerScore[] = playerStats.map(p => ({
+      name: p.name,
+      points: p.points,
+      exactScores: p.exactScores,
+      betsCompleted: p.betsCompleted,
+      isWinner: false
+    }));
+
+    if (isRoundFinished) {
+      const maxPts = Math.max(...finalScores.map(s => s.points));
+      const candidates = finalScores.filter(s => s.points === maxPts);
+      const maxExs = Math.max(...candidates.map(s => s.exactScores));
+      finalScores.forEach(s => {
+        if (s.points === maxPts && s.exactScores === maxExs && maxPts > 0) s.isWinner = true;
+      });
+    } else {
+      // Mathematical certainty logic: A player is a winner if they are unreachable
+      finalScores.forEach(p => {
+        const pStat = playerStats.find(s => s.name === p.name)!;
+        if (pStat.points === 0) return;
+
+        const isUnreachable = playerStats.every(other => {
+          if (p.name === other.name) return true;
+          // Can 'other' catch up in points?
+          if (other.maxPossiblePts < pStat.points) return true;
+          // If they can reach same points, check exact scores tie-breaker
+          if (other.maxPossiblePts === pStat.points && other.maxPossibleExs < pStat.exactScores) return true;
+          return false;
+        });
+
+        if (isUnreachable) p.isWinner = true;
       });
     }
 
-    return calculated;
+    return finalScores;
   }, [matchDescriptions, results, predictions]);
 
-  // Automatic Winner Detection Effect
+  // Sync Automatic Winners to Championship History
   useEffect(() => {
     if (!currentRound) return;
 
-    // A round is considered "defined" if all results are filled for the matches that have descriptions
-    const activeMatchesCount = matchDescriptions.filter(d => d && d !== "").length;
-    if (activeMatchesCount === 0) return;
+    const winnersList = scores
+      .filter(s => s.isWinner)
+      .map(s => s.name)
+      .join(", ");
 
-    const isRoundDefined = results.slice(0, activeMatchesCount).every(r => r.homeScore !== "" && r.awayScore !== "");
-    
-    if (isRoundDefined) {
-      const winnersList = scores
-        .filter(s => s.isWinner)
-        .map(s => s.name)
-        .join(", ");
-
-      if (winnersList) {
-        setRoundWinners(prev => 
-          prev.map((rw, i) => (i === currentRound - 1 ? { ...rw, winners: winnersList } : rw))
-        );
-      }
+    if (winnersList) {
+      setRoundWinners(prev => 
+        prev.map((rw, i) => (i === currentRound - 1 ? { ...rw, winners: winnersList } : rw))
+      );
     }
-  }, [scores, results, currentRound, matchDescriptions]);
+  }, [scores, currentRound]);
 
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add("dark");
