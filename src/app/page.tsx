@@ -1,9 +1,9 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { PLAYERS, TEAMS } from "@/lib/constants";
-import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry } from "@/lib/types";
+import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
 import { BettingTable } from "@/components/betting-table";
 import { MatchCalendar } from "@/components/match-calendar";
@@ -11,8 +11,8 @@ import { LeagueStandings } from "@/components/league-standings";
 import { ChampionshipRanking } from "@/components/championship-ranking";
 import { AiBetAssistant } from "@/components/ai-bet-assistant";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2, ListOrdered, Calendar, Table as TableIcon, Medal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
@@ -36,6 +36,15 @@ export default function Home() {
   const [results, setResults] = useState<Prediction[]>(Array(10).fill({ homeScore: "", awayScore: "" }));
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Championship Winners State
+  const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
+    Array.from({ length: 38 }, (_, i) => ({
+      round: i + 1,
+      winners: "",
+      value: 6,
+    }))
+  );
 
   // Initial fetch
   useEffect(() => {
@@ -103,9 +112,9 @@ export default function Home() {
     setMatchDescriptions(prev => prev.map((d, i) => i === idx ? value : d));
   };
 
-  // Calculate scores
-  const calculateScores = useCallback((): PlayerScore[] => {
-    return PLAYERS.map(player => {
+  // Calculate scores for the current visible round
+  const scores = useMemo((): PlayerScore[] => {
+    const calculated = PLAYERS.map(player => {
       let points = 0;
       let exactScores = 0;
       let completed = true;
@@ -124,15 +133,45 @@ export default function Home() {
       }
       return { name: player, points, exactScores, betsCompleted: completed };
     });
+
+    const maxPoints = Math.max(...calculated.map(s => s.points));
+    const playersWithMaxPoints = calculated.filter(s => s.points === maxPoints && maxPoints > 0);
+    
+    if (playersWithMaxPoints.length > 0) {
+      const maxExact = Math.max(...playersWithMaxPoints.map(p => p.exactScores));
+      calculated.forEach(s => { 
+        if (s.points === maxPoints && s.exactScores === maxExact && maxPoints > 0) {
+          s.isWinner = true; 
+        }
+      });
+    }
+
+    return calculated;
   }, [matchDescriptions, results, predictions]);
 
-  const scores = calculateScores();
-  const maxPoints = Math.max(...scores.map(s => s.points));
-  const topPlayers = scores.filter(s => s.points === maxPoints && maxPoints > 0);
-  if (topPlayers.length > 0) {
-    const maxExact = Math.max(...topPlayers.map(p => p.exactScores));
-    scores.forEach(s => { if (s.points === maxPoints && s.exactScores === maxExact && maxPoints > 0) s.isWinner = true; });
-  }
+  // Automatic Winner Detection Effect
+  useEffect(() => {
+    if (!currentRound) return;
+
+    // A round is considered "defined" if all results are filled for the matches that have descriptions
+    const activeMatchesCount = matchDescriptions.filter(d => d && d !== "").length;
+    if (activeMatchesCount === 0) return;
+
+    const isRoundDefined = results.slice(0, activeMatchesCount).every(r => r.homeScore !== "" && r.awayScore !== "");
+    
+    if (isRoundDefined) {
+      const winnersList = scores
+        .filter(s => s.isWinner)
+        .map(s => s.name)
+        .join(", ");
+
+      if (winnersList) {
+        setRoundWinners(prev => 
+          prev.map((rw, i) => (i === currentRound - 1 ? { ...rw, winners: winnersList } : rw))
+        );
+      }
+    }
+  }, [scores, results, currentRound, matchDescriptions]);
 
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add("dark");
@@ -247,8 +286,8 @@ export default function Home() {
                   Ranking AlphaBet 2026
                 </h2>
                 <ChampionshipRanking 
-                  currentRoundScores={scores} 
-                  currentRoundNumber={currentRound} 
+                  roundWinners={roundWinners}
+                  setRoundWinners={setRoundWinners}
                 />
               </TabsContent>
 
@@ -280,11 +319,11 @@ export default function Home() {
 
           <div className="space-y-8">
             <AiBetAssistant />
-            <Card>
+            <Card className="border-none shadow-lg">
               <div className="p-4 bg-muted/20 border-b">
                 <h3 className="font-bold flex items-center gap-2 text-sm uppercase">Regras AlphaBet</h3>
               </div>
-              <CardContent className="p-4 space-y-3 text-xs leading-relaxed">
+              <div className="p-4 space-y-3 text-xs leading-relaxed">
                 <div className="flex gap-2">
                   <div className="h-5 w-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-black text-white shrink-0">3</div>
                   <p><b>Placar Exato:</b> Acertar os dois resultados garante pontuação máxima.</p>
@@ -294,7 +333,7 @@ export default function Home() {
                   <p><b>Vencedor/Empate:</b> Acertar apenas quem ganha ou se empata.</p>
                 </div>
                 <p className="text-muted-foreground italic mt-2 border-t pt-2">Critério de desempate: Maior número de placares exatos na rodada.</p>
-              </CardContent>
+              </div>
             </Card>
           </div>
         </div>

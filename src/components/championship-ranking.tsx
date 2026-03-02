@@ -1,33 +1,23 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { PLAYERS } from "@/lib/constants";
-import { ChampionshipWinner, PlayerOverallStats, PlayerScore } from "@/lib/types";
+import { ChampionshipWinner, PlayerOverallStats } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Button } from "./ui/button";
-import { Trophy, Medal, Star, TrendingUp, TrendingDown, Users, Sparkles, UserPlus } from "lucide-react";
+import { Trophy, Medal, TrendingUp, TrendingDown, Users, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 
 interface ChampionshipRankingProps {
-  currentRoundScores?: PlayerScore[];
-  currentRoundNumber?: number | null;
+  roundWinners: ChampionshipWinner[];
+  setRoundWinners: React.Dispatch<React.SetStateAction<ChampionshipWinner[]>>;
 }
 
-export function ChampionshipRanking({ currentRoundScores, currentRoundNumber }: ChampionshipRankingProps) {
-  const { toast } = useToast();
-  const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
-    Array.from({ length: 38 }, (_, i) => ({
-      round: i + 1,
-      winners: "",
-      value: 6,
-    }))
-  );
-
+export function ChampionshipRanking({ roundWinners, setRoundWinners }: ChampionshipRankingProps) {
+  
   const toggleWinner = (roundIndex: number, playerName: string) => {
     setRoundWinners((prev) =>
       prev.map((rw, i) => {
@@ -51,40 +41,6 @@ export function ChampionshipRanking({ currentRoundScores, currentRoundNumber }: 
     setRoundWinners((prev) =>
       prev.map((rw, i) => (i === roundIndex ? { ...rw, value } : rw))
     );
-  };
-
-  const autoDetectWinner = () => {
-    if (!currentRoundNumber || !currentRoundScores) {
-      toast({
-        variant: "destructive",
-        title: "Dados insuficientes",
-        description: "Não há scores calculados para a rodada atual."
-      });
-      return;
-    }
-
-    const winners = currentRoundScores
-      .filter(s => s.isWinner)
-      .map(s => s.name)
-      .join(", ");
-
-    if (!winners) {
-      toast({
-        variant: "destructive",
-        title: "Nenhum vencedor",
-        description: "Nenhum jogador atingiu a pontuação mínima para vencer."
-      });
-      return;
-    }
-
-    setRoundWinners(prev => 
-      prev.map((rw, i) => (i === currentRoundNumber - 1 ? { ...rw, winners } : rw))
-    );
-
-    toast({
-      title: "Ganhadores detectados!",
-      description: `Vencedores da rodada ${currentRoundNumber} foram atualizados: ${winners}`
-    });
   };
 
   const overallStats = useMemo(() => {
@@ -149,20 +105,15 @@ export function ChampionshipRanking({ currentRoundScores, currentRoundNumber }: 
         <CardHeader className="bg-primary text-primary-foreground py-4 flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="h-5 w-5" />
-            <CardTitle className="text-lg uppercase italic font-black">Histórico</CardTitle>
+            <CardTitle className="text-lg uppercase italic font-black">Histórico de Vencedores</CardTitle>
           </div>
-          <Button 
-            size="sm" 
-            variant="secondary" 
-            className="h-7 text-[10px] gap-1 px-2"
-            onClick={autoDetectWinner}
-          >
-            <Sparkles className="h-3 w-3" />
-            Auto-Detectar
-          </Button>
+          <div className="flex items-center gap-1 text-[10px] font-medium opacity-70">
+            <CheckCircle2 className="h-3 w-3" />
+            Auto-Sync Ativo
+          </div>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[600px] p-4">
+          <ScrollArea className="h-[650px] p-4">
             <div className="space-y-4">
               {roundWinners.map((rw, idx) => (
                 <div key={rw.round} className="space-y-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group border-b border-dashed last:border-0 pb-3">
@@ -191,7 +142,7 @@ export function ChampionshipRanking({ currentRoundScores, currentRoundNumber }: 
                           variant={isWinner ? "default" : "outline"}
                           className={cn(
                             "cursor-pointer text-[9px] px-2 h-5 transition-all select-none",
-                            isWinner ? "bg-primary border-primary" : "text-muted-foreground hover:bg-primary/10"
+                            isWinner ? "bg-primary border-primary shadow-sm" : "text-muted-foreground hover:bg-primary/10"
                           )}
                           onClick={() => toggleWinner(idx, player)}
                         >
@@ -221,14 +172,14 @@ export function ChampionshipRanking({ currentRoundScores, currentRoundNumber }: 
             )}>
               <div className={cn(
                 "absolute top-0 right-0 h-10 w-10 flex items-center justify-center font-black text-white rounded-bl-xl",
-                index === 0 ? "bg-accent" : "bg-primary/50"
+                index === 0 ? "bg-accent shadow-lg" : "bg-primary/50"
               )}>
                 {index + 1}
               </div>
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center mb-4">
                   <div className="text-xl font-black italic uppercase text-primary mb-1">{player.name}</div>
-                  {index === 0 && <Badge className="bg-accent hover:bg-accent animate-pulse text-[10px]">Líder Alpha</Badge>}
+                  {index === 0 && <Badge className="bg-accent hover:bg-accent animate-pulse text-[10px] shadow-sm">Líder Alpha</Badge>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -261,7 +212,7 @@ export function ChampionshipRanking({ currentRoundScores, currentRoundNumber }: 
         <Card className="bg-muted/20 border-dashed border-2">
           <CardContent className="p-4 flex items-center gap-4 text-xs text-muted-foreground italic">
             <Users className="h-8 w-8 opacity-20" />
-            <p>O saldo é calculado com base no valor de cada rodada. Vitórias solo levam o pote cheio dos outros jogadores. Empates dividem o prêmio proporcionalmente entre os vencedores.</p>
+            <p>O saldo é calculado automaticamente: quando todos os placares de uma rodada são preenchidos, o sistema identifica o vencedor (usando placares exatos como desempate) e atualiza o ranking instantaneamente.</p>
           </CardContent>
         </Card>
       </div>
