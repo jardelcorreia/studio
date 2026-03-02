@@ -6,74 +6,74 @@ service cloud.firestore {
      * AlphaBet League Security Rules
      */
 
-    // --- Global Helper Functions ---
+    // --- Funções Auxiliares ---
 
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    // Admin robusto: UID direto, e-mail ou existência na coleção roles_admin
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.uid == "TquLV2ai1yRgfWPJHZGrHKifgc72" || 
+        request.auth.token.email == "jardel@alphabet.com" ||
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+      );
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Admin baseado no documento, nome no token OU e-mail (mais robusto no primeiro login)
-    function isAdmin() {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
-        request.auth.token.name == "Jardel" ||
-        request.auth.token.email == "jardel@alphabet.com"
-      );
-    }
+    // --- Regras de Collection Group (Essencial para buscas globais) ---
+    // Estas regras permitem que o app busque apostas de todos os usuários de uma vez.
 
-    // --- Collection Group Rules (Essencial para buscas globais de apostas) ---
-
-    match /{path=**}/bets/{betId} {
+    match /{allPaths=**}/bets/{betId} {
       allow read: if isSignedIn() && (
+        isAdmin() || 
         isOwner(resource.data.userId) || 
-        resource.data.isScoresHidden == false || 
-        isAdmin()
+        resource.data.isScoresHidden == false
       );
     }
 
-    match /{path=**}/player_scores/{userId} {
+    match /{allPaths=**}/player_scores/{userId} {
       allow read: if isSignedIn() && (
+        isAdmin() || 
         isOwner(userId) || 
-        resource.data.isScoresHidden == false || 
-        isAdmin()
+        resource.data.isScoresHidden == false
       );
     }
 
-    // --- Specific Path Rules ---
+    // --- Regras de Caminhos Específicos ---
 
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if (isOwner(userId) || isAdmin()) && resource != null;
-      allow delete: if isAdmin() && resource != null;
+      allow update: if (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
 
       match /bets/{betId} {
-        allow get, list, create, update, delete: if isOwner(userId) || isAdmin();
+        allow read, write: if isOwner(userId) || isAdmin();
       }
 
       match /overall_stats {
-        allow get: if isOwner(userId) || isAdmin();
-        allow list: if isOwner(userId) || isAdmin();
+        allow get, list: if isOwner(userId) || isAdmin();
         allow create, update, delete: if isAdmin();
       }
     }
 
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
+      // Permite que o Jardel crie seu próprio registro de admin
       allow create: if isSignedIn() && (
         request.auth.token.email == "jardel@alphabet.com" && userId == request.auth.uid
       );
       allow list, update, delete: if false; 
     }
 
-    match /app_settings/league_config {
+    match /app_settings/{docId} {
       allow get: if isSignedIn();
-      allow list: if false;
       allow create, update, delete: if isAdmin();
     }
 
@@ -87,7 +87,8 @@ service cloud.firestore {
       }
 
       match /player_scores/{userId} {
-        allow get, list, create, update, delete: if isOwner(userId) || isAdmin();
+        allow get, list: if isOwner(userId) || isAdmin() || resource.data.isScoresHidden == false;
+        allow create, update, delete: if isAdmin();
       }
     }
   }
