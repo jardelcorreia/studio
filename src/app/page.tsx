@@ -80,7 +80,6 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
-  // Função auxiliar para limpar nomes de times vindos da API
   const cleanName = (name: string) => {
     if (TEAMS[name]) return TEAMS[name].nome;
     return name
@@ -187,10 +186,6 @@ export default function Home() {
 
   const updateResult = (idx: number, type: 'home' | 'away', value: string) => {
     setResults(prev => prev.map((r, i) => i === idx ? { ...r, [type === 'home' ? 'homeScore' : 'awayScore']: value } : r));
-  };
-
-  const updateMatchDescription = (idx: number, value: string) => {
-    setMatchDescriptions(prev => prev.map((d, i) => i === idx ? value : d));
   };
 
   const scores = useMemo((): PlayerScore[] => {
@@ -338,9 +333,7 @@ export default function Home() {
                 </div>
                 <BettingTable 
                   roundName={roundName}
-                  setRoundName={setRoundName}
                   matchDescriptions={matchDescriptions}
-                  setMatchDescriptions={updateMatchDescription}
                   predictions={predictions}
                   setPrediction={updatePrediction}
                   results={results}

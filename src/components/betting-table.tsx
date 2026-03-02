@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -12,9 +11,7 @@ import { Trophy, CheckCircle2 } from "lucide-react";
 
 interface BettingTableProps {
   roundName: string;
-  setRoundName: (name: string) => void;
   matchDescriptions: string[];
-  setMatchDescriptions: (index: number, value: string) => void;
   predictions: PlayerPredictions;
   setPrediction: (player: string, matchIndex: number, type: 'home' | 'away', value: string) => void;
   results: Prediction[];
@@ -24,10 +21,7 @@ interface BettingTableProps {
 }
 
 export function BettingTable({
-  roundName,
-  setRoundName,
   matchDescriptions,
-  setMatchDescriptions,
   predictions,
   setPrediction,
   results,
@@ -48,17 +42,14 @@ export function BettingTable({
   };
 
   const handleInputChange = (player: string, idx: number, type: 'home' | 'away', value: string) => {
-    // Apenas um dígito permitido para o auto-foco fluir bem
     const cleanValue = value.slice(-1);
     setPrediction(player, idx, type, cleanValue);
 
     if (cleanValue !== "" && player === currentPlayer) {
       if (type === 'home') {
-        // Pula para o visitante do mesmo jogo
         const nextInput = document.getElementById(`input-${player}-${idx}-away`);
         nextInput?.focus();
       } else {
-        // Pula para o mandante do próximo jogo
         const nextInput = document.getElementById(`input-${player}-${idx + 1}-home`);
         nextInput?.focus();
       }
@@ -73,12 +64,9 @@ export function BettingTable({
             {/* Match Info Area */}
             <div className="md:col-span-3 p-6 bg-muted/30 flex flex-col justify-center border-b md:border-b-0 md:border-r border-dashed">
                <div className="text-[10px] font-black uppercase text-muted-foreground mb-2">Confronto #{idx + 1}</div>
-               <Input
-                  value={desc}
-                  onChange={(e) => setMatchDescriptions(idx, e.target.value)}
-                  className="bg-transparent border-none p-0 h-auto text-lg font-black italic uppercase text-primary placeholder:opacity-30 focus-visible:ring-0"
-                  placeholder="TIME A x TIME B"
-                />
+               <div className="text-lg font-black italic uppercase text-primary leading-tight">
+                 {desc || "Pendente"}
+               </div>
             </div>
 
             {/* Players Predictions Area */}
