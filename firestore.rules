@@ -3,141 +3,167 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * AlphaBet 2026 Security Rules
+     * AlphaBet League Security Rules
      *
      * CORE PHILOSOPHY:
-     * This ruleset implements a hybrid security model. User-specific data (profiles and bets) follows a 
-     * strict ownership pattern, while championship metadata, rounds, and leaderboard statistics are 
-     * globally readable by authenticated users but restricted to administrators for modifications.
+     * This ruleset implements a hybrid security model tailored for a competitive sports league. 
+     * It combines strict User-Ownership for personal data (bets, profiles) with Role-Based Access 
+     * Control (RBAC) via a dedicated administrators collection.
      *
      * DATA STRUCTURE:
-     * - /users/{userId}: Private player profiles.
-     * - /users/{userId}/championships/{championshipId}/bets/{matchId}: Personal betting predictions.
-     * - /championships/{championshipId}: Public championship configuration and state.
-     * - /championships/...: Subcollections for rounds, matches, and aggregated scoring statistics.
-     * - /roles_admin/{userId}: Sentinel collection where the existence of a document grants admin privileges.
+     * - /users/{userId}: Private user profiles and nested personal data.
+     * - /rounds/{roundId}: Global league data including match schedules and player scores.
+     * - /roles_admin/{userId}: A lookup collection where the presence of a UID grants admin rights.
+     * - /app_settings: Global configuration singletons.
      *
      * KEY SECURITY DECISIONS:
-     * 1. Admin Authorization: Admin status is determined via a fast lookup in the `/roles_admin` collection.
-     * 2. Read Visibility: Most championship data is public (get/list) to all authenticated users to power the leaderboard.
-     * 3. Bet Privacy: Bets are private to the owner and admins unless the `isScoresVisible` flag (denormalized 
-     *    from championship settings) is set to true.
-     * 4. Relational Integrity: On creation of user-scoped documents, we enforce that the internal 
-     *    `playerId` or `id` matches the authenticated user's UID and the document path.
+     * 1. Authorization Independence: Critical fields like 'isScoresHidden' are denormalized 
+     *    directly into 'PlayerBet' and 'RoundPlayerScore' documents. This allows the rules 
+     *    to evaluate visibility without performing expensive and slow 'get()' lookups 
+     *    to a parent Round document.
+     * 2. Structural Segregation: Personal predictions are kept in user-specific paths, while 
+     *    public league data is kept in top-level collections to simplify 'list' operations.
+     * 3. Prototyping Flexibility: These rules strictly enforce "Who" can access data (Authorization) 
+     *    but remain flexible on "What" the data looks like (Schema), allowing for rapid 
+     *    iteration of the data model.
      */
 
-    // --- GLOBAL HELPER FUNCTIONS ---
+    // --- Global Helper Functions ---
 
-    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user's UID matches the provided ID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the user owns the existing document and it exists. */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /** @description Checks if the user has an admin role marker. */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    // --- COLLECTION RULES ---
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- Collection Rules ---
 
     /**
-     * @description User profile data for players.
+     * @description Rules for user profile documents. Users can create/manage their own profile.
      * @path /users/{userId}
-     * @allow (get, list, update) if isOwner(userId); (get, list) if isAdmin();
-     * @deny (create) if auth.uid != userId; (delete) if not admin;
-     * @principle Restricts access to a user's own profile and enforces ID consistency.
+     * @allow (create) If the authenticated UID matches the document ID.
+     * @deny (read) If the requester is not the owner or an admin.
+     * @principle Ownership and Self-Creation.
      */
     match /users/{userId} {
-      allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == userId;
-      allow delete: if isAdmin();
-    }
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); // Only admins can list all users
+      allow create: if isOwner(userId);
+      allow update: if (isOwner(userId) || isAdmin()) && resource != null;
+      allow delete: if isAdmin() && resource != null;
 
-    /**
-     * @description Individual betting predictions for matches.
-     * @path /users/{userId}/championships/{championshipId}/bets/{matchId}
-     * @allow (get, list) if isOwner(userId) || resource.data.isScoresVisible == true;
-     * @deny (write) if auth.uid != userId;
-     * @principle Enforces document ownership for writes and conditional visibility for reads.
-     */
-    match /users/{userId}/championships/{championshipId}/bets/{matchId} {
-      allow get, list: if isOwner(userId) || isAdmin() || (resource != null && resource.data.isScoresVisible == true);
-      allow create: if isOwner(userId) && request.resource.data.playerId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.playerId == userId;
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Championship configuration and global state.
-     * @path /championships/{championshipId}
-     * @allow (get, list) if isSignedIn(); (write) if isAdmin();
-     * @deny (write) if not admin;
-     * @principle Public read access for participants, restricted write access for admins.
-     */
-    match /championships/{championshipId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-      
       /**
-       * @description Details for each betting round.
-       * @path /championships/{championshipId}/rounds/{roundId}
+       * @description Individual score predictions for matches.
+       * @path /users/{userId}/bets/{betId}
+       * @allow (get) If owner, or if the round's scores are no longer hidden.
+       * @principle Denormalization for Authorization (isScoresHidden field).
        */
-      match /rounds/{roundId} {
-        allow get, list: if isSignedIn();
-        allow create, update, delete: if isAdmin();
-
-        /**
-         * @description Individual football matches within a round.
-         * @path /championships/{championshipId}/rounds/{roundId}/matches/{matchId}
-         */
-        match /matches/{matchId} {
-          allow get, list: if isSignedIn();
-          allow create, update, delete: if isAdmin();
-        }
+      match /bets/{betId} {
+        allow get, list: if isOwner(userId) || (resource.data.isScoresHidden == false);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
       }
 
       /**
-       * @description Calculated points for a player in a specific round.
-       * @path /championships/{championshipId}/playerRoundScores/{docId}
+       * @description Singleton document for cumulative player statistics.
+       * @path /users/{userId}/overall_stats
+       * @allow (get) If owner or admin.
+       * @principle Restricted access to sensitive performance data.
        */
-      match /playerRoundScores/{docId} {
-        allow get, list: if isSignedIn();
-        allow create, update, delete: if isAdmin();
-      }
-
-      /**
-       * @description Cumulative championship statistics for the leaderboard.
-       * @path /championships/{championshipId}/overallPlayerChampionshipStats/{playerId}
-       */
-      match /overallPlayerChampionshipStats/{playerId} {
-        allow get, list: if isSignedIn();
-        allow create, update, delete: if isAdmin();
+      match /overall_stats {
+        allow get: if isOwner(userId) || isAdmin();
+        allow list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if isAdmin(); // Stats managed by system/admin
       }
     }
 
     /**
-     * @description Database Access Control (DBAC) marker for administrators.
+     * @description Database-Backed Access Control (DBAC) for admin roles.
      * @path /roles_admin/{userId}
-     * @allow (get) if isSignedIn(); (list, write) if isAdmin();
-     * @deny (write) if not already admin;
-     * @principle Secures the administrative role assignment process.
+     * @allow (get) Any signed-in user to verify admin status.
+     * @deny (write) Any client-side modification.
+     * @principle Role-Based Access Control.
      */
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
-      allow list: if isAdmin();
+      allow list, create, update, delete: if false; 
+    }
+
+    /**
+     * @description Global settings for the league.
+     * @path /app_settings/league_config
+     * @allow (read) Any signed-in user.
+     * @allow (write) Only administrators.
+     * @principle Public Read with Admin-Only Writes.
+     */
+    match /app_settings/league_config {
+      allow get: if isSignedIn();
+      allow list: if false; // Singleton document
       allow create, update, delete: if isAdmin();
     }
 
+    /**
+     * @description Global information about match rounds.
+     * @path /rounds/{roundId}
+     * @allow (read) All authenticated users.
+     * @allow (write) Only administrators.
+     * @principle Public Read with Admin-Only Writes.
+     */
+    match /rounds/{roundId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+
+      /**
+       * @description Individual matches within a round.
+       * @path /rounds/{roundId}/matches/{matchId}
+       * @allow (read) All authenticated users.
+       * @principle Hierarchical data inheritance.
+       */
+      match /matches/{matchId} {
+        allow get, list: if isSignedIn();
+        allow create, update, delete: if isAdmin();
+      }
+
+      /**
+       * @description Calculated points for each player in this round.
+       * @path /rounds/{roundId}/player_scores/{userId}
+       * @allow (get) If owner or if scores are unhidden.
+       * @principle Denormalization for Authorization.
+       */
+      match /player_scores/{userId} {
+        allow get, list: if isOwner(userId) || (resource.data.isScoresHidden == false);
+        allow create, update, delete: if isAdmin();
+      }
+    }
   }
 }
+
+/**
+ * CRITICAL IMPLEMENTATION NOTES:
+ * 
+ * 1. The 'isScoresHidden' field must be kept in sync: 
+ *    When a Round is updated to hide/show scores, all associated 
+ *    'PlayerBet' and 'RoundPlayerScore' documents must be updated 
+ *    with the same boolean value to maintain security integrity.
+ * 
+ * 2. 'PlayerBet' Relational Integrity:
+ *    The rules enforce that 'userId' in the document data matches 
+ *    the path and the authenticated user during creation.
+ * 
+ * 3. Prototyping Mode: 
+ *    These rules do not check for specific field types (e.g., 'totalPoints is int') 
+ *    to allow developers to change the schema without breaking security rules.
+ */
+
+// Generated with expertise by Firebase Security Rules Architect.
