@@ -53,13 +53,16 @@ export default function Home() {
   );
 
   const roundId = currentRound ? `round_${currentRound}` : null;
-  const roundDocRef = useMemoFirebase(() => roundId ? doc(db, "rounds", roundId) : null, [db, roundId]);
+  
+  // Só ativa a referência do documento se o usuário estiver logado e a rodada definida
+  const roundDocRef = useMemoFirebase(() => (roundId && user) ? doc(db, "rounds", roundId) : null, [db, roundId, user]);
   const { data: roundData } = useDoc(roundDocRef);
 
+  // Só ativa a coleção de apostas se o usuário estiver logado e a rodada definida
   const betsCollectionRef = useMemoFirebase(() => {
-    if (!roundId) return null;
+    if (!roundId || !user) return null;
     return collection(db, "rounds", roundId, "bets");
-  }, [db, roundId]);
+  }, [db, roundId, user]);
   const { data: allBets, isLoading: isLoadingBets } = useCollection(betsCollectionRef);
 
   useEffect(() => {
@@ -159,7 +162,6 @@ export default function Home() {
           matchId: matches[idx]?.id || idx,
           homeScorePrediction: parseInt(pred.homeScore),
           awayScorePrediction: parseInt(pred.awayScore),
-          isScoresHidden: placaresOcultos,
           dateSubmitted: serverTimestamp(),
         }, { merge: true });
       });
