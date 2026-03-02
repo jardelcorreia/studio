@@ -1,11 +1,13 @@
+
 "use client";
 
 import React from "react";
-import { Match } from "@/lib/types";
+import { Match, Prediction } from "@/lib/types";
 import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { CalendarDays, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Input } from "./ui/input";
+import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles } from "lucide-react";
 import { cn, cleanTeamName } from "@/lib/utils";
 import { Button } from "./ui/button";
 
@@ -13,11 +15,26 @@ interface MatchCalendarProps {
   matches: Match[];
   round: number;
   totalRounds: number;
+  predictions: Prediction[];
+  setPrediction: (matchIndex: number, type: 'home' | 'away', value: string) => void;
   onPrev: () => void;
   onNext: () => void;
+  onSave: () => void;
+  isSaving: boolean;
 }
 
-export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: MatchCalendarProps) {
+export function MatchCalendar({ 
+  matches, 
+  round, 
+  totalRounds, 
+  predictions,
+  setPrediction,
+  onPrev, 
+  onNext,
+  onSave,
+  isSaving
+}: MatchCalendarProps) {
+  
   const getTeamInfo = (name: string) => {
     if (TEAMS[name]) return TEAMS[name];
     
@@ -38,6 +55,21 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+  };
+
+  const handleInputChange = (idx: number, type: 'home' | 'away', value: string) => {
+    const cleanValue = value.slice(-1);
+    setPrediction(idx, type, cleanValue);
+
+    if (cleanValue !== "") {
+      if (type === 'home') {
+        const nextInput = document.getElementById(`cal-input-${idx}-away`);
+        nextInput?.focus();
+      } else {
+        const nextInput = document.getElementById(`cal-input-${idx + 1}-home`);
+        nextInput?.focus();
+      }
+    }
   };
 
   return (
@@ -61,14 +93,15 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
 
       {/* Matches Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {matches.map(match => {
+        {matches.map((match, idx) => {
           const home = getTeamInfo(match.homeTeam);
           const away = getTeamInfo(match.awayTeam);
           const isFinished = match.status === 'FINISHED';
           const isLive = match.status === 'LIVE' || match.status === 'PAUSED';
+          const currentPred = predictions[idx] || { homeScore: "", awayScore: "" };
 
           return (
-            <Card key={match.id} className="glass-card border-none rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500 group">
+            <Card key={match.id} className="glass-card border-none rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500 group relative">
               <CardContent className="p-0">
                 {/* Status Bar */}
                 <div className="px-6 py-3 bg-muted/30 flex justify-between items-center border-b border-white/10">
@@ -89,21 +122,39 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
                   <div className="flex flex-col items-center gap-3 w-1/3 text-center">
                     <img src={home.escudo} alt={home.nome} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
                     <div className="flex flex-col">
-                       <span className="text-lg font-black italic uppercase leading-tight">{home.abrev}</span>
-                       <span className="text-[9px] font-bold text-muted-foreground uppercase line-clamp-1">{home.nome}</span>
+                       <span className="text-sm font-black italic uppercase leading-tight line-clamp-1">{home.nome}</span>
                     </div>
                   </div>
 
                   <div className="flex flex-col items-center justify-center w-1/3">
-                    {match.homeScore !== undefined ? (
+                    {isFinished ? (
                       <div className="flex items-center gap-4">
                         <span className="text-4xl font-black italic text-primary">{match.homeScore}</span>
                         <div className="h-8 w-[2px] bg-muted/50 rotate-12" />
                         <span className="text-4xl font-black italic text-primary">{match.awayScore}</span>
                       </div>
                     ) : (
-                      <div className="h-12 w-12 rounded-full sports-gradient flex items-center justify-center text-white shadow-lg animate-float">
-                        <span className="text-xs font-black italic">VS</span>
+                      <div className="flex flex-col items-center gap-2">
+                         <div className="text-[8px] font-black uppercase text-muted-foreground mb-1">Seu Palpite</div>
+                         <div className="flex items-center gap-2">
+                            <Input
+                              id={`cal-input-${idx}-home`}
+                              type="number"
+                              value={currentPred.homeScore}
+                              onChange={(e) => handleInputChange(idx, 'home', e.target.value)}
+                              className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
+                              disabled={isFinished}
+                            />
+                            <span className="font-black text-primary/40 italic text-xs">X</span>
+                            <Input
+                              id={`cal-input-${idx}-away`}
+                              type="number"
+                              value={currentPred.awayScore}
+                              onChange={(e) => handleInputChange(idx, 'away', e.target.value)}
+                              className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
+                              disabled={isFinished}
+                            />
+                         </div>
                       </div>
                     )}
                   </div>
@@ -111,8 +162,7 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
                   <div className="flex flex-col items-center gap-3 w-1/3 text-center">
                     <img src={away.escudo} alt={away.nome} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
                     <div className="flex flex-col">
-                       <span className="text-lg font-black italic uppercase leading-tight">{away.abrev}</span>
-                       <span className="text-[9px] font-bold text-muted-foreground uppercase line-clamp-1">{away.nome}</span>
+                       <span className="text-sm font-black italic uppercase leading-tight line-clamp-1">{away.nome}</span>
                     </div>
                   </div>
                 </div>
@@ -120,12 +170,24 @@ export function MatchCalendar({ matches, round, totalRounds, onPrev, onNext }: M
                 {/* Footer Info */}
                 <div className="px-6 py-4 bg-primary/5 flex justify-center items-center gap-2">
                    <Clock className="h-3 w-3 text-primary/40" />
-                   <span className="text-[10px] font-black italic text-primary/60">{formatTime(match.utcDate)} • ESTÁDIO NACIONAL</span>
+                   <span className="text-[10px] font-black italic text-primary/60">{formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : "AGUARDANDO PALPITE"}</span>
                 </div>
               </CardContent>
             </Card>
           );
         })}
+      </div>
+
+      <div className="flex justify-center pt-8">
+        <Button 
+          size="lg" 
+          onClick={onSave} 
+          disabled={isSaving}
+          className="h-16 px-12 rounded-3xl gap-4 font-black italic uppercase text-xl sports-gradient shadow-2xl shadow-primary/40 hover:scale-[1.05] transition-transform active:scale-95"
+        >
+          {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : <Sparkles className="h-6 w-6 fill-current" />}
+          {isSaving ? "Sincronizando..." : "CONFIRMAR TODOS PALPITES"}
+        </Button>
       </div>
     </div>
   );

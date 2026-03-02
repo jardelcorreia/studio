@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -300,9 +301,9 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setDarkMode(!darkMode)}>
+            <button className="p-2 hover:bg-muted rounded-full transition-colors" onClick={() => setDarkMode(!darkMode)}>
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
+            </button>
             <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90 rounded-full px-5 shadow-lg shadow-primary/20" onClick={handleSaveAll} disabled={isSaving}>
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               <span className="hidden sm:inline">{isSaving ? "Sincronizando..." : "Salvar"}</span>
@@ -328,11 +329,15 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-8">
-            <Tabs defaultValue="betting" className="space-y-6">
+            <Tabs defaultValue="calendar" className="space-y-6">
               <TabsList className="w-full bg-muted/50 p-1 rounded-2xl h-14 overflow-x-auto no-scrollbar">
+                <TabsTrigger value="calendar" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
+                  <Calendar className="h-4 w-4" />
+                  Jogos & Palpites
+                </TabsTrigger>
                 <TabsTrigger value="betting" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
                   <ListChecks className="h-4 w-4" />
-                  Apostas
+                  Live Score League
                 </TabsTrigger>
                 <TabsTrigger value="overall" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
                   <Trophy className="h-4 w-4" />
@@ -340,23 +345,35 @@ export default function Home() {
                 </TabsTrigger>
                 <TabsTrigger value="standings" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
                   <LayoutDashboard className="h-4 w-4" />
-                  Tabela
-                </TabsTrigger>
-                <TabsTrigger value="calendar" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
-                  <Calendar className="h-4 w-4" />
-                  Jogos
+                  Tabela CBF
                 </TabsTrigger>
                 <TabsTrigger value="profile" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
-                  <Settings className="h-4 w-4" />
+                  <UserCircle className="h-4 w-4" />
                   Perfil
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="calendar" className="outline-none">
+                {currentRound !== null && (
+                  <MatchCalendar 
+                    matches={matches} 
+                    round={currentRound} 
+                    totalRounds={38}
+                    predictions={predictions[user?.displayName || ""] || Array(10).fill({ homeScore: "", awayScore: "" })}
+                    setPrediction={(idx, type, value) => updatePrediction(user?.displayName || "", idx, type, value)}
+                    onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
+                    onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
+                    onSave={handleSaveAll}
+                    isSaving={isSaving}
+                  />
+                )}
+              </TabsContent>
 
               <TabsContent value="betting" className="space-y-4 outline-none">
                 <div className="flex items-center justify-between px-2">
                    <div className="flex flex-col">
                       <h3 className="font-black italic uppercase text-lg text-primary">{roundName}</h3>
-                      <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Preencha seus palpites abaixo</p>
+                      <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Comparativo de palpites em tempo real</p>
                    </div>
                    <div className="flex items-center gap-2">
                       {isAdminUser && (
@@ -378,6 +395,7 @@ export default function Home() {
                   setResult={updateResult}
                   placaresOcultos={placaresOcultos}
                   currentPlayer={user?.displayName || ""}
+                  isAdmin={isAdminUser}
                 />
               </TabsContent>
 
@@ -387,16 +405,6 @@ export default function Home() {
 
               <TabsContent value="standings" className="outline-none">
                  <LeagueStandings standings={standings} />
-              </TabsContent>
-
-              <TabsContent value="calendar" className="outline-none">
-                {currentRound !== null && (
-                  <MatchCalendar 
-                    matches={matches} round={currentRound} totalRounds={38}
-                    onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
-                    onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
-                  />
-                )}
               </TabsContent>
 
               <TabsContent value="profile" className="outline-none">
