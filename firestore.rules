@@ -25,11 +25,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- Regras de Collection Group (CRÍTICO para buscas globais) ---
-    // Estas regras devem vir primeiro para garantir que consultas globais funcionem.
+    // --- Regras Globais e de Grupo ---
+    
+    // Permite que admins listem qualquer documento em qualquer lugar
+    // Isso resolve o erro de 'list' no caminho raiz '/'
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
 
+    // Regras específicas para consultas de grupo (Collection Group)
     match /{path=**}/bets/{betId} {
-      // Admin pode ver tudo. Usuário vê as suas ou se os placares estiverem revelados.
       allow read: if isSignedIn() && (
         isAdmin() || 
         isOwner(resource.data.userId) || 
