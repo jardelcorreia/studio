@@ -16,6 +16,20 @@ export type Match = {
   matchday: number;
 };
 
+export type StandingEntry = {
+  position: number;
+  teamName: string;
+  teamCrest: string;
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+};
+
 export type Prediction = {
   homeScore: string;
   awayScore: string;

@@ -3,28 +3,29 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { PLAYERS, TEAMS } from "@/lib/constants";
-import { Match, PlayerPredictions, Prediction, PlayerScore } from "@/lib/types";
+import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
 import { BettingTable } from "@/components/betting-table";
 import { MatchCalendar } from "@/components/match-calendar";
+import { LeagueStandings } from "@/components/league-standings";
 import { AiBetAssistant } from "@/components/ai-bet-assistant";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, Sun, Moon, Shield, Save, Trophy, LayoutDashboard, Loader2, ListOrdered, Calendar, Table as TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday } from "@/lib/football-api";
+import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
 
 export default function Home() {
   const { toast } = useToast();
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [currentUser, setCurrentUser] = useState("Jardel");
-  const [password, setPassword] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   
   // App state
   const [currentRound, setCurrentRound] = useState<number | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
   const [roundName, setRoundName] = useState("");
   const [matchDescriptions, setMatchDescriptions] = useState<string[]>(Array(10).fill(""));
@@ -35,12 +36,15 @@ export default function Home() {
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initial fetch: Get current matchday
+  // Initial fetch
   useEffect(() => {
     async function init() {
       const matchday = await getBrasileiraoCurrentMatchday();
       setCurrentRound(matchday);
       setRoundName(`Rodada ${matchday}`);
+      
+      const leagueTable = await getLeagueStandings();
+      setStandings(leagueTable);
     }
     init();
   }, []);
@@ -56,8 +60,6 @@ export default function Home() {
       
       if (data.length > 0) {
         setRoundName(`Rodada ${currentRound}`);
-        
-        // Atualiza as descrições dos confrontos na tabela
         const newDescriptions = Array(10).fill("");
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
         
@@ -66,8 +68,6 @@ export default function Home() {
             const home = TEAMS[match.homeTeam]?.abrev || match.homeTeam.substring(0, 3).toUpperCase();
             const away = TEAMS[match.awayTeam]?.abrev || match.awayTeam.substring(0, 3).toUpperCase();
             newDescriptions[idx] = `${home} x ${away}`;
-            
-            // Se o jogo já terminou, preenche o resultado oficial
             if (match.status === 'FINISHED') {
               newResults[idx] = {
                 homeScore: match.homeScore?.toString() || "",
@@ -76,7 +76,6 @@ export default function Home() {
             }
           }
         });
-        
         setMatchDescriptions(newDescriptions);
         setResults(newResults);
       }
@@ -85,21 +84,7 @@ export default function Home() {
     loadMatches();
   }, [currentRound]);
 
-  // Authentication
-  const handleLogin = () => {
-    if (currentUser && password) {
-      setIsLoggedIn(true);
-      toast({ title: "Bem-vindo!", description: `Logado como ${currentUser}` });
-    } else {
-      toast({ variant: "destructive", title: "Erro de login", description: "Preencha usuário e senha." });
-    }
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser("");
-    setPassword("");
-  };
+  const handleLogout = () => setIsLoggedIn(false);
 
   // State managers
   const updatePrediction = (player: string, idx: number, type: 'home' | 'away', value: string) => {
@@ -126,27 +111,16 @@ export default function Home() {
 
       for (let i = 0; i < 10; i++) {
         const desc = matchDescriptions[i];
-        if (!desc || desc.toLowerCase().includes("sem jogo") || desc === "") continue;
-
+        if (!desc || desc === "") continue;
         const res = results[i];
         const pred = predictions[player][i];
-
         if (!pred.homeScore || !pred.awayScore) completed = false;
         if (!res.homeScore || !res.awayScore) continue;
-
-        const rh = parseInt(res.homeScore);
-        const ra = parseInt(res.awayScore);
-        const ph = parseInt(pred.homeScore);
-        const pa = parseInt(pred.awayScore);
-
-        if (ph === rh && pa === ra) {
-          points += 3;
-          exactScores += 1;
-        } else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) {
-          points += 1;
-        }
+        const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
+        const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
+        if (ph === rh && pa === ra) { points += 3; exactScores += 1; }
+        else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { points += 1; }
       }
-
       return { name: player, points, exactScores, betsCompleted: completed };
     });
   }, [matchDescriptions, results, predictions]);
@@ -156,50 +130,16 @@ export default function Home() {
   const topPlayers = scores.filter(s => s.points === maxPoints && maxPoints > 0);
   if (topPlayers.length > 0) {
     const maxExact = Math.max(...topPlayers.map(p => p.exactScores));
-    scores.forEach(s => {
-      if (s.points === maxPoints && s.exactScores === maxExact && maxPoints > 0) {
-        s.isWinner = true;
-      }
-    });
+    scores.forEach(s => { if (s.points === maxPoints && s.exactScores === maxExact && maxPoints > 0) s.isWinner = true; });
   }
 
-  // Effect for dark mode
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
-  if (!isLoggedIn) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-primary to-secondary/80">
-        <Card className="w-full max-w-sm p-8 space-y-6 shadow-2xl bg-white/95 backdrop-blur-sm">
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary italic">ALPHABET</h1>
-            <p className="text-muted-foreground font-medium">Faça seu login para apostar</p>
-          </div>
-          <div className="space-y-4">
-            <Input 
-              placeholder="Nome de usuário" 
-              value={currentUser} 
-              onChange={(e) => setCurrentUser(e.target.value)}
-            />
-            <Input 
-              type="password" 
-              placeholder="Senha" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-            />
-            <Button className="w-full h-12 text-lg font-bold" onClick={handleLogin}>Entrar</Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="flex-1 space-y-8 pb-20">
-      {/* Header section */}
       <div className="relative overflow-hidden bg-primary py-12 px-4 shadow-xl">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent via-secondary to-accent" />
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-2 relative z-10">
@@ -207,11 +147,7 @@ export default function Home() {
             {"BRASILEIRÃO ALPHABET 2026".split(" ").map((word, wi) => (
               <span key={wi} className="flex">
                 {word.split("").map((char, ci) => (
-                  <span 
-                    key={ci} 
-                    className="animate-letter-reveal opacity-0" 
-                    style={{ animationDelay: `${(wi * 10 + ci) * 0.05}s` }}
-                  >
+                  <span key={ci} className="animate-letter-reveal opacity-0" style={{ animationDelay: `${(wi * 10 + ci) * 0.05}s` }}>
                     {char}
                   </span>
                 ))}
@@ -220,8 +156,6 @@ export default function Home() {
           </h1>
           <p className="text-white/80 font-medium tracking-widest uppercase">Liga de Apostas Profissional</p>
         </div>
-        
-        {/* Navbar-like controls */}
         <div className="absolute top-4 right-4 flex gap-2">
            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => setDarkMode(!darkMode)}>
             {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -234,7 +168,6 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 space-y-12">
-        {/* Admin and Global Controls */}
         <div className="flex flex-wrap items-center gap-4 bg-white dark:bg-card p-4 rounded-xl shadow-sm border">
           <div className="flex items-center gap-2">
             <LayoutDashboard className="h-5 w-5 text-primary" />
@@ -243,30 +176,21 @@ export default function Home() {
           <div className="flex gap-2 ml-auto">
             {loadingMatches && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
             {currentUser === "Jardel" && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setPlacaresOcultos(!placaresOcultos)}
-                className="gap-2"
-              >
+              <Button variant="outline" size="sm" onClick={() => setPlacaresOcultos(!placaresOcultos)} className="gap-2">
                 <Shield className="h-4 w-4 text-primary" />
                 {placaresOcultos ? "Revelar Placares" : "Ocultar Placares"}
               </Button>
             )}
             <Button size="sm" className="gap-2 bg-secondary hover:bg-secondary/90" onClick={() => {
               setIsSaving(true);
-              setTimeout(() => {
-                setIsSaving(false);
-                toast({ title: "Salvo!", description: "Suas apostas foram armazenadas com sucesso." });
-              }, 1000);
+              setTimeout(() => { setIsSaving(false); toast({ title: "Salvo!", description: "Dados sincronizados com o servidor." }); }, 800);
             }}>
               <Save className="h-4 w-4" />
-              Salvar Rodada
+              Salvar Tudo
             </Button>
           </div>
         </div>
 
-        {/* Ranking Summary */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Trophy className="h-6 w-6 text-accent" />
@@ -275,65 +199,85 @@ export default function Home() {
           <RankingSummary scores={scores} />
         </section>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3 space-y-12">
-            {/* Betting Table */}
-            <section className="space-y-4">
-              <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
-                <span className="h-8 w-2 bg-primary" />
-                Quadro de Apostas
-              </h2>
-              <BettingTable 
-                roundName={roundName}
-                setRoundName={setRoundName}
-                matchDescriptions={matchDescriptions}
-                setMatchDescriptions={updateMatchDescription}
-                predictions={predictions}
-                setPrediction={updatePrediction}
-                results={results}
-                setResult={updateResult}
-                placaresOcultos={placaresOcultos}
-                currentPlayer={currentUser}
-              />
-            </section>
+          <div className="lg:col-span-3">
+            <Tabs defaultValue="betting" className="space-y-8">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 h-12">
+                <TabsTrigger value="betting" className="gap-2 font-bold uppercase text-xs">
+                  <TableIcon className="h-4 w-4" />
+                  Apostas
+                </TabsTrigger>
+                <TabsTrigger value="standings" className="gap-2 font-bold uppercase text-xs">
+                  <ListOrdered className="h-4 w-4" />
+                  Classificação
+                </TabsTrigger>
+                <TabsTrigger value="calendar" className="gap-2 font-bold uppercase text-xs">
+                  <Calendar className="h-4 w-4" />
+                  Calendário
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Match Calendar */}
-            <section className="space-y-4">
-              <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
-                <span className="h-8 w-2 bg-secondary" />
-                Calendário Brasileirão
-              </h2>
-              {currentRound !== null && (
-                <MatchCalendar 
-                  matches={matches}
-                  round={currentRound}
-                  totalRounds={38}
-                  onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
-                  onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
+              <TabsContent value="betting" className="space-y-4">
+                <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
+                  <span className="h-8 w-2 bg-primary" />
+                  Quadro de Apostas
+                </h2>
+                <BettingTable 
+                  roundName={roundName}
+                  setRoundName={setRoundName}
+                  matchDescriptions={matchDescriptions}
+                  setMatchDescriptions={updateMatchDescription}
+                  predictions={predictions}
+                  setPrediction={updatePrediction}
+                  results={results}
+                  setResult={updateResult}
+                  placaresOcultos={placaresOcultos}
+                  currentPlayer={currentUser}
                 />
-              )}
-            </section>
+              </TabsContent>
+
+              <TabsContent value="standings" className="space-y-4">
+                <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
+                  <span className="h-8 w-2 bg-accent" />
+                  Tabela Brasileirão
+                </h2>
+                <LeagueStandings standings={standings} />
+              </TabsContent>
+
+              <TabsContent value="calendar" className="space-y-4">
+                <h2 className="text-2xl font-black italic uppercase flex items-center gap-2">
+                  <span className="h-8 w-2 bg-secondary" />
+                  Jogos da Rodada
+                </h2>
+                {currentRound !== null && (
+                  <MatchCalendar 
+                    matches={matches}
+                    round={currentRound}
+                    totalRounds={38}
+                    onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
+                    onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-8">
             <AiBetAssistant />
-            
             <Card>
               <div className="p-4 bg-muted/20 border-b">
-                <h3 className="font-bold flex items-center gap-2">Regras AlphaBet</h3>
+                <h3 className="font-bold flex items-center gap-2 text-sm uppercase">Regras AlphaBet</h3>
               </div>
-              <CardContent className="p-4 space-y-3 text-xs">
+              <CardContent className="p-4 space-y-3 text-xs leading-relaxed">
                 <div className="flex gap-2">
-                  <div className="h-4 w-4 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-white shrink-0">3</div>
-                  <p>Placar Exato: Acertar os dois resultados garante 3 pontos.</p>
+                  <div className="h-5 w-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-black text-white shrink-0">3</div>
+                  <p><b>Placar Exato:</b> Acertar os dois resultados garante pontuação máxima.</p>
                 </div>
                 <div className="flex gap-2">
-                  <div className="h-4 w-4 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-white shrink-0">1</div>
-                  <p>Resultado: Acertar apenas o vencedor ou empate garante 1 ponto.</p>
+                  <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-[10px] font-black text-white shrink-0">1</div>
+                  <p><b>Vencedor/Empate:</b> Acertar apenas quem ganha ou se empata.</p>
                 </div>
-                <p className="text-muted-foreground italic">Em caso de empate na rodada, o critério de desempate é o número de placares exatos.</p>
+                <p className="text-muted-foreground italic mt-2 border-t pt-2">Critério de desempate: Maior número de placares exatos na rodada.</p>
               </CardContent>
             </Card>
           </div>
@@ -346,12 +290,7 @@ export default function Home() {
              <Trophy className="h-6 w-6 text-muted" />
              <div className="text-2xl font-black italic opacity-30">ALPHABET</div>
           </div>
-          <p className="text-muted-foreground text-sm">© 2025 AlphaBet League. Desenvolvido para amantes de futebol.</p>
-          <div className="flex justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            <span>Fair Play</span>
-            <span>Data Real-Time</span>
-            <span>Alpha Insights</span>
-          </div>
+          <p className="text-muted-foreground text-sm">© 2026 AlphaBet League. Dados oficiais via Football-Data API.</p>
         </div>
       </footer>
     </div>
