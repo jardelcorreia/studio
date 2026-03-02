@@ -16,7 +16,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Atualizado para permitir Admin baseado no documento físico OU no nome do token (para o protótipo)
+    // Admin baseado no documento físico OU no nome do token (para o protótipo)
     function isAdmin() {
       return isSignedIn() && (
         exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
@@ -24,11 +24,28 @@ service cloud.firestore {
       );
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
+    // --- Collection Group Rules (Necessário para queries globais) ---
+
+    // Regras para a coleção 'bets' em qualquer lugar da hierarquia
+    match /{path=**}/bets/{betId} {
+      allow read: if isSignedIn() && (
+        isOwner(resource.data.userId) || 
+        resource.data.isScoresHidden == false || 
+        isAdmin()
+      );
+      // Escrita continua restrita ao caminho específico do usuário
     }
 
-    // --- Collection Rules ---
+    // Regras para a coleção 'player_scores' em qualquer lugar da hierarquia
+    match /{path=**}/player_scores/{userId} {
+      allow read: if isSignedIn() && (
+        isOwner(userId) || 
+        resource.data.isScoresHidden == false || 
+        isAdmin()
+      );
+    }
+
+    // --- Specific Path Rules ---
 
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
@@ -38,10 +55,11 @@ service cloud.firestore {
       allow delete: if isAdmin() && resource != null;
 
       match /bets/{betId} {
-        allow get, list: if isOwner(userId) || (resource.data.isScoresHidden == false);
+        // Leitura já coberta pelo collection group acima, mas mantemos por segurança de caminho direto
+        allow get, list: if isOwner(userId) || (resource.data.isScoresHidden == false) || isAdmin();
         allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-        allow delete: if isExistingOwner(userId);
+        allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isOwner(userId);
       }
 
       match /overall_stats {
@@ -53,7 +71,7 @@ service cloud.firestore {
 
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
-      // Permite que o Jardel crie seu próprio registro de admin
+      // Permite que o Jardel crie seu próprio registro de admin se logado
       allow create: if isSignedIn() && (request.auth.token.name == "Jardel" && userId == request.auth.uid);
       allow list, update, delete: if false; 
     }
@@ -74,7 +92,8 @@ service cloud.firestore {
       }
 
       match /player_scores/{userId} {
-        allow get, list: if isOwner(userId) || (resource.data.isScoresHidden == false);
+        // Leitura já coberta pelo collection group acima
+        allow get, list: if isOwner(userId) || (resource.data.isScoresHidden == false) || isAdmin();
         allow create, update, delete: if isAdmin();
       }
     }
