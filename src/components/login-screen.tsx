@@ -14,14 +14,15 @@ import { Shield, Loader2, Trophy, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function LoginScreen() {
-  const auth = useAuth();
+  const auth = authInstance(); // Usando a instância do hook ou helper se disponível, mas aqui usaremos useAuth()
+  const authHook = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [playerName, setPlayerName] = useState<string>("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const formatEmail = (name: string) => `${name.toLowerCase()}@alphabet.com`;
+  const formatEmail = (name: string) => `${name.toLowerCase().replace(/\s+/g, '')}@alphabet.com`;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,30 +34,39 @@ export function LoginScreen() {
     const email = formatEmail(playerName);
 
     try {
-      // Try to sign in
-      await signInWithEmailAndPassword(auth, email, password);
+      // Tenta fazer o login direto
+      await signInWithEmailAndPassword(authHook, email, password);
       toast({
         title: `Bem-vindo, ${playerName}!`,
-        description: "Login realizado com sucesso.",
+        description: "Acesso autorizado.",
       });
     } catch (err: any) {
-      // If user doesn't exist and they are using the default password, try to create them
-      if (err.code === "auth/user-not-found" && password === "alphabet123") {
+      console.error("Erro no login:", err.code, err.message);
+
+      // No Firebase moderno, 'auth/invalid-credential' substitui 'auth/user-not-found' 
+      // e 'auth/wrong-password' por segurança.
+      // Se falhar e a senha for a padrão, tentamos criar a conta (Primeiro Acesso)
+      if ((err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") && password === "alphabet123") {
         try {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const userCredential = await createUserWithEmailAndPassword(authHook, email, password);
           await updateProfile(userCredential.user, { displayName: playerName });
+          
           toast({
-            title: "Conta Criada!",
-            description: `Seu primeiro acesso como ${playerName} foi registrado.`,
+            title: "Primeiro Acesso Realizado!",
+            description: `Sua conta como ${playerName} foi configurada com sucesso.`,
           });
-          return;
         } catch (createErr: any) {
-          setError("Erro ao criar conta de primeiro acesso.");
+          console.error("Erro ao criar conta:", createErr.code, createErr.message);
+          if (createErr.code === "auth/email-already-in-use") {
+            setError("Senha incorreta para este jogador.");
+          } else {
+            setError("Erro ao configurar acesso. O administrador precisa ativar o provedor de e-mail/senha no Firebase.");
+          }
         }
-      } else if (err.code === "auth/wrong-password") {
-        setError("Senha incorreta para este jogador.");
+      } else if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setError("Senha incorreta ou usuário não encontrado.");
       } else {
-        setError("Não foi possível entrar. Verifique seus dados.");
+        setError("Ocorreu um erro de conexão com o servidor de autenticação.");
       }
     } finally {
       setLoading(false);
@@ -103,7 +113,7 @@ export function LoginScreen() {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <p className="text-[10px] text-muted-foreground italic">
-                * Dica: Se for seu primeiro acesso, use a senha padrão combinada.
+                * Dica: Use a senha padrão combinada para o primeiro acesso.
               </p>
             </div>
             {error && (
