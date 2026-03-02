@@ -4,6 +4,7 @@ import React from "react";
 import { PlayerScore } from "@/lib/types";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { CheckCircle2, Trophy, Medal, Star, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,31 +37,46 @@ export function RankingSummary({ scores }: RankingSummaryProps) {
           )}
           
           <CardContent className="p-6 flex flex-col items-center text-center space-y-3 relative z-10">
-            <div className={cn(
-               "h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-110",
-               score.isWinner ? "bg-white/20" : "bg-muted/50"
-            )}>
-              {index === 0 ? <Trophy className={cn("h-8 w-8", score.isWinner ? "text-accent" : "text-accent")} /> : 
-               index === 1 ? <Medal className="h-8 w-8 text-slate-400" /> :
-               index === 2 ? <Medal className="h-8 w-8 text-amber-700" /> :
-               <Star className="h-8 w-8 text-muted-foreground" />}
+            <div className="relative">
+              <Avatar className={cn(
+                 "h-16 w-16 rounded-2xl shadow-lg transform transition-transform group-hover:scale-110",
+                 score.isWinner ? "ring-4 ring-white/30" : "ring-2 ring-muted"
+              )}>
+                <AvatarImage src={score.photoUrl || ""} className="object-cover" />
+                <AvatarFallback className={cn(
+                  "text-2xl font-black italic",
+                  score.isWinner ? "bg-white/20 text-white" : "bg-muted/50 text-primary"
+                )}>
+                  {score.name.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className={cn(
+                "absolute -top-2 -right-2 h-7 w-7 rounded-full flex items-center justify-center shadow-lg border-2 border-background",
+                index === 0 ? "bg-accent" : index === 1 ? "bg-slate-300" : index === 2 ? "bg-amber-600" : "bg-muted"
+              )}>
+                {index === 0 ? <Trophy className="h-4 w-4 text-accent-foreground" /> : 
+                 index === 1 ? <Medal className="h-4 w-4 text-slate-600" /> :
+                 index === 2 ? <Medal className="h-4 w-4 text-white" /> :
+                 <Star className="h-3 w-3 text-muted-foreground" />}
+              </div>
             </div>
 
             <div>
               <h3 className={cn(
-                "font-black italic uppercase text-lg leading-none mb-1",
+                "font-black italic uppercase text-sm leading-none mb-1",
                 score.isWinner ? "text-white" : "text-foreground"
               )}>{score.name}</h3>
               <div className="flex flex-col">
                 <span className={cn(
-                   "text-3xl font-black",
+                   "text-2xl font-black",
                    score.isWinner ? "text-white" : "text-primary"
-                )}>{score.points} <span className="text-sm font-bold opacity-50">PTS</span></span>
+                )}>{score.points} <span className="text-[10px] font-bold opacity-50">PTS</span></span>
                 <Badge variant="outline" className={cn(
-                   "mt-2 rounded-full text-[9px] font-black uppercase tracking-widest",
-                   score.isWinner ? "border-white/20 text-white bg-white/10" : "border-primary/10 text-muted-foreground"
+                   "mt-2 rounded-full text-[8px] font-black uppercase tracking-widest border-none px-2",
+                   score.isWinner ? "bg-white/10 text-white" : "bg-primary/5 text-muted-foreground"
                 )}>
-                  {score.exactScores} PLACARES EXATOS
+                  {score.exactScores} Exatos
                 </Badge>
               </div>
             </div>

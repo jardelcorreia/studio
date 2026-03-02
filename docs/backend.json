@@ -18,6 +18,14 @@
         "isAdmin": {
           "type": "boolean",
           "description": "Indica se o usuário tem privilégios de administrador."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL da foto de perfil armazenada no Firebase Storage."
+        },
+        "dateCreated": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": [
@@ -151,7 +159,6 @@
           "description": "Apostas dentro de uma rodada específica."
         }
       }
-    ],
-    "reasoning": "Estrutura de subcoleções sob rodadas escolhida para evitar a necessidade de índices compostos em consultas de Collection Group, melhorando a performance e simplicidade."
+    ]
   }
 }

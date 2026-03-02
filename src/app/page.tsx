@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -10,12 +9,14 @@ import { MatchCalendar } from "@/components/match-calendar";
 import { LeagueStandings } from "@/components/league-standings";
 import { ChampionshipRanking } from "@/components/championship-ranking";
 import { AiBetAssistant } from "@/components/ai-bet-assistant";
+import { ProfileSettings } from "@/components/profile-settings";
 import { LoginScreen } from "@/components/login-screen";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, LayoutDashboard, Calendar, ListChecks, Medal, RefreshCw, UserCircle } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, LayoutDashboard, Calendar, ListChecks, Medal, RefreshCw, UserCircle, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
 import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
@@ -67,6 +68,9 @@ export default function Home() {
     return collection(db, "rounds", roundId, "bets");
   }, [db, roundId, user]);
   const { data: allBets, isLoading: isLoadingBets } = useCollection(betsCollectionRef);
+
+  const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
+  const { data: allUsers } = useCollection(usersCollectionRef);
 
   useEffect(() => {
     async function init() {
@@ -162,9 +166,17 @@ export default function Home() {
       });
       return { name: player, points: pts, exactScores: exs, betsCompleted: completed };
     });
-    const finalScores: PlayerScore[] = playerStats.map(p => ({
-      name: p.name, points: p.points, exactScores: p.exactScores, betsCompleted: p.betsCompleted, isWinner: false
-    }));
+    const finalScores: PlayerScore[] = playerStats.map(p => {
+      const userProfile = allUsers?.find(u => u.username === p.name);
+      return {
+        name: p.name, 
+        points: p.points, 
+        exactScores: p.exactScores, 
+        betsCompleted: p.betsCompleted, 
+        isWinner: false,
+        photoUrl: userProfile?.photoUrl
+      };
+    });
     const maxPts = Math.max(...finalScores.map(s => s.points));
     if (maxPts > 0) {
       const candidates = finalScores.filter(s => s.points === maxPts);
@@ -172,7 +184,7 @@ export default function Home() {
       finalScores.forEach(s => { if (s.points === maxPts && s.exactScores === maxExs) s.isWinner = true; });
     }
     return finalScores;
-  }, [matchDescriptions, results, predictions]);
+  }, [matchDescriptions, results, predictions, allUsers]);
 
   useEffect(() => {
     if (!currentRound) return;
@@ -211,20 +223,22 @@ export default function Home() {
       }, { merge: true });
 
       const userBets = predictions[user.displayName!];
-      userBets.forEach((pred, idx) => {
-        if (pred.homeScore === "" || pred.awayScore === "") return;
-        const betId = `${user.uid}_${idx}`;
-        const betRef = doc(db, "rounds", roundId, "bets", betId);
-        setDocumentNonBlocking(betRef, {
-          id: betId,
-          userId: user.uid,
-          username: user.displayName,
-          matchId: matches[idx]?.id || idx,
-          homeScorePrediction: parseInt(pred.homeScore),
-          awayScorePrediction: parseInt(pred.awayScore),
-          dateSubmitted: serverTimestamp(),
-        }, { merge: true });
-      });
+      if (userBets) {
+        userBets.forEach((pred, idx) => {
+          if (pred.homeScore === "" || pred.awayScore === "") return;
+          const betId = `${user.uid}_${idx}`;
+          const betRef = doc(db, "rounds", roundId, "bets", betId);
+          setDocumentNonBlocking(betRef, {
+            id: betId,
+            userId: user.uid,
+            username: user.displayName,
+            matchId: matches[idx]?.id || idx,
+            homeScorePrediction: parseInt(pred.homeScore),
+            awayScorePrediction: parseInt(pred.awayScore),
+            dateSubmitted: serverTimestamp(),
+          }, { merge: true });
+        });
+      }
       toast({ title: "Sincronizado!", description: "Dados e Ranking salvos no AlphaBet Cloud." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Falha na sincronização." });
@@ -275,9 +289,12 @@ export default function Home() {
              </div>
              <div className="h-6 w-px bg-border" />
              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-accent">
-                   <UserCircle className="h-5 w-5" />
-                </div>
+                <Avatar className="h-8 w-8 ring-2 ring-accent/30">
+                  <AvatarImage src={user?.photoURL || ""} className="object-cover" />
+                  <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
+                    {user?.displayName?.substring(0,2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <span className="text-sm font-bold italic uppercase">{user?.displayName}</span>
              </div>
           </div>
@@ -312,22 +329,26 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-8">
             <Tabs defaultValue="betting" className="space-y-6">
-              <TabsList className="w-full bg-muted/50 p-1 rounded-2xl h-14">
-                <TabsTrigger value="betting" className="flex-1 gap-2 font-black uppercase text-xs rounded-xl data-[state=active]:shadow-lg">
+              <TabsList className="w-full bg-muted/50 p-1 rounded-2xl h-14 overflow-x-auto no-scrollbar">
+                <TabsTrigger value="betting" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
                   <ListChecks className="h-4 w-4" />
                   Apostas
                 </TabsTrigger>
-                <TabsTrigger value="overall" className="flex-1 gap-2 font-black uppercase text-xs rounded-xl data-[state=active]:shadow-lg">
+                <TabsTrigger value="overall" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
                   <Trophy className="h-4 w-4" />
                   Ranking
                 </TabsTrigger>
-                <TabsTrigger value="standings" className="flex-1 gap-2 font-black uppercase text-xs rounded-xl data-[state=active]:shadow-lg">
+                <TabsTrigger value="standings" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
                   <LayoutDashboard className="h-4 w-4" />
                   Tabela
                 </TabsTrigger>
-                <TabsTrigger value="calendar" className="flex-1 gap-2 font-black uppercase text-xs rounded-xl data-[state=active]:shadow-lg">
+                <TabsTrigger value="calendar" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
                   <Calendar className="h-4 w-4" />
                   Jogos
+                </TabsTrigger>
+                <TabsTrigger value="profile" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
+                  <Settings className="h-4 w-4" />
+                  Perfil
                 </TabsTrigger>
               </TabsList>
 
@@ -376,6 +397,10 @@ export default function Home() {
                     onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
                   />
                 )}
+              </TabsContent>
+
+              <TabsContent value="profile" className="outline-none">
+                 <ProfileSettings />
               </TabsContent>
             </Tabs>
           </div>

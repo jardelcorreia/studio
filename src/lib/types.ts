@@ -50,6 +50,7 @@ export type PlayerScore = {
   exactScores: number;
   isWinner?: boolean;
   betsCompleted: boolean;
+  photoUrl?: string;
 };
 
 export type ChampionshipWinner = {
