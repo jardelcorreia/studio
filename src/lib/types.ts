@@ -56,6 +56,7 @@ export type ChampionshipWinner = {
   round: number;
   winners: string; // Ex: "Jardel, Werbet"
   value: number;
+  pointsMap?: Record<string, number>; // Pontos reais ganhos por cada jogador na rodada
 };
 
 export type PlayerOverallStats = {

@@ -27,22 +27,29 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
     );
 
     roundWinners.forEach((rw) => {
+      // 1. Somar pontos de cada jogador nesta rodada
+      if (rw.pointsMap) {
+        PLAYERS.forEach(p => {
+          stats[p].points += rw.pointsMap?.[p] || 0;
+        });
+      }
+
+      // 2. Calcular Vitórias/Empates na liderança da rodada e Saldo Financeiro
       if (!rw.winners || !rw.winners.trim()) return;
       const winnersList = rw.winners.split(",").map((s) => s.trim()).filter((s) => PLAYERS.includes(s));
       if (winnersList.length === 0) return;
+      
       const roundValue = rw.value;
       const numPlayers = PLAYERS.length;
 
       if (winnersList.length === 1) {
         const winner = winnersList[0];
         stats[winner].wins += 1;
-        stats[winner].points += 3; // Vitória solo vale 3 pontos no ranking geral
         stats[winner].balance += roundValue * (numPlayers - 1);
         PLAYERS.forEach(p => { if (p !== winner) stats[p].balance -= roundValue; });
       } else {
         winnersList.forEach((w) => { 
           stats[w].draws += 1; 
-          stats[w].points += 1; // Empate vale 1 ponto no ranking geral
         });
         const losers = PLAYERS.filter(p => !winnersList.includes(p));
         const totalPot = losers.length * roundValue;
@@ -53,11 +60,11 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
     });
 
     return Object.values(stats).sort((a, b) => {
-      // Critério 1: Vitórias
+      // Critério 1: Vitórias (Rodadas ganhas)
       if (b.wins !== a.wins) return b.wins - a.wins;
-      // Critério 2: Empates
+      // Critério 2: Empates (Rodadas empatadas na liderança)
       if (b.draws !== a.draws) return b.draws - a.draws;
-      // Critério 3: Pontos
+      // Critério 3: Pontos (Soma total de pontos em todas as rodadas)
       if (b.points !== a.points) return b.points - a.points;
       // Critério Extra: Saldo financeiro
       return b.balance - a.balance;
@@ -97,7 +104,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
                          {index === 0 ? "Líder Alpha" : `Top ${index + 1} Elite`}
                       </Badge>
                       <Badge className="rounded-full bg-primary text-white text-[8px] font-black uppercase px-2">
-                        {player.points} PTS
+                        {player.points} PTS ACUMULADOS
                       </Badge>
                     </div>
                  </div>
@@ -113,7 +120,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
                     </div>
                     <div className="text-center">
                        <div className="text-xl font-black text-primary">{player.points}</div>
-                       <div className="text-[8px] font-bold text-muted-foreground uppercase">Pontos</div>
+                       <div className="text-[8px] font-bold text-muted-foreground uppercase">Total Pts</div>
                     </div>
                     <div className="col-span-3 pt-4 border-t border-dashed flex items-center justify-between mt-2">
                        <div className="flex items-center gap-2">

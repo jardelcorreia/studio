@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -49,6 +50,7 @@ export default function Home() {
       round: i + 1,
       winners: "",
       value: 6,
+      pointsMap: Object.fromEntries(PLAYERS.map(p => [p, 0]))
     }))
   );
 
@@ -56,6 +58,9 @@ export default function Home() {
   
   const roundDocRef = useMemoFirebase(() => (roundId && user) ? doc(db, "rounds", roundId) : null, [db, roundId, user]);
   const { data: roundData } = useDoc(roundDocRef);
+
+  const settingsDocRef = useMemoFirebase(() => user ? doc(db, "app_settings", "championship") : null, [db, user]);
+  const { data: settingsData } = useDoc(settingsDocRef);
 
   const betsCollectionRef = useMemoFirebase(() => {
     if (!roundId || !user) return null;
@@ -70,6 +75,12 @@ export default function Home() {
     }
     init();
   }, []);
+
+  useEffect(() => {
+    if (settingsData?.history) {
+      setRoundWinners(settingsData.history);
+    }
+  }, [settingsData]);
 
   useEffect(() => {
     if (roundData) {
@@ -132,7 +143,52 @@ export default function Home() {
     });
   }, [allBets, currentRound]);
 
-  const handleLogout = () => { setMustChangePassword(false); signOut(auth); };
+  const scores = useMemo((): PlayerScore[] => {
+    const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
+    if (activeIndices.length === 0) return PLAYERS.map(p => ({ name: p, points: 0, exactScores: 0, betsCompleted: false }));
+    const playerStats = PLAYERS.map(player => {
+      let pts = 0, exs = 0, completed = true;
+      activeIndices.forEach(idx => {
+        const res = results[idx], pred = predictions[player][idx];
+        const hasRes = res.homeScore !== "" && res.awayScore !== "";
+        const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
+        if (!hasPred) completed = false;
+        if (hasRes && hasPred) {
+          const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
+          const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
+          if (ph === rh && pa === ra) { pts += 3; exs += 1; }
+          else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
+        }
+      });
+      return { name: player, points: pts, exactScores: exs, betsCompleted: completed };
+    });
+    const finalScores: PlayerScore[] = playerStats.map(p => ({
+      name: p.name, points: p.points, exactScores: p.exactScores, betsCompleted: p.betsCompleted, isWinner: false
+    }));
+    const maxPts = Math.max(...finalScores.map(s => s.points));
+    if (maxPts > 0) {
+      const candidates = finalScores.filter(s => s.points === maxPts);
+      const maxExs = Math.max(...candidates.map(s => s.exactScores));
+      finalScores.forEach(s => { if (s.points === maxPts && s.exactScores === maxExs) s.isWinner = true; });
+    }
+    return finalScores;
+  }, [matchDescriptions, results, predictions]);
+
+  useEffect(() => {
+    if (!currentRound) return;
+    const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
+    const pointsMap = Object.fromEntries(scores.map(s => [s.name, s.points]));
+    
+    setRoundWinners(prev => {
+      const next = [...prev];
+      next[currentRound - 1] = {
+        ...next[currentRound - 1],
+        winners: winnersList || next[currentRound - 1].winners,
+        pointsMap: pointsMap
+      };
+      return next;
+    });
+  }, [scores, currentRound]);
 
   const handleSaveAll = async () => {
     if (!currentRound || !user || !roundId) return;
@@ -146,6 +202,12 @@ export default function Home() {
         isScoresHidden: placaresOcultos,
         dateUpdated: serverTimestamp(),
         dateCreated: roundData?.dateCreated || serverTimestamp(),
+      }, { merge: true });
+
+      const settingsRef = doc(db, "app_settings", "championship");
+      setDocumentNonBlocking(settingsRef, {
+        history: roundWinners,
+        lastUpdated: serverTimestamp(),
       }, { merge: true });
 
       const userBets = predictions[user.displayName!];
@@ -163,11 +225,13 @@ export default function Home() {
           dateSubmitted: serverTimestamp(),
         }, { merge: true });
       });
-      toast({ title: "Sincronizado!", description: "Dados salvos no AlphaBet Cloud." });
+      toast({ title: "Sincronizado!", description: "Dados e Ranking salvos no AlphaBet Cloud." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Falha na sincronização." });
     } finally { setIsSaving(false); }
   };
+
+  const handleLogout = () => { setMustChangePassword(false); signOut(auth); };
 
   const updatePrediction = (player: string, idx: number, type: 'home' | 'away', value: string) => {
     setPredictions(prev => ({
@@ -179,45 +243,6 @@ export default function Home() {
   const updateResult = (idx: number, type: 'home' | 'away', value: string) => {
     setResults(prev => prev.map((r, i) => i === idx ? { ...r, [type === 'home' ? 'homeScore' : 'awayScore']: value } : r));
   };
-
-  const scores = useMemo((): PlayerScore[] => {
-    const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
-    if (activeIndices.length === 0) return PLAYERS.map(p => ({ name: p, points: 0, exactScores: 0, betsCompleted: false }));
-    const playerStats = PLAYERS.map(player => {
-      let pts = 0, exs = 0, pending = 0, completed = true;
-      activeIndices.forEach(idx => {
-        const res = results[idx], pred = predictions[player][idx];
-        const hasRes = res.homeScore !== "" && res.awayScore !== "";
-        const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
-        if (!hasPred) completed = false;
-        if (hasRes && hasPred) {
-          const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
-          const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
-          if (ph === rh && pa === ra) { pts += 3; exs += 1; }
-          else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
-        } else if (!hasRes && hasPred) { pending++; }
-      });
-      return { name: player, points: pts, exactScores: exs, pending, maxPossiblePts: pts + (pending * 3), maxPossibleExs: exs + pending, betsCompleted: completed };
-    });
-    const finalScores: PlayerScore[] = playerStats.map(p => ({
-      name: p.name, points: p.points, exactScores: p.exactScores, betsCompleted: p.betsCompleted, isWinner: false
-    }));
-    const maxPts = Math.max(...finalScores.map(s => s.points));
-    if (maxPts > 0) {
-      const candidates = finalScores.filter(s => s.points === maxPts);
-      const maxExs = Math.max(...candidates.map(s => s.exactScores));
-      finalScores.forEach(s => { if (s.points === maxPts && s.exactScores === maxExs) s.isWinner = true; });
-    }
-    return finalScores;
-  }, [matchDescriptions, results, predictions]);
-
-  useEffect(() => {
-    if (!currentRound) return;
-    const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
-    if (winnersList) {
-      setRoundWinners(prev => prev.map((rw, i) => (i === currentRound - 1 ? { ...rw, winners: winnersList } : rw)));
-    }
-  }, [scores, currentRound]);
 
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add("dark");
