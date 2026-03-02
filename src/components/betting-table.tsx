@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -46,6 +47,24 @@ export function BettingTable({
     return 0;
   };
 
+  const handleInputChange = (player: string, idx: number, type: 'home' | 'away', value: string) => {
+    // Apenas um dígito permitido para o auto-foco fluir bem
+    const cleanValue = value.slice(-1);
+    setPrediction(player, idx, type, cleanValue);
+
+    if (cleanValue !== "" && player === currentPlayer) {
+      if (type === 'home') {
+        // Pula para o visitante do mesmo jogo
+        const nextInput = document.getElementById(`input-${player}-${idx}-away`);
+        nextInput?.focus();
+      } else {
+        // Pula para o mandante do próximo jogo
+        const nextInput = document.getElementById(`input-${player}-${idx + 1}-home`);
+        nextInput?.focus();
+      }
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4">
       {matchDescriptions.map((desc, idx) => (
@@ -81,10 +100,11 @@ export function BettingTable({
                        )}>{player}</span>
                        <div className="flex items-center gap-1 relative">
                           <Input
+                            id={`input-${player}-${idx}-home`}
                             type="number"
                             disabled={isDisabled}
                             value={isHidden ? "" : predictions[player][idx].homeScore}
-                            onChange={(e) => setPrediction(player, idx, 'home', e.target.value)}
+                            onChange={(e) => handleInputChange(player, idx, 'home', e.target.value)}
                             className={cn(
                               "w-9 h-10 text-center rounded-xl p-0 font-black",
                               points === 3 && "bg-secondary/20 border-secondary text-secondary",
@@ -94,10 +114,11 @@ export function BettingTable({
                           />
                           <span className="text-muted-foreground/30 font-black text-[10px]">X</span>
                           <Input
+                            id={`input-${player}-${idx}-away`}
                             type="number"
                             disabled={isDisabled}
                             value={isHidden ? "" : predictions[player][idx].awayScore}
-                            onChange={(e) => setPrediction(player, idx, 'away', e.target.value)}
+                            onChange={(e) => handleInputChange(player, idx, 'away', e.target.value)}
                             className={cn(
                               "w-9 h-10 text-center rounded-xl p-0 font-black",
                               points === 3 && "bg-secondary/20 border-secondary text-secondary",
