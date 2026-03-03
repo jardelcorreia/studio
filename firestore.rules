@@ -4,10 +4,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * AlphaBet League Security Rules - Optimized for Subcollections
+     * AlphaBet League Security Rules
      */
 
-    // --- MESTRE: Jardel (TquLV2ai1yRgfWPJHZGrHKifgc72) tem acesso total ---
+    // --- REGRA MESTRE: Jardel tem acesso total ---
     match /{document=**} {
       allow read, write: if request.auth != null && (
         request.auth.uid == "TquLV2ai1yRgfWPJHZGrHKifgc72" || 
@@ -15,39 +15,42 @@ service cloud.firestore {
       );
     }
 
-    // Regras para usuários comuns
-    
+    // Regras para perfis de usuários
     match /users/{userId} {
-      // Qualquer um logado pode ver nomes e fotos para o ranking
+      // Qualquer usuário autenticado pode ler os perfis (necessário para o Ranking e Tabelas)
       allow read: if request.auth != null;
-      // Apenas o dono pode editar seu próprio perfil
+      // Apenas o próprio usuário pode criar ou atualizar seu perfil
       allow create, update: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Regras para rodadas e apostas
     match /rounds/{roundId} {
-      // Todos logados podem ver metadados da rodada
+      // Todos logados podem ver os metadados da rodada (nome, status oculto, etc)
       allow read: if request.auth != null;
       
-      // Regras para apostas dentro da rodada
       match /bets/{betId} {
-        // Usuário pode ler sua própria aposta OU qualquer uma se a rodada não estiver oculta
+        // Um usuário pode ler sua própria aposta. 
+        // Para ler apostas de outros, a rodada não pode estar com placares ocultos.
         allow read: if request.auth != null && (
           betId.startsWith(request.auth.uid) || 
           get(/databases/$(database)/documents/rounds/$(roundId)).data.isScoresHidden == false
         );
         
-        // Usuário pode criar/atualizar apenas sua própria aposta
+        // Apenas o dono da aposta pode criar ou modificar seu palpite
         allow write: if request.auth != null && betId.startsWith(request.auth.uid);
       }
     }
 
+    // Verificação de privilégios administrativos
     match /roles_admin/{userId} {
       allow get: if request.auth != null;
       allow create: if request.auth != null && request.auth.token.email == "jardel@alphabet.com";
     }
 
+    // Configurações globais do app
     match /app_settings/{docId} {
       allow read: if request.auth != null;
+      // Escrita permitida apenas pelo admin (via regra mestre)
     }
   }
 }
