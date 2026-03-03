@@ -98,6 +98,7 @@ export function MatchCalendar({
           const away = getTeamInfo(match.awayTeam);
           const isFinished = match.status === 'finished';
           const isLive = match.status === 'live';
+          const isCancelled = match.status === 'cancelled';
           const currentPred = predictions[idx] || { homeScore: "", awayScore: "" };
           const isOutlier = match.isValidForPoints === false;
 
@@ -122,9 +123,10 @@ export function MatchCalendar({
                       <Badge className={cn(
                         "rounded-full px-3 text-[8px] font-black uppercase border-none",
                         isLive ? "bg-destructive text-white animate-pulse" : 
-                        isFinished ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
+                        isFinished ? "bg-primary/20 text-primary" : 
+                        isCancelled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
                       )}>
-                        {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : 'Agendado'}
+                        {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : isCancelled ? 'Adiado/Cancelado' : 'Agendado'}
                       </Badge>
                    </div>
                 </div>
@@ -155,7 +157,7 @@ export function MatchCalendar({
                               value={currentPred.homeScore}
                               onChange={(e) => handleInputChange(idx, 'home', e.target.value)}
                               className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
-                              disabled={isFinished}
+                              disabled={isFinished || isCancelled}
                             />
                             <span className="font-black text-primary/40 italic text-xs">X</span>
                             <Input
@@ -164,7 +166,7 @@ export function MatchCalendar({
                               value={currentPred.awayScore}
                               onChange={(e) => handleInputChange(idx, 'away', e.target.value)}
                               className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
-                              disabled={isFinished}
+                              disabled={isFinished || isCancelled}
                             />
                          </div>
                       </div>
@@ -186,7 +188,9 @@ export function MatchCalendar({
                 )}>
                    <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3 text-primary/40" />
-                      <span className="text-[10px] font-black italic text-primary/60">{formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : "AGUARDANDO PALPITE"}</span>
+                      <span className="text-[10px] font-black italic text-primary/60">
+                        {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isCancelled ? "PARTIDA ADIADA" : "AGUARDANDO PALPITE"}
+                      </span>
                    </div>
                    {isOutlier && (
                      <div className="flex items-center gap-1 text-destructive font-black text-[9px] uppercase tracking-wider">
