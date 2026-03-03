@@ -237,7 +237,7 @@ export default function Home() {
         if (bUserId && next[bUserId] && matchIdx >= 0 && matchIdx < 10) {
           next[bUserId][matchIdx] = {
             homeScore: bet.homeScorePrediction?.toString() || "",
-            awayScorePrediction: bet.awayScorePrediction?.toString() || ""
+            awayScore: bet.awayScorePrediction?.toString() || ""
           };
         }
       });
