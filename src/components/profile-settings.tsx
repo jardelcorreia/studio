@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useRef, useCallback } from "react";
@@ -96,10 +97,16 @@ export function ProfileSettings() {
     if (!user || !displayName.trim()) return;
     setLoading(true);
     try {
+      // 1. Atualiza Perfil de Autenticação
       await updateProfile(user, { displayName: displayName.trim() });
-      await refreshUser(); // Force UI update
+      
+      // 2. Atualiza Documento do Firestore
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { username: displayName.trim() });
+      
+      // 3. Força atualização reativa em todo o app
+      await refreshUser();
+      
       toast({ title: "Perfil Atualizado!", description: "Seu nome de exibição foi alterado." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Não foi possível atualizar o nome." });
@@ -123,10 +130,11 @@ export function ProfileSettings() {
     if (!imageToCrop || !croppedAreaPixels || !user) return;
 
     setUploading(true);
+    const tempImageToCrop = imageToCrop;
     setImageToCrop(null); 
     
     try {
-      const croppedBlob = await getCroppedImg(imageToCrop, croppedAreaPixels);
+      const croppedBlob = await getCroppedImg(tempImageToCrop, croppedAreaPixels);
       if (!croppedBlob) throw new Error("Erro ao processar imagem");
 
       const storageRef = ref(storage, `avatars/${user.uid}`);
@@ -134,9 +142,10 @@ export function ProfileSettings() {
       const url = await getDownloadURL(snapshot.ref);
       
       await updateProfile(user, { photoURL: url });
-      await refreshUser(); // Force UI update
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { photoUrl: url });
+      
+      await refreshUser(); // Force UI update
       
       toast({ title: "Foto Atualizada!", description: "Sua foto de perfil foi recortada e salva." });
     } catch (error) {
@@ -161,10 +170,10 @@ export function ProfileSettings() {
       }
 
       await updateProfile(user, { photoURL: "" });
-      await refreshUser(); // Critical: Force UI to see the empty photoURL immediately
-      
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { photoUrl: "" });
+      
+      await refreshUser(); // Force UI update
       
       toast({ title: "Foto Removida", description: "Seu avatar voltou ao padrão da liga." });
     } catch (error) {

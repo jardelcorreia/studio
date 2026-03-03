@@ -313,6 +313,10 @@ export default function Home() {
       }
       const myPreds = predictions[user.uid];
       if (myPreds) {
+        // Obter o username mais atualizado da coleção de usuários para garantir consistência
+        const currentUserData = allUsers?.find(u => u.id === user.uid);
+        const currentUsername = currentUserData?.username || user.displayName || "Jogador";
+
         myPreds.forEach((pred, idx) => {
           if (pred.homeScore === "" || pred.awayScore === "") return;
           const betId = `${user.uid}_${idx}`;
@@ -320,7 +324,7 @@ export default function Home() {
           setDocumentNonBlocking(betRef, {
             id: betId,
             userId: user.uid,
-            username: user.displayName,
+            username: currentUsername,
             matchId: matches[idx]?.id || idx,
             homeScorePrediction: parseInt(pred.homeScore),
             awayScorePrediction: parseInt(pred.awayScore),
@@ -353,6 +357,13 @@ export default function Home() {
     if (darkMode) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
+
+  // Fix for "locked interface" after dialog close: ensure body is interactive
+  useEffect(() => {
+    if (!showProfileDialog) {
+      document.body.style.pointerEvents = "auto";
+    }
+  }, [showProfileDialog]);
 
   if (isUserLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   if (!user || mustChangePassword) return <LoginScreen forcePasswordChange={mustChangePassword} onPasswordChangeRequired={() => setMustChangePassword(true)} onPasswordChanged={() => setMustChangePassword(false)} />;
@@ -390,6 +401,7 @@ export default function Home() {
                   <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
+                      // Small timeout to allow DropdownMenu to cleanup its state before opening Dialog
                       setTimeout(() => setShowProfileDialog(true), 150);
                     }}
                     className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
