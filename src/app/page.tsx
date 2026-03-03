@@ -304,10 +304,6 @@ export default function Home() {
             <button className="p-2 hover:bg-muted rounded-full transition-colors" onClick={() => setDarkMode(!darkMode)}>
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
-            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90 rounded-full px-5 shadow-lg shadow-primary/20" onClick={handleSaveAll} disabled={isSaving}>
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              <span className="hidden sm:inline">{isSaving ? "Sincronizando..." : "Salvar"}</span>
-            </Button>
             <Button variant="ghost" size="icon" onClick={handleLogout} className="text-destructive hover:bg-destructive/10 rounded-full">
               <LogOut className="h-5 w-5" />
             </Button>
