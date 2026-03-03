@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -102,7 +103,6 @@ export default function Home() {
   const { data: allUsers } = useCollection(usersCollectionRef);
 
   // CRITICAL FIX: Ensure body pointer-events are restored after Dialog closes.
-  // Radix UI sometimes fails to clean up when opening a Dialog from a DropdownMenu.
   useEffect(() => {
     if (!showProfileDialog) {
       const timer = setTimeout(() => {
@@ -192,18 +192,19 @@ export default function Home() {
     if (!allUsers || allUsers.length === 0) return [];
     
     const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
+    const totalActiveMatches = activeIndices.length;
     
     const playerStats = allUsers.map(u => {
-      let pts = 0, exs = 0, completed = true;
+      let pts = 0, exs = 0, filledCount = 0;
       const userPreds = predictions[u.id];
       
-      if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false, photoUrl: u.photoUrl };
+      if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl };
 
       activeIndices.forEach(idx => {
         const res = results[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
         const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
-        if (!hasPred) completed = false;
+        if (hasPred) filledCount++;
         if (hasRes && hasPred) {
           const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
           const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
@@ -211,7 +212,15 @@ export default function Home() {
           else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
         }
       });
-      return { id: u.id, name: u.username, points: pts, exactScores: exs, betsCompleted: completed, photoUrl: u.photoUrl };
+      return { 
+        id: u.id, 
+        name: u.username, 
+        points: pts, 
+        exactScores: exs, 
+        betsCompleted: filledCount >= totalActiveMatches && totalActiveMatches > 0, 
+        betsCount: filledCount,
+        photoUrl: u.photoUrl 
+      };
     });
 
     const finalScores = playerStats.map(p => ({ ...p, isWinner: false }));
@@ -353,7 +362,6 @@ export default function Home() {
                   <DropdownMenuItem 
                     onSelect={(e) => {
                       e.preventDefault();
-                      // Wait for DropdownMenu to start closing before showing Dialog
                       setTimeout(() => {
                         setShowProfileDialog(true);
                       }, 150);

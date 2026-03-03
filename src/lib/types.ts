@@ -51,6 +51,7 @@ export type PlayerScore = {
   exactScores: number;
   isWinner?: boolean;
   betsCompleted: boolean;
+  betsCount: number; // Nova propriedade para progresso
   photoUrl?: string;
 };
 
