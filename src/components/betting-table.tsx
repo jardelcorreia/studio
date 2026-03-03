@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -101,7 +102,7 @@ export function BettingTable({
                        <div className="grid grid-cols-5 gap-0.5 mb-0.5 px-0.5">
                           <div className="text-[5px] font-black uppercase text-white/20 italic">JOGO</div>
                           {sortedUsers.map(u => (
-                            <div key={u.id} className="text-center text-[6px] font-black uppercase text-accent tracking-tighter truncate">
+                            <div key={u.id} className="text-center text-[7px] font-black uppercase text-accent tracking-tighter truncate px-1">
                                {u.username}
                             </div>
                           ))}
@@ -192,33 +193,32 @@ export function BettingTable({
 
                     return (
                       <div key={u.id} className={cn(
-                        "flex flex-col items-center min-w-[55px] md:min-w-[70px] relative transition-all",
+                        "flex flex-col items-center min-w-[65px] md:min-w-[75px] relative transition-all",
                         isCurrent && "scale-105"
                       )}>
-                        <div className="flex items-center gap-0.5 mb-1">
+                        <div className="flex items-center gap-0.5 mb-1.5 px-1 w-full justify-center">
                           <span className={cn(
-                            "text-[8px] font-black uppercase tracking-tighter",
+                            "text-[10px] font-black uppercase tracking-tighter truncate text-center w-full",
                             isCurrent ? "text-primary" : "text-muted-foreground/60"
                           )}>
-                            <span className="md:hidden">{u.username.substring(0, 3)}</span>
-                            <span className="hidden md:inline">{u.username}</span>
+                            {u.username}
                           </span>
-                          {isCurrent && <UserCircle2 className="h-2 w-2 text-primary" />}
+                          {isCurrent && <UserCircle2 className="h-2 w-2 text-primary shrink-0" />}
                         </div>
 
                         <div className={cn(
-                          "flex items-center justify-center gap-1 px-2 py-1 rounded-xl border transition-colors",
+                          "flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border transition-colors",
                           isOutOfWindow ? "bg-muted/50 border-muted text-muted-foreground" :
                           points === 3 ? "bg-secondary text-white border-secondary shadow-md" : 
                           points === 1 ? "bg-accent text-accent-foreground border-accent shadow-sm" : 
                           points === 0 ? "bg-destructive/10 border-destructive/20 text-destructive" :
                           "bg-background border-muted shadow-sm"
                         )}>
-                          <span className="text-[11px] font-black">
+                          <span className="text-[12px] font-black tabular-nums">
                             {isHidden ? "?" : (predictions[u.id]?.[idx]?.homeScore || "-")}
                           </span>
                           <span className="text-[8px] font-black opacity-30">x</span>
-                          <span className="text-[11px] font-black">
+                          <span className="text-[12px] font-black tabular-nums">
                             {isHidden ? "?" : (predictions[u.id]?.[idx]?.awayScore || "-")}
                           </span>
                         </div>
