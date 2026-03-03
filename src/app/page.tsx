@@ -34,7 +34,8 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
-  Clock
+  Clock,
+  Radar
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -569,8 +570,8 @@ export default function Home() {
                   Jogos & Palpites
                 </TabsTrigger>
                 <TabsTrigger value="betting" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
-                  <ListChecks className="h-4 w-4" />
-                  Live Score League
+                  <Radar className="h-4 w-4" />
+                  Radar de Palpites
                 </TabsTrigger>
                 <TabsTrigger value="overall" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <Trophy className="h-4 w-4" />

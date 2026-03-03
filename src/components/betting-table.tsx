@@ -156,7 +156,7 @@ export function BettingTable({
 
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2 bg-muted/20 rounded-2xl border border-transparent">
         <div className="col-span-3 text-[10px] font-black uppercase text-muted-foreground">Confronto</div>
-        <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-muted-foreground">Palpites da Liga</div>
+        <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-muted-foreground">Palpites da Galera</div>
         <div className="col-span-3 text-center text-[10px] font-black uppercase text-muted-foreground">Resultado</div>
       </div>
 
@@ -193,7 +193,7 @@ export function BettingTable({
 
                     return (
                       <div key={u.id} className={cn(
-                        "flex flex-col items-center min-w-[65px] md:min-w-[75px] relative transition-all",
+                        "flex flex-col items-center min-w-[70px] md:min-w-[85px] relative transition-all",
                         isCurrent && "scale-105"
                       )}>
                         <div className="flex items-center gap-0.5 mb-1.5 px-1 w-full justify-center">
@@ -203,22 +203,22 @@ export function BettingTable({
                           )}>
                             {u.username}
                           </span>
-                          {isCurrent && <UserCircle2 className="h-2 w-2 text-primary shrink-0" />}
+                          {isCurrent && <UserCircle2 className="h-2.5 w-2.5 text-primary shrink-0" />}
                         </div>
 
                         <div className={cn(
-                          "flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border transition-colors",
+                          "flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border transition-colors",
                           isOutOfWindow ? "bg-muted/50 border-muted text-muted-foreground" :
                           points === 3 ? "bg-secondary text-white border-secondary shadow-md" : 
                           points === 1 ? "bg-accent text-accent-foreground border-accent shadow-sm" : 
                           points === 0 ? "bg-destructive/10 border-destructive/20 text-destructive" :
                           "bg-background border-muted shadow-sm"
                         )}>
-                          <span className="text-[12px] font-black tabular-nums">
+                          <span className="text-[13px] font-black tabular-nums">
                             {isHidden ? "?" : (predictions[u.id]?.[idx]?.homeScore || "-")}
                           </span>
-                          <span className="text-[8px] font-black opacity-30">x</span>
-                          <span className="text-[12px] font-black tabular-nums">
+                          <span className="text-[9px] font-black opacity-30">x</span>
+                          <span className="text-[13px] font-black tabular-nums">
                             {isHidden ? "?" : (predictions[u.id]?.[idx]?.awayScore || "-")}
                           </span>
                         </div>
