@@ -7,7 +7,7 @@ import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Progress } from "./ui/progress";
-import { Trophy, Medal, Star, Crown, CheckCircle2, Circle, AlertCircle } from "lucide-react";
+import { Trophy, Medal, Star, Crown, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RankingSummaryProps {
@@ -87,7 +87,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between md:justify-center gap-2">
+                <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-2">
                    <Badge variant="outline" className={cn(
                       "rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest border-none px-2",
                       score.isWinner ? "bg-white/10 text-white" : "bg-primary/5 text-muted-foreground"
@@ -96,24 +96,20 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                    </Badge>
 
                    {isScoresHidden && (
-                     <div className="flex flex-col items-end gap-0">
-                        <div className="flex items-center gap-1">
-                           {score.betsCompleted ? (
-                             <CheckCircle2 className={cn("h-2.5 w-2.5", score.isWinner ? "text-white" : "text-secondary")} />
-                           ) : (
-                             <div className={cn("h-2 w-2 rounded-full border border-current opacity-30", score.isWinner ? "text-white" : "text-muted-foreground")} />
-                           )}
-                           <span className={cn(
-                             "text-[7px] md:text-[9px] font-black uppercase italic tracking-tighter",
-                             score.betsCompleted 
-                               ? (score.isWinner ? "text-white" : "text-secondary") 
-                               : (score.isWinner ? "text-white/60" : "text-muted-foreground/60")
-                           )}>
-                             {score.betsCompleted ? "Quilado" : "Ainda não quilou"}
-                           </span>
-                        </div>
-                        <span className={cn("text-[6px] md:text-[8px] font-bold opacity-40 tabular-nums", score.isWinner ? "text-white" : "text-muted-foreground")}>
-                          {score.betsCount}/10 palpites
+                     <div className="flex items-center gap-1.5">
+                        {score.betsCompleted ? (
+                          <CheckCircle2 className={cn("h-3 w-3", score.isWinner ? "text-white" : "text-secondary")} />
+                        ) : (
+                          <div className={cn("h-2.5 w-2.5 rounded-full border-2 border-current opacity-30", score.isWinner ? "text-white" : "text-muted-foreground")} />
+                        )}
+                        <span className={cn(
+                          "text-[9px] md:text-[10px] font-black uppercase italic tracking-tighter whitespace-nowrap",
+                          score.betsCompleted 
+                            ? (score.isWinner ? "text-white" : "text-secondary") 
+                            : (score.isWinner ? "text-white/60" : "text-muted-foreground/60")
+                        )}>
+                          {score.betsCompleted ? "Quilado" : "Não Quilou"}
+                          <span className="ml-1 opacity-50 tabular-nums">({score.betsCount}/10)</span>
                         </span>
                      </div>
                    )}
