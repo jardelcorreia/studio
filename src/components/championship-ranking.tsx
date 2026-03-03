@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { PLAYERS } from "@/lib/constants";
 import { ChampionshipWinner, PlayerOverallStats } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
@@ -13,46 +12,55 @@ import { cn } from "@/lib/utils";
 interface ChampionshipRankingProps {
   roundWinners: ChampionshipWinner[];
   setRoundWinners: React.Dispatch<React.SetStateAction<ChampionshipWinner[]>>;
+  allUsers: any[];
 }
 
-export function ChampionshipRanking({ roundWinners, setRoundWinners }: ChampionshipRankingProps) {
+export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }: ChampionshipRankingProps) {
   const updateValue = (roundIndex: number, value: number) => {
     setRoundWinners((prev) => prev.map((rw, i) => (i === roundIndex ? { ...rw, value } : rw)));
   };
 
   const overallStats = useMemo(() => {
-    const stats: Record<string, PlayerOverallStats> = Object.fromEntries(
-      PLAYERS.map((p) => [p, { name: p, wins: 0, draws: 0, points: 0, balance: 0 }])
+    if (!allUsers || allUsers.length === 0) return [];
+
+    const stats: Record<string, PlayerOverallStats & { photoUrl?: string }> = Object.fromEntries(
+      allUsers.map((u) => [u.id, { name: u.username, wins: 0, draws: 0, points: 0, balance: 0, photoUrl: u.photoUrl }])
     );
 
     roundWinners.forEach((rw) => {
       if (rw.pointsMap) {
-        PLAYERS.forEach(p => {
-          stats[p].points += rw.pointsMap?.[p] || 0;
+        allUsers.forEach(u => {
+          if (stats[u.id]) {
+            stats[u.id].points += rw.pointsMap?.[u.id] || 0;
+          }
         });
       }
 
       if (!rw.winners || !rw.winners.trim()) return;
-      const winnersList = rw.winners.split(",").map((s) => s.trim()).filter((s) => PLAYERS.includes(s));
-      if (winnersList.length === 0) return;
+      
+      const winnersList = rw.winners.split(",").map((s) => s.trim());
+      // Encontra os IDs dos vencedores baseados nos nomes salvos no histórico
+      const winnerIds = allUsers.filter(u => winnersList.includes(u.username)).map(u => u.id);
+      
+      if (winnerIds.length === 0) return;
       
       const roundValue = rw.value;
-      const numPlayers = PLAYERS.length;
+      const numPlayers = allUsers.length;
 
-      if (winnersList.length === 1) {
-        const winner = winnersList[0];
-        stats[winner].wins += 1;
-        stats[winner].balance += roundValue * (numPlayers - 1);
-        PLAYERS.forEach(p => { if (p !== winner) stats[p].balance -= roundValue; });
+      if (winnerIds.length === 1) {
+        const winnerId = winnerIds[0];
+        stats[winnerId].wins += 1;
+        stats[winnerId].balance += roundValue * (numPlayers - 1);
+        allUsers.forEach(u => { if (u.id !== winnerId) stats[u.id].balance -= roundValue; });
       } else {
-        winnersList.forEach((w) => { 
-          stats[w].draws += 1; 
+        winnerIds.forEach((wId) => { 
+          stats[wId].draws += 1; 
         });
-        const losers = PLAYERS.filter(p => !winnersList.includes(p));
+        const losers = allUsers.filter(u => !winnerIds.includes(u.id));
         const totalPot = losers.length * roundValue;
-        const prizePerWinner = totalPot / winnersList.length;
-        winnersList.forEach(w => { stats[w].balance += prizePerWinner; });
-        losers.forEach(l => { stats[l].balance -= roundValue; });
+        const prizePerWinner = totalPot / winnerIds.length;
+        winnerIds.forEach(wId => { stats[wId].balance += prizePerWinner; });
+        losers.forEach(l => { stats[l.id].balance -= roundValue; });
       }
     });
 
@@ -62,7 +70,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
       if (b.points !== a.points) return b.points - a.points;
       return b.balance - a.balance;
     });
-  }, [roundWinners]);
+  }, [roundWinners, allUsers]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -79,10 +87,12 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners }: Champions
                  )}>
                     <div className="relative mb-4">
                        <div className={cn(
-                         "h-20 w-20 rounded-2xl flex items-center justify-center text-2xl font-black italic shadow-lg",
+                         "h-20 w-20 rounded-2xl flex items-center justify-center text-2xl font-black italic shadow-lg overflow-hidden",
                          index === 0 ? "sports-gradient text-white rotate-6" : "bg-white dark:bg-card border-2"
                        )}>
-                          {player.name.substring(0, 2).toUpperCase()}
+                          {player.photoUrl ? (
+                            <img src={player.photoUrl} alt={player.name} className="w-full h-full object-cover" />
+                          ) : player.name.substring(0, 2).toUpperCase()}
                        </div>
                        {index === 0 && (
                          <div className="absolute -top-3 -right-3 h-8 w-8 bg-accent rounded-full flex items-center justify-center shadow-lg border-2 border-white">

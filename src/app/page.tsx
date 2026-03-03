@@ -69,9 +69,7 @@ export default function Home() {
   const [loadingMatches, setLoadingMatches] = useState(false);
   const [roundName, setRoundName] = useState("");
   const [matchDescriptions, setMatchDescriptions] = useState<string[]>(Array(10).fill(""));
-  const [predictions, setPredictions] = useState<PlayerPredictions>(
-    Object.fromEntries(PLAYERS.map(p => [p, Array(10).fill({ homeScore: "", awayScore: "" })]))
-  );
+  const [predictions, setPredictions] = useState<PlayerPredictions>({});
   const [results, setResults] = useState<Prediction[]>(Array(10).fill({ homeScore: "", awayScore: "" }));
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -82,7 +80,7 @@ export default function Home() {
       round: i + 1,
       winners: "",
       value: 6,
-      pointsMap: Object.fromEntries(PLAYERS.map(p => [p, 0]))
+      pointsMap: {}
     }))
   );
 
@@ -159,16 +157,16 @@ export default function Home() {
   }, [currentRound]);
 
   useEffect(() => {
-    if (!allBets || !currentRound) return;
+    if (!allBets || !allUsers) return;
     setPredictions(prev => {
-      const next = { ...prev };
-      PLAYERS.forEach(p => { next[p] = Array(10).fill({ homeScore: "", awayScore: "" }); });
+      const next: PlayerPredictions = {};
+      allUsers.forEach(u => { next[u.id] = Array(10).fill({ homeScore: "", awayScore: "" }); });
       allBets.forEach(bet => {
         const parts = bet.id.split('_');
         const matchIdx = parseInt(parts[parts.length - 1]);
-        const player = bet.username;
-        if (player && PLAYERS.includes(player) && matchIdx >= 0 && matchIdx < 10) {
-          next[player][matchIdx] = {
+        const bUserId = bet.userId;
+        if (bUserId && next[bUserId] && matchIdx >= 0 && matchIdx < 10) {
+          next[bUserId][matchIdx] = {
             homeScore: bet.homeScorePrediction?.toString() || "",
             awayScore: bet.awayScorePrediction?.toString() || ""
           };
@@ -176,15 +174,19 @@ export default function Home() {
       });
       return next;
     });
-  }, [allBets, currentRound]);
+  }, [allBets, allUsers]);
 
   const scores = useMemo((): PlayerScore[] => {
+    if (!allUsers) return [];
     const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
-    if (activeIndices.length === 0) return PLAYERS.map(p => ({ name: p, points: 0, exactScores: 0, betsCompleted: false }));
-    const playerStats = PLAYERS.map(player => {
+    
+    const playerStats = allUsers.map(u => {
       let pts = 0, exs = 0, completed = true;
+      const userPreds = predictions[u.id];
+      if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false };
+
       activeIndices.forEach(idx => {
-        const res = results[idx], pred = predictions[player][idx];
+        const res = results[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
         const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
         if (!hasPred) completed = false;
@@ -195,19 +197,14 @@ export default function Home() {
           else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
         }
       });
-      return { name: player, points: pts, exactScores: exs, betsCompleted: completed };
+      return { id: u.id, name: u.username, points: pts, exactScores: exs, betsCompleted: completed, photoUrl: u.photoUrl };
     });
-    const finalScores: PlayerScore[] = playerStats.map(p => {
-      const userProfile = allUsers?.find(u => u.username === p.name);
-      return {
-        name: p.name, 
-        points: p.points, 
-        exactScores: p.exactScores, 
-        betsCompleted: p.betsCompleted, 
-        isWinner: false,
-        photoUrl: userProfile?.photoUrl
-      };
-    });
+
+    const finalScores: PlayerScore[] = playerStats.map(p => ({
+      ...p,
+      isWinner: false,
+    }));
+
     const maxPts = Math.max(...finalScores.map(s => s.points));
     if (maxPts > 0) {
       const candidates = finalScores.filter(s => s.points === maxPts);
@@ -218,9 +215,9 @@ export default function Home() {
   }, [matchDescriptions, results, predictions, allUsers]);
 
   useEffect(() => {
-    if (!currentRound) return;
+    if (!currentRound || scores.length === 0) return;
     const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
-    const pointsMap = Object.fromEntries(scores.map(s => [s.name, s.points]));
+    const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
     
     setRoundWinners(prev => {
       const next = [...prev];
@@ -253,9 +250,9 @@ export default function Home() {
         lastUpdated: serverTimestamp(),
       }, { merge: true });
 
-      const userBets = predictions[user.displayName!];
-      if (userBets) {
-        userBets.forEach((pred, idx) => {
+      const myPreds = predictions[user.uid];
+      if (myPreds) {
+        myPreds.forEach((pred, idx) => {
           if (pred.homeScore === "" || pred.awayScore === "") return;
           const betId = `${user.uid}_${idx}`;
           const betRef = doc(db, "rounds", roundId, "bets", betId);
@@ -270,7 +267,7 @@ export default function Home() {
           }, { merge: true });
         });
       }
-      toast({ title: "Sincronizado!", description: "Dados e Ranking salvos no AlphaBet Cloud." });
+      toast({ title: "Sincronizado!", description: "Dados salvos no AlphaBet Cloud." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Falha na sincronização." });
     } finally { setIsSaving(false); }
@@ -278,10 +275,12 @@ export default function Home() {
 
   const handleLogout = () => { setMustChangePassword(false); signOut(auth); };
 
-  const updatePrediction = (player: string, idx: number, type: 'home' | 'away', value: string) => {
+  const updatePrediction = (userId: string, idx: number, type: 'home' | 'away', value: string) => {
     setPredictions(prev => ({
       ...prev,
-      [player]: prev[player].map((p, i) => i === idx ? { ...p, [type === 'home' ? 'homeScore' : 'awayScore']: value } : p)
+      [userId]: (prev[userId] || Array(10).fill({ homeScore: "", awayScore: "" })).map((p, i) => 
+        i === idx ? { ...p, [type === 'home' ? 'homeScore' : 'awayScore']: value } : p
+      )
     }));
   };
 
@@ -444,8 +443,8 @@ export default function Home() {
                     matches={matches} 
                     round={currentRound} 
                     totalRounds={38}
-                    predictions={predictions[user?.displayName || ""] || Array(10).fill({ homeScore: "", awayScore: "" })}
-                    setPrediction={(idx, type, value) => updatePrediction(user?.displayName || "", idx, type, value)}
+                    predictions={predictions[user?.uid || ""] || Array(10).fill({ homeScore: "", awayScore: "" })}
+                    setPrediction={(idx, type, value) => updatePrediction(user?.uid || "", idx, type, value)}
                     onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
                     onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
                     onSave={handleSaveAll}
@@ -479,13 +478,14 @@ export default function Home() {
                   results={results}
                   setResult={updateResult}
                   placaresOcultos={placaresOcultos}
-                  currentPlayer={user?.displayName || ""}
+                  currentPlayerId={user?.uid || ""}
                   isAdmin={isAdminUser}
+                  allUsers={allUsers || []}
                 />
               </TabsContent>
 
               <TabsContent value="overall" className="outline-none">
-                 <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} />
+                 <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} />
               </TabsContent>
 
               <TabsContent value="standings" className="outline-none">

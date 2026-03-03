@@ -35,7 +35,7 @@ export type Prediction = {
   awayScore: string;
 };
 
-export type PlayerPredictions = Record<string, Prediction[]>;
+export type PlayerPredictions = Record<string, Prediction[]>; // Key is userId
 
 export type GameSession = {
   roundName: string;
@@ -45,6 +45,7 @@ export type GameSession = {
 };
 
 export type PlayerScore = {
+  id: string; // Adicionado userId
   name: string;
   points: number;
   exactScores: number;
@@ -57,7 +58,7 @@ export type ChampionshipWinner = {
   round: number;
   winners: string; // Ex: "Jardel, Werbet"
   value: number;
-  pointsMap?: Record<string, number>; // Pontos reais ganhos por cada jogador na rodada
+  pointsMap?: Record<string, number>; // Key is userId
 };
 
 export type PlayerOverallStats = {

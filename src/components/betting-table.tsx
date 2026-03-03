@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { PLAYERS, TEAMS } from "@/lib/constants";
+import { TEAMS } from "@/lib/constants";
 import { Prediction, PlayerPredictions } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
@@ -13,12 +13,13 @@ interface BettingTableProps {
   roundName: string;
   matchDescriptions: string[];
   predictions: PlayerPredictions;
-  setPrediction: (player: string, matchIndex: number, type: 'home' | 'away', value: string) => void;
+  setPrediction: (userId: string, matchIndex: number, type: 'home' | 'away', value: string) => void;
   results: Prediction[];
   setResult: (matchIndex: number, type: 'home' | 'away', value: string) => void;
   placaresOcultos: boolean;
-  currentPlayer: string;
+  currentPlayerId: string;
   isAdmin?: boolean;
+  allUsers: any[];
 }
 
 export function BettingTable({
@@ -28,13 +29,14 @@ export function BettingTable({
   results,
   setResult,
   placaresOcultos,
-  currentPlayer,
-  isAdmin
+  currentPlayerId,
+  isAdmin,
+  allUsers
 }: BettingTableProps) {
   
-  const getPoints = (player: string, idx: number) => {
+  const getPoints = (userId: string, idx: number) => {
     const res = results[idx];
-    const pred = predictions[player][idx];
+    const pred = predictions[userId]?.[idx];
     if (!res?.homeScore || !res?.awayScore || !pred?.homeScore || !pred?.awayScore) return null;
     const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
     const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
@@ -47,6 +49,9 @@ export function BettingTable({
     const team = Object.values(TEAMS).find(t => t.nome === cleanName);
     return team ? team.abrev : cleanName.substring(0, 3).toUpperCase();
   };
+
+  // Garante uma ordem estável para as colunas baseada no ID do usuário
+  const sortedUsers = [...allUsers].sort((a, b) => a.id.localeCompare(b.id));
 
   return (
     <div className="w-full space-y-4">
@@ -75,11 +80,8 @@ export function BettingTable({
                     </DialogClose>
                  </div>
 
-                 {/* 1:1 Static Card - Focus on Data Density */}
-                 <div className="aspect-square w-full max-w-[580px] min-w-[300px] bg-[#020617] p-2.5 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-xl self-center">
-                    
-                    {/* Ultra Compact Header */}
-                    <div className="relative z-10 flex justify-between items-center mb-1.5 border-b border-white/10 pb-1">
+                 <div className="aspect-square w-full max-w-[580px] min-w-[300px] bg-[#020617] p-2 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-xl self-center">
+                    <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
                        <div className="flex items-center gap-1.5">
                           <div className="h-4 w-4 bg-accent rounded-sm flex items-center justify-center -rotate-6">
                             <Trophy className="h-2.5 w-2.5 text-black" />
@@ -94,19 +96,16 @@ export function BettingTable({
                        </div>
                     </div>
 
-                    {/* Table Layout */}
                     <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-                       {/* Table Header */}
                        <div className="grid grid-cols-5 gap-0.5 mb-0.5 px-0.5">
                           <div className="text-[5px] font-black uppercase text-white/20 italic">JOGO</div>
-                          {PLAYERS.map(player => (
-                            <div key={player} className="text-center text-[6px] font-black uppercase text-accent tracking-tighter truncate">
-                               {player}
+                          {sortedUsers.map(u => (
+                            <div key={u.id} className="text-center text-[6px] font-black uppercase text-accent tracking-tighter truncate">
+                               {u.username}
                             </div>
                           ))}
                        </div>
 
-                       {/* Match List - Optimized Vertical Spacing */}
                        <div className="flex-1 flex flex-col justify-between">
                           {Array.from({ length: 10 }).map((_, idx) => {
                              const desc = matchDescriptions[idx];
@@ -116,8 +115,7 @@ export function BettingTable({
                                 : "--- x ---";
 
                              return (
-                               <div key={idx} className="grid grid-cols-5 gap-0.5 items-center bg-white/[0.01] py-0.5 px-0.5 rounded border border-white/[0.01] h-[calc(100%/10.8)]">
-                                  {/* Match ID + Abrev */}
+                               <div key={idx} className="grid grid-cols-5 gap-0.5 items-center bg-white/[0.01] py-0.2 px-0.5 rounded border border-white/[0.01] h-[calc(100%/10.8)]">
                                   <div className="flex items-center gap-1 overflow-hidden">
                                      <span className="text-[4px] font-black text-white/10 italic tabular-nums">#{idx + 1}</span>
                                      <span className="text-[7.5px] font-black italic uppercase text-white truncate tracking-tighter">
@@ -125,12 +123,11 @@ export function BettingTable({
                                      </span>
                                   </div>
 
-                                  {/* Player Predictions - Compact Cells */}
-                                  {PLAYERS.map(player => (
-                                     <div key={player} className="flex justify-center h-full items-center">
-                                        <div className="bg-black/40 w-full py-0.5 rounded border border-white/5 flex items-center justify-center">
+                                  {sortedUsers.map(u => (
+                                     <div key={u.id} className="flex justify-center h-full items-center">
+                                        <div className="bg-black/40 w-full py-0.2 rounded border border-white/5 flex items-center justify-center">
                                            <span className="text-[9px] font-black text-white leading-none tabular-nums tracking-tighter">
-                                              {predictions[player][idx]?.homeScore || "0"}-{predictions[player][idx]?.awayScore || "0"}
+                                              {predictions[u.id]?.[idx]?.homeScore || "0"}-{predictions[u.id]?.[idx]?.awayScore || "0"}
                                            </span>
                                         </div>
                                      </div>
@@ -140,17 +137,9 @@ export function BettingTable({
                           })}
                        </div>
                     </div>
-
-                    {/* Minimal Footer */}
                     <div className="relative z-10 flex justify-center items-center mt-1 pt-0.5 border-t border-white/5">
                        <span className="text-[4px] font-black text-white/10 uppercase tracking-[0.5em]">Alpha Cloud Protocol • High Density Data View</span>
                     </div>
-                 </div>
-                 
-                 <div className="mt-2">
-                    <p className="text-white/30 text-[7px] uppercase tracking-[0.2em] text-center font-bold">
-                       Captura Técnica 1:1 • Minimalista
-                    </p>
                  </div>
               </div>
             </DialogContent>
@@ -170,7 +159,6 @@ export function BettingTable({
           <div key={idx} className="glass-card border-none rounded-2xl overflow-hidden group hover:bg-primary/5 transition-all duration-200">
             <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px]">
               
-              {/* Match Info */}
               <div className="md:col-span-3 px-4 py-2 flex items-center gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
                 <span className="text-[9px] font-black text-primary/40 italic">#{idx + 1}</span>
                 <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate">
@@ -178,15 +166,14 @@ export function BettingTable({
                 </div>
               </div>
 
-              {/* Players Predictions */}
               <div className="md:col-span-6 px-2 py-3 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
-                {PLAYERS.map(player => {
-                  const isHidden = placaresOcultos && currentPlayer !== player;
-                  const points = getPoints(player, idx);
-                  const isCurrent = currentPlayer === player;
+                {sortedUsers.map(u => {
+                  const isHidden = placaresOcultos && currentPlayerId !== u.id;
+                  const points = getPoints(u.id, idx);
+                  const isCurrent = currentPlayerId === u.id;
 
                   return (
-                    <div key={player} className={cn(
+                    <div key={u.id} className={cn(
                       "flex flex-col items-center min-w-[55px] md:min-w-[70px] relative transition-all",
                       isCurrent && "scale-105"
                     )}>
@@ -195,8 +182,8 @@ export function BettingTable({
                           "text-[8px] font-black uppercase tracking-tighter",
                           isCurrent ? "text-primary" : "text-muted-foreground/60"
                         )}>
-                          <span className="md:hidden">{player.substring(0, 3)}</span>
-                          <span className="hidden md:inline">{player}</span>
+                          <span className="md:hidden">{u.username.substring(0, 3)}</span>
+                          <span className="hidden md:inline">{u.username}</span>
                         </span>
                         {isCurrent && <UserCircle2 className="h-2 w-2 text-primary" />}
                       </div>
@@ -209,11 +196,11 @@ export function BettingTable({
                         "bg-background border-muted shadow-sm"
                       )}>
                         <span className="text-[11px] font-black">
-                          {isHidden ? "?" : predictions[player][idx].homeScore || "-"}
+                          {isHidden ? "?" : (predictions[u.id]?.[idx]?.homeScore || "-")}
                         </span>
                         <span className="text-[8px] font-black opacity-30">x</span>
                         <span className="text-[11px] font-black">
-                          {isHidden ? "?" : predictions[player][idx].awayScore || "-"}
+                          {isHidden ? "?" : (predictions[u.id]?.[idx]?.awayScore || "-")}
                         </span>
                       </div>
                     </div>
@@ -221,7 +208,6 @@ export function BettingTable({
                 })}
               </div>
 
-              {/* Real Result */}
               <div className="md:col-span-3 px-4 py-2 bg-primary/5 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3">
                 <div className="flex items-center gap-1.5">
                   <Input
