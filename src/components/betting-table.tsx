@@ -4,7 +4,7 @@ import React from "react";
 import { TEAMS } from "@/lib/constants";
 import { Prediction, PlayerPredictions, Match } from "@/lib/types";
 import { Input } from "./ui/input";
-import { cn } from "@/lib/utils";
+import { cn, cleanTeamName } from "@/lib/utils";
 import { Trophy, UserCircle2, Swords, Share2, Camera, X, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
@@ -47,9 +47,10 @@ export function BettingTable({
     return 0;
   };
 
-  const getTeamAbrev = (cleanName: string) => {
-    const team = Object.values(TEAMS).find(t => t.nome === cleanName);
-    return team ? team.abrev : cleanName.substring(0, 3).toUpperCase();
+  const getTeamAbrev = (rawName: string) => {
+    const cleaned = cleanTeamName(rawName);
+    const team = Object.values(TEAMS).find(t => t.nome === cleaned);
+    return team ? team.abrev : cleaned.substring(0, 3).toUpperCase();
   };
 
   const sortedUsers = [...allUsers].sort((a, b) => a.id.localeCompare(b.id));
@@ -161,7 +162,7 @@ export function BettingTable({
       <div className="grid grid-cols-1 gap-1.5">
         {matches.map((match, idx) => {
           const isOutOfWindow = match.isValidForPoints === false;
-          const desc = `${match.homeTeam} x ${match.awayTeam}`;
+          const desc = `${cleanTeamName(match.homeTeam)} x ${cleanTeamName(match.awayTeam)}`;
 
           return (
             <div key={idx} className={cn(
@@ -177,7 +178,7 @@ export function BettingTable({
                     </div>
                     {isOutOfWindow && (
                       <span className="text-[8px] font-black text-destructive uppercase flex items-center gap-1 mt-0.5">
-                        <AlertCircle className="h-2 w-2" /> Fora da Janela: Não vale pontos
+                        <AlertCircle className="h-2 w-2" /> Jogo fora da janela de validade da rodada
                       </span>
                     )}
                   </div>
