@@ -358,16 +358,37 @@ export default function Home() {
              </DropdownMenu>
           </div>
 
-          <div className="flex md:hidden items-center gap-2">
-             <button className="p-2 hover:bg-muted rounded-full transition-colors" onClick={() => setDarkMode(!darkMode)}>
-               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-             </button>
-             <Avatar className="h-8 w-8 ring-2 ring-accent/30 cursor-pointer" onClick={() => setShowProfileDialog(true)}>
-                <AvatarImage src={user?.photoURL || ""} className="object-cover" />
-                <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
-                  {user?.displayName?.substring(0,2).toUpperCase()}
-                </AvatarFallback>
-             </Avatar>
+          <div className="flex md:hidden items-center gap-3">
+             <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black italic">#{currentRound}</Badge>
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="h-10 w-10 ring-2 ring-accent/30 cursor-pointer">
+                    <AvatarImage src={user?.photoURL || ""} className="object-cover" />
+                    <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
+                      {user?.displayName?.substring(0,2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl border-none shadow-2xl glass-card p-2">
+                  <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-muted-foreground tracking-widest px-3 py-2">
+                    Minha Conta
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-primary/5" />
+                  <DropdownMenuItem onClick={() => setShowProfileDialog(true)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
+                    <UserCircle className="h-4 w-4 text-primary" />
+                    Editar Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDarkMode(!darkMode)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
+                    {darkMode ? <Sun className="h-4 w-4 text-accent" /> : <Moon className="h-4 w-4 text-primary" />}
+                    Tema {darkMode ? 'Claro' : 'Escuro'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-primary/5" />
+                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl gap-2 font-bold cursor-pointer py-3 text-destructive focus:bg-destructive/10">
+                    <LogOut className="h-4 w-4" />
+                    Encerrar Sessão
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+             </DropdownMenu>
           </div>
         </div>
       </header>
