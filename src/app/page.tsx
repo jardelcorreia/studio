@@ -14,6 +14,7 @@ import { ProfileSettings } from "@/components/profile-settings";
 import { LoginScreen } from "@/components/login-screen";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   LogOut,
   Sun,
