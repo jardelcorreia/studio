@@ -186,7 +186,7 @@ export function BettingTable({
                     </div>
                   </div>
 
-                  {/* Placar Real no Cabeçalho (Mobile Only) */}
+                  {/* Placar Real no Cabeçalho (Mobile Only) para economizar espaço no rodapé */}
                   <div className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/5">
                     <span className="text-xs font-black text-primary tabular-nums">
                       {results[idx].homeScore !== "" ? results[idx].homeScore : "-"}
@@ -244,6 +244,7 @@ export function BettingTable({
                   "md:col-span-3 px-4 py-2 bg-primary/5 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3",
                   !isAdmin && "hidden md:flex"
                 )}>
+                  {/* No mobile, para não-admins, essa coluna inteira é oculta via CSS acima (hidden md:flex) */}
                   <div className="flex items-center gap-1.5">
                     <Input
                       type="number"
