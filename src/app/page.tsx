@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -67,6 +66,7 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [currentRound, setCurrentRound] = useState<number | null>(null);
+  const [realCurrentRound, setRealCurrentRound] = useState<number | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
@@ -104,7 +104,6 @@ export default function Home() {
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
 
-  // Verificação de Admin baseada no e-mail oficial
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
   useEffect(() => {
@@ -121,6 +120,7 @@ export default function Home() {
     async function init() {
       const matchday = await getBrasileiraoCurrentMatchday();
       setCurrentRound(matchday);
+      setRealCurrentRound(matchday);
     }
     init();
   }, []);
@@ -143,7 +143,8 @@ export default function Home() {
   // Regra de Revelação Automática Baseada no Horário
   // Apenas o Admin dispara no Firestore para sincronizar com os outros jogadores
   useEffect(() => {
-    if (!isAdminUser || !placaresOcultos || matches.length === 0 || !roundId) return;
+    // CRITICAL: A revelação automática só deve ocorrer na rodada oficial ativa (realCurrentRound)
+    if (!isAdminUser || !placaresOcultos || matches.length === 0 || !roundId || currentRound !== realCurrentRound) return;
 
     const checkAutoReveal = () => {
       const now = new Date();
@@ -183,7 +184,7 @@ export default function Home() {
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [isAdminUser, placaresOcultos, matches, roundId, db, toast]);
+  }, [isAdminUser, placaresOcultos, matches, roundId, db, toast, currentRound, realCurrentRound]);
 
   useEffect(() => {
     if (currentRound === null) return;
