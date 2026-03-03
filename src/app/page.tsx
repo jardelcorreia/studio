@@ -105,7 +105,6 @@ export default function Home() {
   // Radix UI sometimes fails to clean up when opening a Dialog from a DropdownMenu.
   useEffect(() => {
     if (!showProfileDialog) {
-      // Small timeout to allow Radix cleanup to happen, then force reset if it failed.
       const timer = setTimeout(() => {
         document.body.style.pointerEvents = 'auto';
         document.body.style.overflow = 'auto';
