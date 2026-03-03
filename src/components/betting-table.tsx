@@ -87,17 +87,17 @@ export function BettingTable({
 
                     {/* Table Layout - FULL SIZE */}
                     <div className="relative z-10 flex-1 flex flex-col">
-                       {/* Table Header Row */}
-                       <div className="grid grid-cols-12 gap-1 mb-1 px-2">
-                          <div className="col-span-4 text-[8px] font-black uppercase text-accent/80">Confronto</div>
+                       {/* Table Header Row - Grid 6 */}
+                       <div className="grid grid-cols-6 gap-1 mb-1 px-2">
+                          <div className="col-span-2 text-[8px] font-black uppercase text-accent/80">Confronto</div>
                           {PLAYERS.map(player => (
-                            <div key={player} className="col-span-2 text-center text-[8px] font-black uppercase text-white/60">
+                            <div key={player} className="col-span-1 text-center text-[8px] font-black uppercase text-white/60">
                                {player}
                             </div>
                           ))}
                        </div>
 
-                       {/* 10 Match Rows */}
+                       {/* 10 Match Rows - Grid 6 */}
                        <div className="flex-1 flex flex-col justify-between py-0.5">
                           {Array.from({ length: 10 }).map((_, idx) => {
                              const desc = matchDescriptions[idx];
@@ -107,19 +107,19 @@ export function BettingTable({
                                 : desc;
 
                              return (
-                               <div key={idx} className="grid grid-cols-12 gap-1 items-center bg-black/20 hover:bg-black/40 transition-colors py-1 px-2 rounded-lg border border-white/5">
+                               <div key={idx} className="grid grid-cols-6 gap-1 items-center bg-black/20 hover:bg-black/40 transition-colors py-1 px-2 rounded-lg border border-white/5">
                                   {/* Match Name (ABBREVIATED) */}
-                                  <div className="col-span-4 flex items-center gap-1.5 overflow-hidden">
+                                  <div className="col-span-2 flex items-center gap-1.5 overflow-hidden">
                                      <span className="text-[8px] font-black text-white/30 italic shrink-0">#{idx+1}</span>
                                      <span className="text-[11px] font-black italic uppercase text-white truncate leading-none">
                                         {abrevDesc || "PENDENTE"}
                                      </span>
                                   </div>
 
-                                  {/* Player Predictions */}
+                                  {/* Player Predictions - Spaced correctly */}
                                   {PLAYERS.map(player => (
-                                     <div key={player} className="col-span-2 flex justify-center">
-                                        <div className="bg-white/5 w-full max-w-[50px] py-1 rounded-md text-center border border-white/10">
+                                     <div key={player} className="col-span-1 flex justify-center">
+                                        <div className="bg-white/5 w-full max-w-[42px] py-1 rounded-md text-center border border-white/10">
                                            <span className="text-[11px] font-black text-accent leading-none tabular-nums">
                                               {predictions[player][idx]?.homeScore || "0"}-{predictions[player][idx]?.awayScore || "0"}
                                            </span>
