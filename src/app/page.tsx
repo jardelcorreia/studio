@@ -17,19 +17,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  LogOut, 
-  Sun, 
-  Moon, 
-  Shield, 
-  Trophy, 
-  Loader2, 
-  LayoutDashboard, 
-  Calendar, 
-  ListChecks, 
-  Medal, 
-  RefreshCw, 
-  UserCircle, 
+import {
+  LogOut,
+  Sun,
+  Moon,
+  Shield,
+  Trophy,
+  Loader2,
+  LayoutDashboard,
+  Calendar,
+  ListChecks,
+  Medal,
+  RefreshCw,
+  UserCircle,
   Settings,
   ChevronDown,
   Eye,
@@ -65,7 +65,7 @@ export default function Home() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
-  
+
   const [darkMode, setDarkMode] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [currentRound, setCurrentRound] = useState<number | null>(null);
@@ -92,7 +92,7 @@ export default function Home() {
   );
 
   const roundId = currentRound ? `round_${currentRound}` : null;
-  
+
   const roundDocRef = useMemoFirebase(() => (roundId && user) ? doc(db, "rounds", roundId) : null, [db, roundId, user]);
   const { data: roundData } = useDoc(roundDocRef);
 
@@ -121,7 +121,7 @@ export default function Home() {
     // CRITICAL: Só calcula se os matches carregados pertencem de fato à rodada sendo visualizada
     // E se a rodada visualizada é a rodada real do campeonato
     if (!currentRound || currentRound !== realCurrentRound || matches.length === 0 || loadingMatches) return false;
-    
+
     // Verifica se o primeiro jogo da lista pertence à rodada correta para evitar falsos positivos durante o loading
     if (matches[0].matchday !== currentRound) return false;
 
@@ -182,11 +182,11 @@ export default function Home() {
       isScoresHidden: false,
       dateUpdated: serverTimestamp(),
     }, { merge: true });
-    
+
     setPlacaresOcultos(false);
-    toast({ 
-      title: "Modo Público Ativado", 
-      description: "O horário dos jogos chegou! Palpites revelados automaticamente." 
+    toast({
+      title: "Modo Público Ativado",
+      description: "O horário dos jogos chegou! Palpites revelados automaticamente."
     });
   }, [isAdminUser, placaresOcultos, isTimePassed, roundId, db, toast, loadingMatches]);
 
@@ -197,10 +197,10 @@ export default function Home() {
       const rawData = await getBrasileiraoMatches(currentRound!);
       const data = determineMatchValidity(rawData);
       setMatches(data);
-      
+
       const leagueTable = await getLeagueStandings();
       setStandings(leagueTable);
-      
+
       if (data.length > 0) {
         const newDescriptions = Array(10).fill("");
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
@@ -237,7 +237,7 @@ export default function Home() {
         if (bUserId && next[bUserId] && matchIdx >= 0 && matchIdx < 10) {
           next[bUserId][matchIdx] = {
             homeScore: bet.homeScorePrediction?.toString() || "",
-            awayScore: bet.awayScorePrediction?.toString() || ""
+            awayScorePrediction: bet.awayScorePrediction?.toString() || ""
           };
         }
       });
@@ -247,14 +247,14 @@ export default function Home() {
 
   const scores = useMemo((): PlayerScore[] => {
     if (!allUsers || allUsers.length === 0) return [];
-    
+
     const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
     const totalActiveMatches = activeIndices.length;
-    
+
     const playerStats = allUsers.map(u => {
       let pts = 0, exs = 0, filledCount = 0;
       const userPreds = predictions[u.id];
-      
+
       if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl };
 
       activeIndices.forEach(idx => {
@@ -264,7 +264,7 @@ export default function Home() {
         const isMatchValid = matches[idx]?.isValidForPoints !== false;
 
         if (hasPred) filledCount++;
-        
+
         if (hasRes && hasPred && isMatchValid) {
           const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
           const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
@@ -272,14 +272,14 @@ export default function Home() {
           else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
         }
       });
-      return { 
-        id: u.id, 
-        name: u.username, 
-        points: pts, 
-        exactScores: exs, 
-        betsCompleted: filledCount >= totalActiveMatches && totalActiveMatches > 0, 
+      return {
+        id: u.id,
+        name: u.username,
+        points: pts,
+        exactScores: exs,
+        betsCompleted: filledCount >= totalActiveMatches && totalActiveMatches > 0,
         betsCount: filledCount,
-        photoUrl: u.photoUrl 
+        photoUrl: u.photoUrl
       };
     });
 
@@ -297,7 +297,7 @@ export default function Home() {
     if (!currentRound || scores.length === 0) return;
     const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
     const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
-    
+
     setRoundWinners(prev => {
       const next = [...prev];
       next[currentRound - 1] = {
@@ -313,17 +313,17 @@ export default function Home() {
     if (!isAdminUser || !roundId) return;
     const newValue = !placaresOcultos;
     setPlacaresOcultos(newValue);
-    
+
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
       id: roundId,
       isScoresHidden: newValue,
       dateUpdated: serverTimestamp(),
     }, { merge: true });
-    
-    toast({ 
-      title: newValue ? "Modo Privado Ativado" : "Modo Público Ativado", 
-      description: newValue ? "Palpites ocultos para os jogadores." : "Todos os palpites estão visíveis!" 
+
+    toast({
+      title: newValue ? "Modo Privado Ativado" : "Modo Público Ativado",
+      description: newValue ? "Palpites ocultos para os jogadores." : "Todos os palpites estão visíveis!"
     });
   };
 
@@ -377,7 +377,7 @@ export default function Home() {
   const updatePrediction = (userId: string, idx: number, type: 'home' | 'away', value: string) => {
     setPredictions(prev => ({
       ...prev,
-      [userId]: (prev[userId] || Array(10).fill({ homeScore: "", awayScore: "" })).map((p, i) => 
+      [userId]: (prev[userId] || Array(10).fill({ homeScore: "", awayScore: "" })).map((p, i) =>
         i === idx ? { ...p, [type === 'home' ? 'homeScore' : 'awayScore']: value } : p
       )
     }));
@@ -415,7 +415,7 @@ export default function Home() {
                 <span className="font-black italic text-primary">#{currentRound}</span>
              </div>
              <div className="h-6 w-px bg-border" />
-             
+
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-full transition-colors pr-3">
@@ -437,7 +437,7 @@ export default function Home() {
                     Minha Conta
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-primary/5" />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
                       setTimeout(() => {
@@ -478,7 +478,7 @@ export default function Home() {
                     Minha Conta
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-primary/5" />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
                       setTimeout(() => {
@@ -529,15 +529,15 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-4 w-full md:w-auto">
                <Badge className={cn(
-                 "rounded-full px-4 py-1 text-[10px] font-black uppercase border-none h-10 flex items-center gap-2", 
+                 "rounded-full px-4 py-1 text-[10px] font-black uppercase border-none h-10 flex items-center gap-2",
                  isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
                )}>
                   {isEffectivelyHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                   {isEffectivelyHidden ? "Modo Privado" : (isTimePassed && placaresOcultos ? "Público (Automático)" : "Modo Público")}
                </Badge>
-               <Button 
-                 size="lg" 
-                 onClick={handleTogglePlacaresOcultos} 
+               <Button
+                 size="lg"
+                 onClick={handleTogglePlacaresOcultos}
                  className={cn(
                    "flex-1 md:flex-none rounded-2xl text-[10px] font-black uppercase h-10 px-8 gap-3 shadow-xl transition-all hover:scale-[1.02] active:scale-95",
                    placaresOcultos ? "bg-secondary hover:bg-secondary/90 text-white" : "bg-destructive hover:bg-destructive/90 text-white"
@@ -567,11 +567,11 @@ export default function Home() {
               <TabsList className="w-full bg-muted/50 p-1 rounded-2xl h-14 overflow-x-auto no-scrollbar flex justify-start md:justify-center">
                 <TabsTrigger value="calendar" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <Calendar className="h-4 w-4" />
-                  Jogos & Palpites
+                  Jogos &amp; Quila
                 </TabsTrigger>
                 <TabsTrigger value="betting" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <Radar className="h-4 w-4" />
-                  Radar de Palpites
+                  Todos os Palpites
                 </TabsTrigger>
                 <TabsTrigger value="overall" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <Trophy className="h-4 w-4" />
@@ -585,9 +585,9 @@ export default function Home() {
 
               <TabsContent value="calendar" className="outline-none">
                 {currentRound !== null && (
-                  <MatchCalendar 
-                    matches={matches} 
-                    round={currentRound} 
+                  <MatchCalendar
+                    matches={matches}
+                    round={currentRound}
                     totalRounds={38}
                     predictions={predictions[user?.uid || ""] || Array(10).fill({ homeScore: "", awayScore: "" })}
                     setPrediction={(idx, type, value) => updatePrediction(user?.uid || "", idx, type, value)}
@@ -611,7 +611,7 @@ export default function Home() {
                       </Badge>
                    </div>
                 </div>
-                <BettingTable 
+                <BettingTable
                   roundName={roundName}
                   matches={matches}
                   predictions={predictions}
@@ -637,7 +637,7 @@ export default function Home() {
 
           <div className="lg:col-span-4 space-y-8">
             <AiBetAssistant />
-            
+
             <Card className="glass-card border-none overflow-hidden rounded-3xl">
                <div className="bg-primary p-5 flex items-center gap-3">
                   <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
