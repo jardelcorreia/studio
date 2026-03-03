@@ -157,7 +157,7 @@ export function BettingTable({
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2 bg-muted/20 rounded-2xl border border-transparent">
         <div className="col-span-3 text-[10px] font-black uppercase text-muted-foreground">Confronto</div>
         <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-muted-foreground">Palpites da Galera</div>
-        <div className="col-span-3 text-center text-[10px] font-black uppercase text-muted-foreground">Resultado</div>
+        <div className="col-span-3 text-center text-[10px] font-black uppercase text-muted-foreground">Resultado Oficial</div>
       </div>
 
       <div className="grid grid-cols-1 gap-1.5">
@@ -171,7 +171,7 @@ export function BettingTable({
               isOutOfWindow ? "opacity-60 saturate-50" : "hover:bg-primary/5"
             )}>
               <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px]">
-                <div className="md:col-span-3 px-4 py-2 flex items-center justify-between md:justify-start gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
+                <div className="md:col-span-3 px-4 py-3 flex items-center justify-between md:justify-start gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
                   <div className="flex items-center gap-3">
                     <span className="text-[9px] font-black text-primary/40 italic">#{idx + 1}</span>
                     <div className="flex flex-col">
@@ -186,33 +186,33 @@ export function BettingTable({
                     </div>
                   </div>
 
-                  {/* Placar Real no Cabeçalho (Mobile Only) - Editável para Admin */}
-                  <div className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/5">
+                  {/* Placar Oficial no Cabeçalho (Mobile Only) - Cápsula de Resultado */}
+                  <div className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary shadow-sm border border-primary/20">
                     {isAdmin ? (
                       <div className="flex items-center gap-1">
                         <Input
                           type="number"
                           value={results[idx].homeScore}
                           onChange={(e) => setResult(idx, 'home', e.target.value)}
-                          className="w-6 h-6 text-center rounded-md p-0 font-black text-[11px] border-none bg-white/50 dark:bg-black/50 shadow-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                          className="w-6 h-6 text-center rounded-md p-0 font-black text-[11px] border-none bg-white text-primary shadow-none focus-visible:ring-0"
                           placeholder="-"
                         />
-                        <span className="text-[8px] font-black text-primary/30 opacity-50">x</span>
+                        <span className="text-[8px] font-black text-white/50">x</span>
                         <Input
                           type="number"
                           value={results[idx].awayScore}
                           onChange={(e) => setResult(idx, 'away', e.target.value)}
-                          className="w-6 h-6 text-center rounded-md p-0 font-black text-[11px] border-none bg-white/50 dark:bg-black/50 shadow-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                          className="w-6 h-6 text-center rounded-md p-0 font-black text-[11px] border-none bg-white text-primary shadow-none focus-visible:ring-0"
                           placeholder="-"
                         />
                       </div>
                     ) : (
                       <>
-                        <span className="text-xs font-black text-primary tabular-nums">
+                        <span className="text-xs font-black text-white tabular-nums">
                           {results[idx].homeScore !== "" ? results[idx].homeScore : "-"}
                         </span>
-                        <span className="text-[8px] font-black text-primary/30 opacity-50">x</span>
-                        <span className="text-xs font-black text-primary tabular-nums">
+                        <span className="text-[8px] font-black text-white/50">x</span>
+                        <span className="text-xs font-black text-white tabular-nums">
                           {results[idx].awayScore !== "" ? results[idx].awayScore : "-"}
                         </span>
                       </>
@@ -220,7 +220,7 @@ export function BettingTable({
                   </div>
                 </div>
 
-                <div className="md:col-span-6 px-2 py-3 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
+                <div className="md:col-span-6 px-2 py-4 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
                   {sortedUsers.map(u => {
                     const isHidden = placaresOcultos && currentPlayerId !== u.id;
                     const points = getPoints(u.id, idx);
@@ -234,7 +234,7 @@ export function BettingTable({
                         <div className="flex items-center gap-0.5 mb-1.5 px-1 w-full justify-center">
                           <span className={cn(
                             "text-[10px] font-black uppercase tracking-tighter truncate text-center w-full",
-                            isCurrent ? "text-primary" : "text-muted-foreground/60"
+                            isCurrent ? "text-primary font-bold" : "text-muted-foreground/60"
                           )}>
                             {u.username}
                           </span>
@@ -262,7 +262,7 @@ export function BettingTable({
                   })}
                 </div>
 
-                {/* Coluna de Resultado Final (Apenas para Desktop ou Admin no Desktop) */}
+                {/* Coluna de Resultado Oficial (Desktop Only) */}
                 <div className={cn(
                   "md:col-span-3 px-4 py-2 bg-primary/5 items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex",
                 )}>
@@ -294,3 +294,4 @@ export function BettingTable({
     </div>
   );
 }
+
