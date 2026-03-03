@@ -194,7 +194,7 @@ export function MatchCalendar({
                    </div>
                    {isOutOfWindow && (
                      <div className="flex items-center gap-1 text-destructive font-black text-[9px] uppercase tracking-wider text-center px-4">
-                        <AlertTriangle className="h-3 w-3" /> Regra da Janela: Jogo fora da janela de validade da rodada
+                        <AlertTriangle className="h-3 w-3" /> Jogo fora da janela de validade da rodada
                      </div>
                    )}
                 </div>
