@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { PLAYERS } from "@/lib/constants";
+import { PLAYERS, TEAMS } from "@/lib/constants";
 import { Prediction, PlayerPredictions } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,11 @@ export function BettingTable({
     return 0;
   };
 
+  const getTeamAbrev = (cleanName: string) => {
+    const team = Object.values(TEAMS).find(t => t.nome === cleanName);
+    return team ? team.abrev : cleanName.substring(0, 3).toUpperCase();
+  };
+
   return (
     <div className="w-full space-y-4">
       {/* Admin Actions */}
@@ -66,7 +71,7 @@ export function BettingTable({
                        </div>
                     </div>
 
-                    {/* Header Minimalist - COMPACTED */}
+                    {/* Header Minimalist */}
                     <div className="relative z-10 flex justify-between items-end mb-2 border-b border-white/20 pb-2">
                        <div className="flex flex-col">
                           <h2 className="text-2xl font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</h2>
@@ -92,17 +97,22 @@ export function BettingTable({
                           ))}
                        </div>
 
-                       {/* 10 Match Rows - REDUCED PADDING/MARGIN */}
+                       {/* 10 Match Rows */}
                        <div className="flex-1 flex flex-col justify-between py-0.5">
                           {Array.from({ length: 10 }).map((_, idx) => {
                              const desc = matchDescriptions[idx];
+                             const parts = desc ? desc.split(' x ') : [];
+                             const abrevDesc = parts.length === 2 
+                                ? `${getTeamAbrev(parts[0])} x ${getTeamAbrev(parts[1])}`
+                                : desc;
+
                              return (
                                <div key={idx} className="grid grid-cols-12 gap-1 items-center bg-black/20 hover:bg-black/40 transition-colors py-1 px-2 rounded-lg border border-white/5">
-                                  {/* Match Name */}
+                                  {/* Match Name (ABBREVIATED) */}
                                   <div className="col-span-4 flex items-center gap-1.5 overflow-hidden">
                                      <span className="text-[8px] font-black text-white/30 italic shrink-0">#{idx+1}</span>
-                                     <span className="text-[10px] font-black italic uppercase text-white truncate leading-none">
-                                        {desc || "PENDENTE"}
+                                     <span className="text-[11px] font-black italic uppercase text-white truncate leading-none">
+                                        {abrevDesc || "PENDENTE"}
                                      </span>
                                   </div>
 
@@ -122,7 +132,7 @@ export function BettingTable({
                        </div>
                     </div>
 
-                    {/* Minimal Footer - REDUCED SPACE */}
+                    {/* Minimal Footer */}
                     <div className="relative z-10 flex justify-between items-center border-t border-white/10 pt-2 mt-1">
                        <div className="flex items-center gap-1.5">
                           <div className="h-5 w-5 bg-accent rounded-md flex items-center justify-center">
@@ -136,10 +146,10 @@ export function BettingTable({
                  
                  <div className="mt-4 flex flex-col items-center gap-1 bg-black/40 backdrop-blur-md p-4 rounded-3xl border border-white/10">
                     <p className="text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                       <Share2 className="h-4 w-4 text-accent" /> Relatório Completo Ativado
+                       <Share2 className="h-4 w-4 text-accent" /> Relatório Oficial Otimizado
                     </p>
                     <p className="text-white/40 text-[9px] uppercase tracking-widest text-center">
-                       Todos os 10 jogos exibidos no formato 1:1 para WhatsApp e Instagram.
+                       Abreviações ativadas para máxima legibilidade em formato 1:1.
                     </p>
                  </div>
               </div>
