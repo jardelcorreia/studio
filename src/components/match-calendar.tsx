@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -156,7 +157,7 @@ export function MatchCalendar({
                               value={currentPred.homeScore}
                               onChange={(e) => handleInputChange(idx, 'home', e.target.value)}
                               className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
-                              disabled={isFinished || isCancelled}
+                              disabled={isFinished || isCancelled || isOutOfWindow}
                             />
                             <span className="font-black text-primary/40 italic text-xs">X</span>
                             <Input
@@ -165,7 +166,7 @@ export function MatchCalendar({
                               value={currentPred.awayScore}
                               onChange={(e) => handleInputChange(idx, 'away', e.target.value)}
                               className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
-                              disabled={isFinished || isCancelled}
+                              disabled={isFinished || isCancelled || isOutOfWindow}
                             />
                          </div>
                       </div>
