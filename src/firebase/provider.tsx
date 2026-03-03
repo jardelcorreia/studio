@@ -33,6 +33,7 @@ export interface FirebaseContextState {
   user: User | null;
   isUserLoading: boolean; // True during initial auth check
   userError: Error | null; // Error from auth listener
+  refreshUser: () => Promise<void>; // Function to force refresh user data
 }
 
 // Return type for useFirebase()
@@ -44,6 +45,7 @@ export interface FirebaseServicesAndUser {
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
+  refreshUser: () => Promise<void>;
 }
 
 // Return type for useUser() - specific to user auth state
@@ -51,6 +53,7 @@ export interface UserHookResult {
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
+  refreshUser: () => Promise<void>;
 }
 
 // React Context
@@ -94,6 +97,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe(); // Cleanup
   }, [auth]); // Depends on the auth instance
 
+  const refreshUser = async () => {
+    if (!auth.currentUser) return;
+    try {
+      await auth.currentUser.reload();
+      // We manually update the state with a shallow copy to trigger React re-renders
+      // because the currentUser object reference might not change
+      setUserAuthState(prev => ({
+        ...prev,
+        user: { ...auth.currentUser! } as User
+      }));
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+    }
+  };
+
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth && storage);
@@ -106,6 +124,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
+      refreshUser,
     };
   }, [firebaseApp, firestore, auth, storage, userAuthState]);
 
@@ -140,6 +159,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     user: context.user,
     isUserLoading: context.isUserLoading,
     userError: context.userError,
+    refreshUser: context.refreshUser,
   };
 };
 
@@ -184,6 +204,6 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
  * @returns {UserHookResult} Object with user, isUserLoading, userError.
  */
 export const useUser = (): UserHookResult => { 
-  const { user, isUserLoading, userError } = useFirebase(); // Leverages the main hook
-  return { user, isUserLoading, userError };
+  const { user, isUserLoading, userError, refreshUser } = useFirebase(); // Leverages the main hook
+  return { user, isUserLoading, userError, refreshUser };
 };

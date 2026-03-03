@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import React, { useState, useRef, useCallback } from "react";
 import { useFirebase } from "@/firebase";
@@ -34,7 +34,7 @@ import { Slider } from "./ui/slider";
 import Cropper, { Area } from "react-easy-crop";
 
 export function ProfileSettings() {
-  const { user, storage, firestore } = useFirebase();
+  const { user, storage, firestore, refreshUser } = useFirebase();
   const { toast } = useToast();
   
   const [displayName, setDisplayName] = useState(user?.displayName || "");
@@ -97,6 +97,7 @@ export function ProfileSettings() {
     setLoading(true);
     try {
       await updateProfile(user, { displayName: displayName.trim() });
+      await refreshUser(); // Force UI update
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { username: displayName.trim() });
       toast({ title: "Perfil Atualizado!", description: "Seu nome de exibição foi alterado." });
@@ -133,6 +134,7 @@ export function ProfileSettings() {
       const url = await getDownloadURL(snapshot.ref);
       
       await updateProfile(user, { photoURL: url });
+      await refreshUser(); // Force UI update
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { photoUrl: url });
       
@@ -159,6 +161,8 @@ export function ProfileSettings() {
       }
 
       await updateProfile(user, { photoURL: "" });
+      await refreshUser(); // Critical: Force UI to see the empty photoURL immediately
+      
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { photoUrl: "" });
       
