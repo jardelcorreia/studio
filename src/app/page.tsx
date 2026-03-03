@@ -106,7 +106,26 @@ export default function Home() {
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
 
+  // Get current user from firestore for display consistency
+  const currentUserFirestore = useMemo(() => {
+    return allUsers?.find(u => u.id === user?.uid);
+  }, [allUsers, user]);
+
   const isAdminUser = user?.email === "jardel@alphabet.com";
+
+  // Force reactive pointer events cleanup
+  useEffect(() => {
+    if (!showProfileDialog) {
+      const cleanupBody = () => {
+        document.body.style.pointerEvents = "auto";
+        document.body.style.overflow = "auto";
+      };
+      // Run once immediately and once after a small delay to catch Radix late changes
+      cleanupBody();
+      const timer = setTimeout(cleanupBody, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [showProfileDialog]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
@@ -313,9 +332,7 @@ export default function Home() {
       }
       const myPreds = predictions[user.uid];
       if (myPreds) {
-        // Obter o username mais atualizado da coleção de usuários para garantir consistência
-        const currentUserData = allUsers?.find(u => u.id === user.uid);
-        const currentUsername = currentUserData?.username || user.displayName || "Jogador";
+        const currentUsername = currentUserFirestore?.username || user.displayName || "Jogador";
 
         myPreds.forEach((pred, idx) => {
           if (pred.homeScore === "" || pred.awayScore === "") return;
@@ -358,13 +375,6 @@ export default function Home() {
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
-  // Fix for "locked interface" after dialog close: ensure body is interactive
-  useEffect(() => {
-    if (!showProfileDialog) {
-      document.body.style.pointerEvents = "auto";
-    }
-  }, [showProfileDialog]);
-
   if (isUserLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   if (!user || mustChangePassword) return <LoginScreen forcePasswordChange={mustChangePassword} onPasswordChangeRequired={() => setMustChangePassword(true)} onPasswordChanged={() => setMustChangePassword(false)} />;
 
@@ -384,16 +394,16 @@ export default function Home() {
 
           <div className="flex items-center gap-3">
              <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black italic">#{currentRound}</Badge>
-             <DropdownMenu>
+             <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-9 w-9 ring-2 ring-accent/30 cursor-pointer bg-muted flex items-center justify-center">
-                    <AvatarImage src={user.photoURL || undefined} />
+                    <AvatarImage src={currentUserFirestore?.photoUrl || user.photoURL || undefined} />
                     <AvatarFallback className="bg-primary/10 text-primary font-black text-[10px]">
-                      {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
+                      {currentUserFirestore?.username ? currentUserFirestore.username.substring(0,2).toUpperCase() : user.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-2xl border-none shadow-2xl glass-card p-2">
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl border-none shadow-2xl glass-card p-2 z-[60]">
                   <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-muted-foreground tracking-widest px-3 py-2">
                     Minha Conta
                   </DropdownMenuLabel>
@@ -401,8 +411,7 @@ export default function Home() {
                   <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
-                      // Small timeout to allow DropdownMenu to cleanup its state before opening Dialog
-                      setTimeout(() => setShowProfileDialog(true), 150);
+                      setShowProfileDialog(true);
                     }}
                     className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
                   >
@@ -425,7 +434,7 @@ export default function Home() {
       </header>
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none focus:outline-none">
+        <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none focus:outline-none z-[70]">
           <DialogHeader className="sr-only">
             <DialogTitle>Configurações de Perfil</DialogTitle>
             <DialogDescription>Personalize seu perfil na AlphaBet League.</DialogDescription>
