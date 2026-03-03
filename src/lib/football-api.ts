@@ -1,7 +1,7 @@
 
 'use server';
 
-import { Match, StandingEntry } from './types';
+import { Match, StandingEntry, MatchStatus } from './types';
 
 const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const BASE_URL = 'https://api.football-data.org/v4';
@@ -32,6 +32,7 @@ export async function getBrasileiraoCurrentMatchday(): Promise<number> {
 
 /**
  * Busca os jogos de uma rodada específica do Brasileirão (BSA).
+ * Aplica o mapeamento de status e a regra de segurança para resultados.
  */
 export async function getBrasileiraoMatches(matchday: number): Promise<Match[]> {
   if (!API_KEY) {
@@ -53,16 +54,41 @@ export async function getBrasileiraoMatches(matchday: number): Promise<Match[]> 
 
     const data = await response.json();
 
-    return data.matches.map((m: any) => ({
-      id: m.id,
-      homeTeam: m.homeTeam.name,
-      awayTeam: m.awayTeam.name,
-      homeScore: m.score.fullTime.home,
-      awayScore: m.score.fullTime.away,
-      utcDate: m.utcDate,
-      status: m.status,
-      matchday: m.matchday,
-    }));
+    return data.matches.map((m: any) => {
+      const homeScore = m.score.fullTime.home;
+      const awayScore = m.score.fullTime.away;
+      const rawStatus = m.status;
+
+      // 1. Mapeamento Direto de Status
+      let status: MatchStatus = 'upcoming';
+
+      if (['SCHEDULED', 'TIMED', 'SUSPENDED'].includes(rawStatus)) {
+        status = 'upcoming';
+      } else if (['IN_PLAY', 'PAUSED', 'LIVE'].includes(rawStatus)) {
+        status = 'live';
+      } else if (['FINISHED', 'AWARDED'].includes(rawStatus)) {
+        status = 'finished';
+      } else if (['POSTPONED', 'CANCELLED'].includes(rawStatus)) {
+        status = 'cancelled';
+      }
+
+      // 2. Regra de Segurança para Resultados Finais
+      // Se houver placar, consideramos finalizado independentemente do status da API
+      if (homeScore !== null && awayScore !== null) {
+        status = 'finished';
+      }
+
+      return {
+        id: m.id,
+        homeTeam: m.homeTeam.name,
+        awayTeam: m.awayTeam.name,
+        homeScore: homeScore,
+        awayScore: awayScore,
+        utcDate: m.utcDate,
+        status: status,
+        matchday: m.matchday,
+      };
+    });
   } catch (error) {
     console.error('Erro ao buscar jogos:', error);
     return [];

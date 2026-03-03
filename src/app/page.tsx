@@ -161,7 +161,7 @@ export default function Home() {
             const home = cleanTeamName(match.homeTeam);
             const away = cleanTeamName(match.awayTeam);
             newDescriptions[idx] = `${home} x ${away}`;
-            if (match.status === 'FINISHED') {
+            if (match.status === 'finished') {
               newResults[idx] = {
                 homeScore: match.homeScore?.toString() || "",
                 awayScore: match.awayScore?.toString() || ""

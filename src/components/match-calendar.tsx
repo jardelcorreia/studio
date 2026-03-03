@@ -96,8 +96,8 @@ export function MatchCalendar({
         {matches.map((match, idx) => {
           const home = getTeamInfo(match.homeTeam);
           const away = getTeamInfo(match.awayTeam);
-          const isFinished = match.status === 'FINISHED';
-          const isLive = match.status === 'LIVE' || match.status === 'PAUSED';
+          const isFinished = match.status === 'finished';
+          const isLive = match.status === 'live';
           const currentPred = predictions[idx] || { homeScore: "", awayScore: "" };
           const isOutlier = match.isValidForPoints === false;
 
@@ -121,7 +121,8 @@ export function MatchCalendar({
                       )}
                       <Badge className={cn(
                         "rounded-full px-3 text-[8px] font-black uppercase border-none",
-                        isLive ? "bg-destructive text-white animate-pulse" : "bg-primary/10 text-primary"
+                        isLive ? "bg-destructive text-white animate-pulse" : 
+                        isFinished ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
                       )}>
                         {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : 'Agendado'}
                       </Badge>

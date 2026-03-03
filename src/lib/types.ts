@@ -5,6 +5,8 @@ export type TeamInfo = {
   escudo: string;
 };
 
+export type MatchStatus = 'upcoming' | 'live' | 'finished' | 'cancelled';
+
 export type Match = {
   id: number;
   homeTeam: string;
@@ -12,7 +14,7 @@ export type Match = {
   homeScore?: number;
   awayScore?: number;
   utcDate: string;
-  status: 'SCHEDULED' | 'LIVE' | 'PAUSED' | 'FINISHED' | 'POSTPONED' | 'SUSPENDED' | 'CANCELED';
+  status: MatchStatus;
   matchday: number;
   isValidForPoints?: boolean; // Indica se a partida está dentro da janela de validade da rodada
 };
