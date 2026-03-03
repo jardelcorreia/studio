@@ -186,15 +186,37 @@ export function BettingTable({
                     </div>
                   </div>
 
-                  {/* Placar Real no Cabeçalho (Mobile Only) para economizar espaço no rodapé */}
+                  {/* Placar Real no Cabeçalho (Mobile Only) - Editável para Admin */}
                   <div className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/5">
-                    <span className="text-xs font-black text-primary tabular-nums">
-                      {results[idx].homeScore !== "" ? results[idx].homeScore : "-"}
-                    </span>
-                    <span className="text-[8px] font-black text-primary/30 opacity-50">x</span>
-                    <span className="text-xs font-black text-primary tabular-nums">
-                      {results[idx].awayScore !== "" ? results[idx].awayScore : "-"}
-                    </span>
+                    {isAdmin ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={results[idx].homeScore}
+                          onChange={(e) => setResult(idx, 'home', e.target.value)}
+                          className="w-6 h-6 text-center rounded-md p-0 font-black text-[11px] border-none bg-white/50 dark:bg-black/50 shadow-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                          placeholder="-"
+                        />
+                        <span className="text-[8px] font-black text-primary/30 opacity-50">x</span>
+                        <Input
+                          type="number"
+                          value={results[idx].awayScore}
+                          onChange={(e) => setResult(idx, 'away', e.target.value)}
+                          className="w-6 h-6 text-center rounded-md p-0 font-black text-[11px] border-none bg-white/50 dark:bg-black/50 shadow-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                          placeholder="-"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-xs font-black text-primary tabular-nums">
+                          {results[idx].homeScore !== "" ? results[idx].homeScore : "-"}
+                        </span>
+                        <span className="text-[8px] font-black text-primary/30 opacity-50">x</span>
+                        <span className="text-xs font-black text-primary tabular-nums">
+                          {results[idx].awayScore !== "" ? results[idx].awayScore : "-"}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -240,11 +262,10 @@ export function BettingTable({
                   })}
                 </div>
 
+                {/* Coluna de Resultado Final (Apenas para Desktop ou Admin no Desktop) */}
                 <div className={cn(
-                  "md:col-span-3 px-4 py-2 bg-primary/5 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3",
-                  !isAdmin && "hidden md:flex"
+                  "md:col-span-3 px-4 py-2 bg-primary/5 items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex",
                 )}>
-                  {/* No mobile, para não-admins, essa coluna inteira é oculta via CSS acima (hidden md:flex) */}
                   <div className="flex items-center gap-1.5">
                     <Input
                       type="number"
