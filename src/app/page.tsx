@@ -109,23 +109,30 @@ export default function Home() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Atualiza o relógio interno a cada 30 segundos para checar auto-reveal
+  // Atualiza o relógio interno a cada 30 segundos
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  // Determina se o horário de algum jogo já passou (apenas para a rodada atual do campeonato)
+  // Determina se o horário de algum jogo VÁLIDO já passou na rodada atual
   const isTimePassed = useMemo(() => {
-    if (currentRound !== realCurrentRound || matches.length === 0) return false;
+    // CRITICAL: Só calcula se os matches carregados pertencem de fato à rodada sendo visualizada
+    // E se a rodada visualizada é a rodada real do campeonato
+    if (!currentRound || currentRound !== realCurrentRound || matches.length === 0 || loadingMatches) return false;
+    
+    // Verifica se o primeiro jogo da lista pertence à rodada correta para evitar falsos positivos durante o loading
+    if (matches[0].matchday !== currentRound) return false;
+
     return matches.some(m => {
-      if (m.status === 'cancelled') return false;
+      // Ignora cancelados e jogos fora da janela para o gatilho de revelação
+      if (m.status === 'cancelled' || m.isValidForPoints === false) return false;
       const matchStartTime = new Date(m.utcDate);
       return now >= matchStartTime;
     });
-  }, [matches, now, currentRound, realCurrentRound]);
+  }, [matches, now, currentRound, realCurrentRound, loadingMatches]);
 
-  // VISIBILIDADE EFETIVA: Se o tempo passou, revela automaticamente, a menos que o admin tenha revelado manualmente
+  // VISIBILIDADE EFETIVA
   const isEffectivelyHidden = useMemo(() => {
     return placaresOcultos && !isTimePassed;
   }, [placaresOcultos, isTimePassed]);
@@ -164,9 +171,9 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
-  // Sincronização do Admin com o Firestore (Apenas para garantir que o estado no DB mude quando o Admin abrir a página)
+  // Sincronização do Admin com o Firestore (Apenas para rodada real e consistente)
   useEffect(() => {
-    if (!isAdminUser || !placaresOcultos || !isTimePassed || !roundId) return;
+    if (!isAdminUser || !placaresOcultos || !isTimePassed || !roundId || loadingMatches) return;
 
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
@@ -180,7 +187,7 @@ export default function Home() {
       title: "Modo Público Ativado", 
       description: "O horário dos jogos chegou! Palpites revelados automaticamente." 
     });
-  }, [isAdminUser, placaresOcultos, isTimePassed, roundId, db, toast]);
+  }, [isAdminUser, placaresOcultos, isTimePassed, roundId, db, toast, loadingMatches]);
 
   useEffect(() => {
     if (currentRound === null) return;
