@@ -369,7 +369,7 @@ export default function Home() {
                   <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-full transition-colors pr-3">
                     <Avatar className="h-8 w-8 ring-2 ring-accent/30 bg-muted flex items-center justify-center">
                       <AvatarImage src={user.photoURL || undefined} />
-                      <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
+                      <AvatarFallback className="bg-primary/10 text-primary font-black text-[10px]">
                         {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                       </AvatarFallback>
                     </Avatar>

@@ -7,9 +7,9 @@ service cloud.firestore {
      * AlphaBet League Security Rules
      */
 
-    // --- REGRA MESTRE: Jardel tem acesso total ---
-    match /{document=**} {
-      allow read, write: if request.auth != null && (
+    // Função auxiliar para verificar se o usuário é o Administrador (Jardel)
+    function isAdmin() {
+      return request.auth != null && (
         request.auth.uid == "TquLV2ai1yRgfWPJHZGrHKifgc72" || 
         request.auth.token.email == "jardel@alphabet.com"
       );
@@ -17,36 +17,42 @@ service cloud.firestore {
 
     // Regras para perfis de usuários
     match /users/{userId} {
-      // Qualquer usuário autenticado pode ler os perfis individuais e listar a coleção
       allow get, list: if request.auth != null;
-      // Apenas o próprio usuário pode criar ou atualizar seu perfil
       allow create, update: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Regras para rodadas e apostas
+    // Regras para rodadas (metadados)
     match /rounds/{roundId} {
-      // Todos logados podem ver os metadados da rodada (nome, status oculto, etc)
       allow read: if request.auth != null;
+      allow write: if isAdmin();
       
+      // Regras para apostas (subcoleção)
       match /bets/{betId} {
-        // Permitimos que todos os usuários autenticados listem as apostas da rodada.
-        // O controle de visibilidade dos placares (isScoresHidden) é gerenciado na UI.
-        allow get, list: if request.auth != null;
-        
-        // Apenas o dono da aposta pode criar ou modificar seu palpite
-        allow write: if request.auth != null && betId.startsWith(request.auth.uid);
+        allow read: if request.auth != null;
+        // Permite escrita se for o admin ou se o ID da aposta começar com o UID do usuário
+        allow create, update: if request.auth != null && (
+          isAdmin() || 
+          betId.startsWith(request.auth.uid)
+        );
+        allow delete: if isAdmin();
       }
     }
 
     // Verificação de privilégios administrativos
     match /roles_admin/{userId} {
       allow get: if request.auth != null;
-      allow create: if request.auth != null && request.auth.token.email == "jardel@alphabet.com";
+      allow create: if isAdmin();
     }
 
     // Configurações globais do app
     match /app_settings/{docId} {
       allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Regra mestre para outros documentos (opcional, por segurança)
+    match /{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }
