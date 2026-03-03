@@ -107,7 +107,7 @@ export function BettingTable({
                        </div>
 
                        {/* 10 Match Rows - 5 EQUAL COLUMNS - Fixed Row Heights */}
-                       <div className="flex-1 flex flex-col justify-between py-1">
+                       <div className="flex-1 flex flex-col justify-between pt-1 pb-4">
                           {Array.from({ length: 10 }).map((_, idx) => {
                              const desc = matchDescriptions[idx];
                              const parts = desc ? desc.split(' x ') : [];
@@ -142,7 +142,7 @@ export function BettingTable({
                     </div>
 
                     {/* Minimal Footer */}
-                    <div className="relative z-10 flex justify-between items-center border-t border-white/10 pt-3 mt-2">
+                    <div className="relative z-10 flex justify-between items-center border-t border-white/10 pt-3 mt-1">
                        <div className="flex items-center gap-1.5">
                           <div className="h-5 w-5 bg-accent rounded-md flex items-center justify-center">
                              <Trophy className="h-3 w-3 text-accent-foreground" />
