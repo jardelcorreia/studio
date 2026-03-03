@@ -13,9 +13,6 @@ import { AiBetAssistant } from "@/components/ai-bet-assistant";
 import { ProfileSettings } from "@/components/profile-settings";
 import { LoginScreen } from "@/components/login-screen";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   LogOut,
@@ -26,16 +23,13 @@ import {
   Loader2,
   LayoutDashboard,
   Calendar,
-  ListChecks,
-  Medal,
+  Radar,
   RefreshCw,
   UserCircle,
-  Settings,
   ChevronDown,
   Eye,
   EyeOff,
-  Clock,
-  Radar
+  Medal
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,12 +54,15 @@ import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, cleanTeamName, determineMatchValidity } from "@/lib/utils";
 
+type TabType = "jogos" | "palpites" | "ranking" | "tabela";
+
 export default function Home() {
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
 
+  const [activeTab, setActiveTab] = useState<TabType>("jogos");
   const [darkMode, setDarkMode] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [currentRound, setCurrentRound] = useState<number | null>(null);
@@ -110,43 +107,24 @@ export default function Home() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Atualiza o relógio interno a cada 30 segundos
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  // Determina se o horário de algum jogo VÁLIDO já passou na rodada atual
   const isTimePassed = useMemo(() => {
-    // CRITICAL: Só calcula se os matches carregados pertencem de fato à rodada sendo visualizada
-    // E se a rodada visualizada é a rodada real do campeonato
     if (!currentRound || currentRound !== realCurrentRound || matches.length === 0 || loadingMatches) return false;
-
-    // Verifica se o primeiro jogo da lista pertence à rodada correta para evitar falsos positivos durante o loading
     if (matches[0].matchday !== currentRound) return false;
-
     return matches.some(m => {
-      // Ignora cancelados e jogos fora da janela para o gatilho de revelação
       if (m.status === 'cancelled' || m.isValidForPoints === false) return false;
       const matchStartTime = new Date(m.utcDate);
       return now >= matchStartTime;
     });
   }, [matches, now, currentRound, realCurrentRound, loadingMatches]);
 
-  // VISIBILIDADE EFETIVA
   const isEffectivelyHidden = useMemo(() => {
     return placaresOcultos && !isTimePassed;
   }, [placaresOcultos, isTimePassed]);
-
-  useEffect(() => {
-    if (!showProfileDialog) {
-      const timer = setTimeout(() => {
-        document.body.style.pointerEvents = 'auto';
-        document.body.style.overflow = 'auto';
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [showProfileDialog]);
 
   useEffect(() => {
     async function init() {
@@ -172,17 +150,14 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
-  // Sincronização do Admin com o Firestore (Apenas para rodada real e consistente)
   useEffect(() => {
     if (!isAdminUser || !placaresOcultos || !isTimePassed || !roundId || loadingMatches) return;
-
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
       id: roundId,
       isScoresHidden: false,
       dateUpdated: serverTimestamp(),
     }, { merge: true });
-
     setPlacaresOcultos(false);
     toast({
       title: "Modo Público Ativado",
@@ -197,10 +172,8 @@ export default function Home() {
       const rawData = await getBrasileiraoMatches(currentRound!);
       const data = determineMatchValidity(rawData);
       setMatches(data);
-
       const leagueTable = await getLeagueStandings();
       setStandings(leagueTable);
-
       if (data.length > 0) {
         const newDescriptions = Array(10).fill("");
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
@@ -247,24 +220,18 @@ export default function Home() {
 
   const scores = useMemo((): PlayerScore[] => {
     if (!allUsers || allUsers.length === 0) return [];
-
     const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
     const totalActiveMatches = activeIndices.length;
-
     const playerStats = allUsers.map(u => {
       let pts = 0, exs = 0, filledCount = 0;
       const userPreds = predictions[u.id];
-
       if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl };
-
       activeIndices.forEach(idx => {
         const res = results[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
         const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
         const isMatchValid = matches[idx]?.isValidForPoints !== false;
-
         if (hasPred) filledCount++;
-
         if (hasRes && hasPred && isMatchValid) {
           const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
           const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
@@ -282,7 +249,6 @@ export default function Home() {
         photoUrl: u.photoUrl
       };
     });
-
     const finalScores = playerStats.map(p => ({ ...p, isWinner: false }));
     const maxPts = Math.max(...finalScores.map(s => s.points));
     if (maxPts > 0) {
@@ -297,7 +263,6 @@ export default function Home() {
     if (!currentRound || scores.length === 0) return;
     const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
     const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
-
     setRoundWinners(prev => {
       const next = [...prev];
       next[currentRound - 1] = {
@@ -313,14 +278,12 @@ export default function Home() {
     if (!isAdminUser || !roundId) return;
     const newValue = !placaresOcultos;
     setPlacaresOcultos(newValue);
-
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
       id: roundId,
       isScoresHidden: newValue,
       dateUpdated: serverTimestamp(),
     }, { merge: true });
-
     toast({
       title: newValue ? "Modo Privado Ativado" : "Modo Público Ativado",
       description: newValue ? "Palpites ocultos para os jogadores." : "Todos os palpites estão visíveis!"
@@ -341,14 +304,12 @@ export default function Home() {
           dateUpdated: serverTimestamp(),
           dateCreated: roundData?.dateCreated || serverTimestamp(),
         }, { merge: true });
-
         const settingsRef = doc(db, "app_settings", "championship");
         setDocumentNonBlocking(settingsRef, {
           history: roundWinners,
           lastUpdated: serverTimestamp(),
         }, { merge: true });
       }
-
       const myPreds = predictions[user.uid];
       if (myPreds) {
         myPreds.forEach((pred, idx) => {
@@ -396,79 +357,26 @@ export default function Home() {
   if (!user || mustChangePassword) return <LoginScreen forcePasswordChange={mustChangePassword} onPasswordChangeRequired={() => setMustChangePassword(true)} onPasswordChanged={() => setMustChangePassword(false)} />;
 
   return (
-    <div className="flex-1 min-h-screen bg-background">
+    <div className="flex-1 min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 sports-gradient rounded-xl flex items-center justify-center shadow-lg transform -rotate-6">
-              <Trophy className="h-7 w-7 text-white" />
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-10 sports-gradient rounded-xl flex items-center justify-center shadow-lg transform -rotate-6">
+              <Trophy className="h-6 w-6 text-white" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter text-primary leading-none">AlphaBet</h1>
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Brasileirão 2026</span>
+              <h1 className="text-lg font-black italic uppercase tracking-tighter text-primary leading-none">AlphaBet</h1>
+              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Brasileirão 2026</span>
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-6 px-6 py-2 bg-muted/50 rounded-full border">
-             <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase font-bold text-muted-foreground">Rodada Atual</span>
-                <span className="font-black italic text-primary">#{currentRound}</span>
-             </div>
-             <div className="h-6 w-px bg-border" />
-
+          <div className="flex items-center gap-3">
+             <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black italic">#{currentRound}</Badge>
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-full transition-colors pr-3">
-                    <Avatar className="h-8 w-8 ring-2 ring-accent/30 bg-muted flex items-center justify-center">
-                      <AvatarImage src={user.photoURL || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-black text-[10px]">
-                        {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col items-start">
-                      <span className="text-xs font-bold italic uppercase leading-none">{user?.displayName}</span>
-                      <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Nível Alpha</span>
-                    </div>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-2xl border-none shadow-2xl glass-card p-2">
-                  <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-muted-foreground tracking-widest px-3 py-2">
-                    Minha Conta
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-primary/5" />
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      setTimeout(() => {
-                        setShowProfileDialog(true);
-                      }, 150);
-                    }}
-                    className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
-                  >
-                    <UserCircle className="h-4 w-4 text-primary" />
-                    Editar Perfil
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setDarkMode(!darkMode)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
-                    {darkMode ? <Sun className="h-4 w-4 text-accent" /> : <Moon className="h-4 w-4 text-primary" />}
-                    Tema {darkMode ? 'Claro' : 'Escuro'}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-primary/5" />
-                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl gap-2 font-bold cursor-pointer py-3 text-destructive focus:bg-destructive/10">
-                    <LogOut className="h-4 w-4" />
-                    Encerrar Sessão
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-             </DropdownMenu>
-          </div>
-
-          <div className="flex md:hidden items-center gap-3">
-             <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black italic">#{currentRound}</Badge>
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Avatar className="h-10 w-10 ring-2 ring-accent/30 cursor-pointer bg-muted flex items-center justify-center">
+                  <Avatar className="h-9 w-9 ring-2 ring-accent/30 cursor-pointer bg-muted flex items-center justify-center">
                     <AvatarImage src={user.photoURL || undefined} />
-                    <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
+                    <AvatarFallback className="bg-primary/10 text-primary font-black text-[10px]">
                       {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                     </AvatarFallback>
                   </Avatar>
@@ -481,9 +389,7 @@ export default function Home() {
                   <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
-                      setTimeout(() => {
-                        setShowProfileDialog(true);
-                      }, 150);
+                      setTimeout(() => setShowProfileDialog(true), 150);
                     }}
                     className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
                   >
@@ -515,165 +421,164 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-10">
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-8">
         {isAdminUser && (
-          <div className="flex flex-col md:flex-row items-center justify-between bg-primary/5 p-5 rounded-[2rem] border border-primary/10 mb-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary">
-                <Shield className="h-6 w-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Painel Admin</span>
-                <h3 className="text-sm font-black italic uppercase text-primary leading-none">Controle de Visibilidade</h3>
-              </div>
+          <div className="flex flex-col md:flex-row items-center justify-between bg-primary/5 p-4 rounded-[1.5rem] border border-primary/10 gap-3">
+            <div className="flex items-center gap-3">
+              <Shield className="h-5 w-5 text-primary" />
+              <h3 className="text-xs font-black italic uppercase text-primary">Controle Admin</h3>
             </div>
-            <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="flex items-center gap-3 w-full md:w-auto">
                <Badge className={cn(
-                 "rounded-full px-4 py-1 text-[10px] font-black uppercase border-none h-10 flex items-center gap-2",
+                 "rounded-full px-3 py-1 text-[9px] font-black uppercase border-none",
                  isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
                )}>
-                  {isEffectivelyHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                  {isEffectivelyHidden ? "Modo Privado" : (isTimePassed && placaresOcultos ? "Público (Automático)" : "Modo Público")}
+                  {isEffectivelyHidden ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
+                  {isEffectivelyHidden ? "Privado" : "Público"}
                </Badge>
                <Button
-                 size="lg"
+                 size="sm"
                  onClick={handleTogglePlacaresOcultos}
                  className={cn(
-                   "flex-1 md:flex-none rounded-2xl text-[10px] font-black uppercase h-10 px-8 gap-3 shadow-xl transition-all hover:scale-[1.02] active:scale-95",
-                   placaresOcultos ? "bg-secondary hover:bg-secondary/90 text-white" : "bg-destructive hover:bg-destructive/90 text-white"
+                   "flex-1 md:flex-none rounded-xl text-[9px] font-black uppercase h-8 px-6 gap-2",
+                   placaresOcultos ? "bg-secondary text-white" : "bg-destructive text-white"
                  )}
                >
-                 {placaresOcultos ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-                 {placaresOcultos ? "Revelar Manualmente" : "Ocultar Manualmente"}
+                 {placaresOcultos ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                 Mudar Visibilidade
                </Button>
             </div>
           </div>
         )}
 
-        <section className="space-y-4">
-           <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Medal className="h-6 w-6 text-accent" />
-                <h2 className="text-xl font-black italic uppercase">Pontuação da Rodada</h2>
-              </div>
-              {(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
-           </div>
-           <RankingSummary scores={scores} isScoresHidden={isEffectivelyHidden} />
-        </section>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 space-y-8">
-            <Tabs defaultValue="calendar" className="space-y-6">
-              <TabsList className="w-full bg-muted/50 p-1 rounded-2xl h-14 overflow-x-auto no-scrollbar flex justify-start md:justify-center">
-                <TabsTrigger value="calendar" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
-                  <Calendar className="h-4 w-4" />
-                  Jogos &amp; Quila
-                </TabsTrigger>
-                <TabsTrigger value="betting" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
-                  <Radar className="h-4 w-4" />
-                  Todos os Palpites
-                </TabsTrigger>
-                <TabsTrigger value="overall" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
-                  <Trophy className="h-4 w-4" />
-                  Ranking
-                </TabsTrigger>
-                <TabsTrigger value="standings" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Tabela CBF
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="calendar" className="outline-none">
-                {currentRound !== null && (
-                  <MatchCalendar
-                    matches={matches}
-                    round={currentRound}
-                    totalRounds={38}
-                    predictions={predictions[user?.uid || ""] || Array(10).fill({ homeScore: "", awayScore: "" })}
-                    setPrediction={(idx, type, value) => updatePrediction(user?.uid || "", idx, type, value)}
-                    onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
-                    onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
-                    onSave={handleSaveAll}
-                    isSaving={isSaving}
-                  />
-                )}
-              </TabsContent>
-
-              <TabsContent value="betting" className="space-y-4 outline-none">
-                <div className="flex items-center justify-between px-2">
-                   <div className="flex flex-col">
-                      <h3 className="font-black italic uppercase text-lg text-primary">{roundName}</h3>
-                      <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Comparativo de palpites em tempo real</p>
-                   </div>
-                   <div className="flex items-center gap-2">
-                      <Badge className={cn("rounded-full px-3 text-[9px] font-black uppercase", isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary")}>
-                        {isEffectivelyHidden ? "Modo Privado" : "Modo Público"}
-                      </Badge>
-                   </div>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {activeTab === "jogos" && (
+            <div className="space-y-8">
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Medal className="h-5 w-5 text-accent" />
+                    <h2 className="text-lg font-black italic uppercase">Pontuação da Rodada</h2>
+                  </div>
+                  {(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
                 </div>
-                <BettingTable
-                  roundName={roundName}
-                  matches={matches}
-                  predictions={predictions}
-                  setPrediction={updatePrediction}
-                  results={results}
-                  setResult={updateResult}
-                  placaresOcultos={isEffectivelyHidden}
-                  currentPlayerId={user?.uid || ""}
-                  isAdmin={isAdminUser}
-                  allUsers={allUsers || []}
-                />
-              </TabsContent>
+                <RankingSummary scores={scores} isScoresHidden={isEffectivelyHidden} />
+              </section>
 
-              <TabsContent value="overall" className="outline-none">
-                 <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} />
-              </TabsContent>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-8">
+                  {currentRound !== null && (
+                    <MatchCalendar
+                      matches={matches}
+                      round={currentRound}
+                      totalRounds={38}
+                      predictions={predictions[user?.uid || ""] || Array(10).fill({ homeScore: "", awayScore: "" })}
+                      setPrediction={(idx, type, value) => updatePrediction(user?.uid || "", idx, type, value)}
+                      onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
+                      onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
+                      onSave={handleSaveAll}
+                      isSaving={isSaving}
+                    />
+                  )}
+                </div>
+                <div className="lg:col-span-4 hidden lg:block">
+                  <AiBetAssistant />
+                </div>
+              </div>
+            </div>
+          )}
 
-              <TabsContent value="standings" className="outline-none">
-                 <LeagueStandings standings={standings} />
-              </TabsContent>
-            </Tabs>
-          </div>
+          {activeTab === "palpites" && (
+            <div className="space-y-6">
+              <div className="flex flex-col">
+                <h3 className="font-black italic uppercase text-lg text-primary">{roundName}</h3>
+                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Comparativo em tempo real</p>
+              </div>
+              <BettingTable
+                roundName={roundName}
+                matches={matches}
+                predictions={predictions}
+                setPrediction={updatePrediction}
+                results={results}
+                setResult={updateResult}
+                placaresOcultos={isEffectivelyHidden}
+                currentPlayerId={user?.uid || ""}
+                isAdmin={isAdminUser}
+                allUsers={allUsers || []}
+              />
+            </div>
+          )}
 
-          <div className="lg:col-span-4 space-y-8">
-            <AiBetAssistant />
+          {activeTab === "ranking" && (
+            <div className="space-y-6">
+              <div className="flex flex-col">
+                <h3 className="font-black italic uppercase text-lg text-primary">Elite AlphaBet</h3>
+                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação Geral do Campeonato</p>
+              </div>
+              <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} />
+            </div>
+          )}
 
-            <Card className="glass-card border-none overflow-hidden rounded-3xl">
-               <div className="bg-primary p-5 flex items-center gap-3">
-                  <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
-                     <Shield className="h-5 w-5 text-white" />
-                  </div>
-                  <h4 className="font-black italic uppercase text-white">Manual Alpha</h4>
-               </div>
-               <div className="p-6 space-y-5">
-                  <div className="flex items-start gap-3">
-                     <span className="h-6 w-6 rounded-lg bg-secondary/20 text-secondary flex items-center justify-center font-black text-xs">03</span>
-                     <p className="text-xs font-medium leading-relaxed"><b>Placar Exato:</b> O santo graal das apostas. Garante a pontuação máxima e desempate no ranking.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                     <span className="h-6 w-6 rounded-lg bg-accent/20 text-accent flex items-center justify-center font-black text-xs">01</span>
-                     <p className="text-xs font-medium leading-relaxed"><b>Vencedor:</b> Acertou quem leva os 3 pontos? Ganha ponto de consolação pela análise.</p>
-                  </div>
-                  <div className="pt-4 border-t border-dashed">
-                     <p className="text-[10px] text-muted-foreground uppercase font-black italic">Dica do Admin: Salve sempre antes dos jogos começarem!</p>
-                  </div>
-               </div>
-            </Card>
-          </div>
+          {activeTab === "tabela" && (
+            <div className="space-y-6">
+              <div className="flex flex-col">
+                <h3 className="font-black italic uppercase text-lg text-primary">Tabela CBF</h3>
+                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação Oficial Série A</p>
+              </div>
+              <LeagueStandings standings={standings} />
+            </div>
+          )}
         </div>
       </main>
 
-      <footer className="py-12 border-t mt-12 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-4">
-           <div className="h-8 w-8 sports-gradient rounded-lg flex items-center justify-center">
-              <Trophy className="h-4 w-4 text-white" />
-           </div>
-           <div className="text-center">
-              <p className="text-sm font-black italic uppercase tracking-widest text-primary">AlphaBet League 2026</p>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase mt-1">Desenvolvido para competidores de elite • Brasileirão Série A</p>
-           </div>
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-primary/10 rounded-none h-20 px-6 pb-2">
+        <div className="max-w-md mx-auto h-full flex items-center justify-between">
+          <button
+            onClick={() => setActiveTab("jogos")}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all",
+              activeTab === "jogos" ? "text-primary scale-110" : "text-muted-foreground opacity-60"
+            )}
+          >
+            <Calendar className={cn("h-6 w-6", activeTab === "jogos" && "fill-current")} />
+            <span className="text-[9px] font-black uppercase italic">Jogos/Quila</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("palpites")}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all",
+              activeTab === "palpites" ? "text-primary scale-110" : "text-muted-foreground opacity-60"
+            )}
+          >
+            <Radar className={cn("h-6 w-6", activeTab === "palpites" && "fill-current")} />
+            <span className="text-[9px] font-black uppercase italic">Palpites</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("ranking")}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all",
+              activeTab === "ranking" ? "text-primary scale-110" : "text-muted-foreground opacity-60"
+            )}
+          >
+            <Trophy className={cn("h-6 w-6", activeTab === "ranking" && "fill-current")} />
+            <span className="text-[9px] font-black uppercase italic">Ranking</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("tabela")}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all",
+              activeTab === "tabela" ? "text-primary scale-110" : "text-muted-foreground opacity-60"
+            )}
+          >
+            <LayoutDashboard className={cn("h-6 w-6", activeTab === "tabela" && "fill-current")} />
+            <span className="text-[9px] font-black uppercase italic">Tabela</span>
+          </button>
         </div>
-      </footer>
+      </nav>
     </div>
   );
 }
