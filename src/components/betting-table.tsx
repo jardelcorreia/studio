@@ -171,17 +171,30 @@ export function BettingTable({
               isOutOfWindow ? "opacity-60 saturate-50" : "hover:bg-primary/5"
             )}>
               <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px]">
-                <div className="md:col-span-3 px-4 py-2 flex items-center gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
-                  <span className="text-[9px] font-black text-primary/40 italic">#{idx + 1}</span>
-                  <div className="flex flex-col">
-                    <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate">
-                      {desc || "---"}
+                <div className="md:col-span-3 px-4 py-2 flex items-center justify-between md:justify-start gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[9px] font-black text-primary/40 italic">#{idx + 1}</span>
+                    <div className="flex flex-col">
+                      <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate max-w-[140px] sm:max-w-none">
+                        {desc || "---"}
+                      </div>
+                      {isOutOfWindow && (
+                        <span className="text-[8px] font-black text-destructive uppercase flex items-center gap-1 mt-0.5">
+                          <AlertCircle className="h-2 w-2" /> Fora da Janela
+                        </span>
+                      )}
                     </div>
-                    {isOutOfWindow && (
-                      <span className="text-[8px] font-black text-destructive uppercase flex items-center gap-1 mt-0.5">
-                        <AlertCircle className="h-2 w-2" /> Jogo fora da janela de validade da rodada
-                      </span>
-                    )}
+                  </div>
+
+                  {/* Placar Real no Cabeçalho (Mobile Only) */}
+                  <div className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/5">
+                    <span className="text-xs font-black text-primary tabular-nums">
+                      {results[idx].homeScore !== "" ? results[idx].homeScore : "-"}
+                    </span>
+                    <span className="text-[8px] font-black text-primary/30 opacity-50">x</span>
+                    <span className="text-xs font-black text-primary tabular-nums">
+                      {results[idx].awayScore !== "" ? results[idx].awayScore : "-"}
+                    </span>
                   </div>
                 </div>
 
@@ -227,7 +240,10 @@ export function BettingTable({
                   })}
                 </div>
 
-                <div className="md:col-span-3 px-4 py-2 bg-primary/5 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3">
+                <div className={cn(
+                  "md:col-span-3 px-4 py-2 bg-primary/5 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3",
+                  !isAdmin && "hidden md:flex"
+                )}>
                   <div className="flex items-center gap-1.5">
                     <Input
                       type="number"
