@@ -104,11 +104,10 @@ export default function Home() {
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
 
-  // Verificação de Admin baseada no e-mail fixo para evitar perda de acesso ao mudar nome de perfil
+  // Verificação de Admin baseada no e-mail oficial
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
   useEffect(() => {
-    // Hack para garantir que o scroll e eventos de ponteiro voltem ao normal após fechar Dialogs do Radix
     if (!showProfileDialog) {
       const timer = setTimeout(() => {
         document.body.style.pointerEvents = 'auto';
@@ -141,12 +140,32 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
+  // Regra de Revelação Automática: Se um jogo começar, revela para todos
+  // Apenas o Admin dispara no Firestore para sincronizar com os outros jogadores
+  useEffect(() => {
+    if (isAdminUser && placaresOcultos && matches.length > 0 && roundId) {
+      const anyMatchStarted = matches.some(m => m.status === 'live' || m.status === 'finished');
+      if (anyMatchStarted) {
+        const roundRef = doc(db, "rounds", roundId);
+        setDocumentNonBlocking(roundRef, {
+          id: roundId,
+          isScoresHidden: false,
+          dateUpdated: serverTimestamp(),
+        }, { merge: true });
+        setPlacaresOcultos(false);
+        toast({ 
+          title: "Modo Público Ativado", 
+          description: "Os jogos começaram! Palpites revelados automaticamente." 
+        });
+      }
+    }
+  }, [isAdminUser, placaresOcultos, matches, roundId, db, toast]);
+
   useEffect(() => {
     if (currentRound === null) return;
     async function loadMatches() {
       setLoadingMatches(true);
       const rawData = await getBrasileiraoMatches(currentRound!);
-      // Aplica a regra da janela de validade
       const data = determineMatchValidity(rawData);
       setMatches(data);
       
@@ -213,8 +232,6 @@ export default function Home() {
         const res = results[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
         const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
-        
-        // Regra da Janela de Validade: Só conta pontos se a partida for válida
         const isMatchValid = matches[idx]?.isValidForPoints !== false;
 
         if (hasPred) filledCount++;
@@ -268,7 +285,6 @@ export default function Home() {
     const newValue = !placaresOcultos;
     setPlacaresOcultos(newValue);
     
-    // Gravação imediata no Firestore para sincronizar com todos os clientes
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
       id: roundId,
@@ -286,7 +302,6 @@ export default function Home() {
     if (!currentRound || !user || !roundId) return;
     setIsSaving(true);
     try {
-      // Apenas Admins salvam metadados da rodada e configurações de campeonato
       if (isAdminUser) {
         const roundRef = doc(db, "rounds", roundId);
         setDocumentNonBlocking(roundRef, {
@@ -305,7 +320,6 @@ export default function Home() {
         }, { merge: true });
       }
 
-      // Todos os usuários salvam seus próprios palpites
       const myPreds = predictions[user.uid];
       if (myPreds) {
         myPreds.forEach((pred, idx) => {
@@ -473,7 +487,6 @@ export default function Home() {
       </Dialog>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-        {/* Admin Control Bar - Visível para Jardel através do e-mail oficial */}
         {isAdminUser && (
           <div className="flex flex-col md:flex-row items-center justify-between bg-primary/5 p-5 rounded-[2rem] border border-primary/10 mb-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center gap-4">
