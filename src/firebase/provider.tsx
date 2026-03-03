@@ -20,6 +20,8 @@ interface UserAuthState {
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
+  // Nonce used to force reactive updates when user object reference stays same
+  authUpdateNonce: number;
 }
 
 // Combined state for the Firebase context
@@ -73,25 +75,26 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     user: null,
     isUserLoading: true, // Start loading until first auth event
     userError: null,
+    authUpdateNonce: 0,
   });
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
     if (!auth) { // If no Auth service instance, cannot determine user state
-      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
+      setUserAuthState(prev => ({ ...prev, user: null, isUserLoading: false, userError: new Error("Auth service not provided.") }));
       return;
     }
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
+    setUserAuthState(prev => ({ ...prev, user: null, isUserLoading: true, userError: null })); // Reset on auth instance change
 
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
-        setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        setUserAuthState(prev => ({ ...prev, user: firebaseUser, isUserLoading: false, userError: null }));
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
-        setUserAuthState({ user: null, isUserLoading: false, userError: error });
+        setUserAuthState(prev => ({ ...prev, user: null, isUserLoading: false, userError: error }));
       }
     );
     return () => unsubscribe(); // Cleanup
@@ -101,11 +104,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     if (!auth.currentUser) return;
     try {
       await auth.currentUser.reload();
-      // We manually update the state with a shallow copy to trigger React re-renders
-      // because the currentUser object reference might not change
+      // Update state with a new nonce to force all observers of 'user' to re-render
+      // even if the Firebase User instance reference is managed internally.
       setUserAuthState(prev => ({
         ...prev,
-        user: { ...auth.currentUser! } as User
+        user: auth.currentUser,
+        authUpdateNonce: prev.authUpdateNonce + 1
       }));
     } catch (error) {
       console.error("Error refreshing user:", error);

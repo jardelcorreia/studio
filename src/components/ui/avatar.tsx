@@ -24,13 +24,12 @@ const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
 >(({ className, src, ...props }, ref) => {
-  // Prevent rendering and avoid NextJS/React warnings if src is falsy
-  if (!src || src === "") return null;
-
+  // We pass undefined if src is an empty string to avoid console warnings
+  // but we MUST render the component so Radix can manage the fallback state correctly.
   return (
     <AvatarPrimitive.Image
       ref={ref}
-      src={src}
+      src={src || undefined}
       className={cn("aspect-square h-full w-full", className)}
       {...props}
     />
