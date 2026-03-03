@@ -18,7 +18,10 @@ service cloud.firestore {
     // Regras para usuários comuns
     
     match /users/{userId} {
-      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+      // Qualquer um logado pode ver nomes e fotos para o ranking
+      allow read: if request.auth != null;
+      // Apenas o dono pode editar seu próprio perfil
+      allow create, update: if request.auth != null && request.auth.uid == userId;
     }
 
     match /rounds/{roundId} {

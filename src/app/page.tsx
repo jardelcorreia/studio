@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -177,13 +178,15 @@ export default function Home() {
   }, [allBets, allUsers]);
 
   const scores = useMemo((): PlayerScore[] => {
-    if (!allUsers) return [];
+    if (!allUsers || allUsers.length === 0) return [];
+    
     const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
     
     const playerStats = allUsers.map(u => {
       let pts = 0, exs = 0, completed = true;
       const userPreds = predictions[u.id];
-      if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false };
+      
+      if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false, photoUrl: u.photoUrl };
 
       activeIndices.forEach(idx => {
         const res = results[idx], pred = userPreds[idx];
@@ -200,18 +203,14 @@ export default function Home() {
       return { id: u.id, name: u.username, points: pts, exactScores: exs, betsCompleted: completed, photoUrl: u.photoUrl };
     });
 
-    const finalScores: PlayerScore[] = playerStats.map(p => ({
-      ...p,
-      isWinner: false,
-    }));
-
+    const finalScores = playerStats.map(p => ({ ...p, isWinner: false }));
     const maxPts = Math.max(...finalScores.map(s => s.points));
     if (maxPts > 0) {
       const candidates = finalScores.filter(s => s.points === maxPts);
       const maxExs = Math.max(...candidates.map(s => s.exactScores));
       finalScores.forEach(s => { if (s.points === maxPts && s.exactScores === maxExs) s.isWinner = true; });
     }
-    return finalScores;
+    return finalScores.sort((a, b) => b.points - a.points || b.exactScores - a.exactScores);
   }, [matchDescriptions, results, predictions, allUsers]);
 
   useEffect(() => {
