@@ -341,7 +341,10 @@ export default function Home() {
                   <DropdownMenuItem 
                     onSelect={(e) => {
                       e.preventDefault();
-                      setShowProfileDialog(true);
+                      // Timeout to ensure Dropdown closes before Dialog opens, preventing UI freeze
+                      setTimeout(() => {
+                        setShowProfileDialog(true);
+                      }, 100);
                     }}
                     className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
                   >
@@ -380,7 +383,9 @@ export default function Home() {
                   <DropdownMenuItem 
                     onSelect={(e) => {
                       e.preventDefault();
-                      setShowProfileDialog(true);
+                      setTimeout(() => {
+                        setShowProfileDialog(true);
+                      }, 100);
                     }}
                     className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
                   >
