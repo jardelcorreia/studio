@@ -65,49 +65,42 @@ export function BettingTable({
               <div className="flex flex-col items-center p-4">
                  <div className="w-full flex justify-between items-center mb-4 px-2">
                     <p className="text-white/60 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                       <Share2 className="h-3 w-3 text-accent" /> Preview de Compartilhamento (1:1)
+                       <Share2 className="h-3 w-3 text-accent" /> Alpha Preview 1:1
                     </p>
                     <DialogClose className="text-white/40 hover:text-white transition-colors">
                        <X className="h-5 w-5" />
                     </DialogClose>
                  </div>
 
-                 {/* 1:1 Static Card for Screenshot - Fixed Aspect and Content */}
-                 <div className="aspect-square w-full max-w-[580px] min-w-[300px] sports-gradient p-5 flex flex-col relative shadow-2xl overflow-hidden border-2 border-white/20 rounded-3xl self-center">
-                    <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-                       <div className="absolute -top-10 -right-10 rotate-12 scale-150">
-                          <Trophy className="h-64 w-64 text-white" />
-                       </div>
-                    </div>
-
-                    {/* Header Minimalist - Fixed Sizes */}
-                    <div className="relative z-10 flex justify-between items-end mb-3 border-b border-white/20 pb-2">
+                 {/* 1:1 Static Card - Minimalist Focus */}
+                 <div className="aspect-square w-full max-w-[580px] min-w-[300px] bg-[#020617] p-6 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-3xl self-center">
+                    
+                    {/* Minimalist Header */}
+                    <div className="relative z-10 flex justify-between items-center mb-6">
                        <div className="flex flex-col">
                           <h2 className="text-2xl font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</h2>
-                          <span className="text-[8px] font-bold text-accent uppercase tracking-[0.4em] mt-1">Elite League 2026</span>
+                          <span className="text-[7px] font-bold text-accent uppercase tracking-[0.5em] mt-1 opacity-80">Elite League 2026</span>
                        </div>
-                       <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-2">
-                          <div className="flex flex-col items-end">
-                            <span className="text-[8px] font-black text-white/60 uppercase leading-none">Rodada Oficial</span>
-                            <span className="text-xl font-black text-white italic leading-none">{roundName.split(' ')[1] || "38"}</span>
-                          </div>
+                       <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-2xl border border-white/10">
+                          <span className="text-[10px] font-black text-white/40 uppercase">RODADA</span>
+                          <span className="text-2xl font-black text-accent italic leading-none">{roundName.split(' ')[1] || "38"}</span>
                        </div>
                     </div>
 
-                    {/* Table Layout - STATIC GRID */}
+                    {/* Table Layout - 5 EQUAL COLUMNS */}
                     <div className="relative z-10 flex-1 flex flex-col">
-                       {/* Table Header Row - 5 EQUAL COLUMNS */}
-                       <div className="grid grid-cols-5 gap-1 mb-2 px-2">
-                          <div className="text-[8px] font-black uppercase text-accent/80">Confronto</div>
+                       {/* Table Header */}
+                       <div className="grid grid-cols-5 gap-2 mb-3 px-3">
+                          <div className="text-[8px] font-black uppercase text-white/30 italic">CONFRONTO</div>
                           {PLAYERS.map(player => (
-                            <div key={player} className="text-center text-[8px] font-black uppercase text-white/60">
+                            <div key={player} className="text-center text-[9px] font-black uppercase text-accent/80 tracking-widest">
                                {player}
                             </div>
                           ))}
                        </div>
 
-                       {/* 10 Match Rows - 5 EQUAL COLUMNS - Fixed Row Heights */}
-                       <div className="flex-1 flex flex-col justify-between pt-1 pb-4">
+                       {/* Match List - Ultra Clean */}
+                       <div className="flex-1 flex flex-col justify-between pb-4">
                           {Array.from({ length: 10 }).map((_, idx) => {
                              const desc = matchDescriptions[idx];
                              const parts = desc ? desc.split(' x ') : [];
@@ -116,20 +109,19 @@ export function BettingTable({
                                 : desc;
 
                              return (
-                               <div key={idx} className="grid grid-cols-5 gap-1 items-center bg-black/20 py-1.5 px-2 rounded-lg border border-white/5">
-                                  {/* Match Name */}
-                                  <div className="flex items-center gap-1 overflow-hidden">
-                                     <span className="text-[8px] font-black text-white/30 italic shrink-0">#{idx+1}</span>
-                                     <span className="text-[11px] font-black italic uppercase text-white truncate leading-none">
+                               <div key={idx} className="grid grid-cols-5 gap-2 items-center bg-white/5 py-2 px-3 rounded-xl border border-white/[0.03]">
+                                  {/* Match ID + Name */}
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                     <span className="text-[9px] font-black italic uppercase text-white truncate">
                                         {abrevDesc || "PND"}
                                      </span>
                                   </div>
 
-                                  {/* Player Predictions - Static sizes */}
+                                  {/* Player Predictions */}
                                   {PLAYERS.map(player => (
                                      <div key={player} className="flex justify-center">
-                                        <div className="bg-white/5 w-full max-w-[45px] py-1 rounded-md text-center border border-white/10">
-                                           <span className="text-[11px] font-black text-accent leading-none tabular-nums">
+                                        <div className="bg-black/40 w-full py-1.5 rounded-lg text-center border border-white/5">
+                                           <span className="text-[12px] font-black text-white leading-none tabular-nums">
                                               {predictions[player][idx]?.homeScore || "0"}-{predictions[player][idx]?.awayScore || "0"}
                                            </span>
                                         </div>
@@ -141,21 +133,18 @@ export function BettingTable({
                        </div>
                     </div>
 
-                    {/* Minimal Footer */}
-                    <div className="relative z-10 flex justify-between items-center border-t border-white/10 pt-3 mt-1">
-                       <div className="flex items-center gap-1.5">
-                          <div className="h-5 w-5 bg-accent rounded-md flex items-center justify-center">
-                             <Trophy className="h-3 w-3 text-accent-foreground" />
-                          </div>
-                          <span className="text-[8px] font-black text-white/60 uppercase tracking-widest italic">Alpha Cloud 2026</span>
+                    {/* Minimalist Footer */}
+                    <div className="relative z-10 flex justify-between items-center pt-2 border-t border-white/5">
+                       <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">Alpha Cloud Protocol</span>
+                       <div className="h-4 w-4 bg-accent/20 rounded flex items-center justify-center">
+                          <Trophy className="h-2 w-2 text-accent" />
                        </div>
-                       <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.3em]">alphabet-league.app</span>
                     </div>
                  </div>
                  
-                 <div className="mt-6 flex flex-col items-center gap-1">
-                    <p className="text-white/40 text-[9px] uppercase tracking-[0.3em] text-center font-bold">
-                       Toque e segure para salvar ou tire um print
+                 <div className="mt-6">
+                    <p className="text-white/40 text-[9px] uppercase tracking-[0.2em] text-center font-bold">
+                       Captura de tela otimizada para feed
                     </p>
                  </div>
               </div>
@@ -164,7 +153,7 @@ export function BettingTable({
         </div>
       )}
 
-      {/* Header Compacto - Desktop Only Labeling */}
+      {/* Header Compacto - App View */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2 bg-muted/20 rounded-2xl border border-transparent">
         <div className="col-span-3 text-[10px] font-black uppercase text-muted-foreground">Confronto</div>
         <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-muted-foreground">Palpites da Liga</div>
@@ -176,7 +165,7 @@ export function BettingTable({
           <div key={idx} className="glass-card border-none rounded-2xl overflow-hidden group hover:bg-primary/5 transition-all duration-200">
             <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px]">
               
-              {/* Match Info - Ultra Minimalist */}
+              {/* Match Info */}
               <div className="md:col-span-3 px-4 py-2 flex items-center gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
                 <span className="text-[9px] font-black text-primary/40 italic">#{idx + 1}</span>
                 <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate">
@@ -184,7 +173,7 @@ export function BettingTable({
                 </div>
               </div>
 
-              {/* Players Predictions - Condensed Row */}
+              {/* Players Predictions */}
               <div className="md:col-span-6 px-2 py-3 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
                 {PLAYERS.map(player => {
                   const isHidden = placaresOcultos && currentPlayer !== player;
@@ -221,31 +210,14 @@ export function BettingTable({
                         <span className="text-[11px] font-black">
                           {isHidden ? "?" : predictions[player][idx].awayScore || "-"}
                         </span>
-                        
-                        {points !== null && points > 0 && !isHidden && (
-                          <div className="absolute -top-1 -right-1">
-                            {points === 3 ? (
-                              <div className="h-4 w-4 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-secondary animate-float">
-                                <Trophy className="h-2 w-2 text-secondary" />
-                              </div>
-                            ) : (
-                              <div className="h-3.5 w-3.5 bg-white rounded-full flex items-center justify-center shadow-sm border border-accent text-[7px] font-black text-accent-foreground">
-                                1
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Real Result - Small & Precise */}
+              {/* Real Result */}
               <div className="md:col-span-3 px-4 py-2 bg-primary/5 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3">
-                <div className="hidden lg:flex flex-col items-end">
-                   <span className="text-[8px] font-black uppercase text-primary/40">Oficial</span>
-                </div>
                 <div className="flex items-center gap-1.5">
                   <Input
                     type="number"
@@ -266,26 +238,9 @@ export function BettingTable({
                   />
                 </div>
               </div>
-
             </div>
           </div>
         ))}
-      </div>
-      
-      {/* Legenda Minimalista */}
-      <div className="flex items-center justify-center gap-6 pt-4 px-2">
-         <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-secondary" />
-            <span className="text-[9px] font-black uppercase text-muted-foreground">Placar Exato (+3)</span>
-         </div>
-         <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-accent" />
-            <span className="text-[9px] font-black uppercase text-muted-foreground">Vencedor (+1)</span>
-         </div>
-         <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-destructive/50" />
-            <span className="text-[9px] font-black uppercase text-muted-foreground">Erro</span>
-         </div>
       </div>
     </div>
   );
