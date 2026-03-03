@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -46,6 +45,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
@@ -375,6 +375,10 @@ export default function Home() {
       {/* Profile Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Configurações de Perfil</DialogTitle>
+            <DialogDescription>Personalize seu perfil na AlphaBet League.</DialogDescription>
+          </DialogHeader>
           <ProfileSettings />
         </DialogContent>
       </Dialog>

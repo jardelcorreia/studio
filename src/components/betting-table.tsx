@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -8,7 +7,7 @@ import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
 import { Trophy, UserCircle2, Swords, Share2, Camera, X } from "lucide-react";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
 
 interface BettingTableProps {
   roundName: string;
@@ -62,6 +61,10 @@ export function BettingTable({
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-[95vw] sm:max-w-[620px] p-0 overflow-hidden border-none bg-black/95 backdrop-blur-xl shadow-2xl">
+              <DialogHeader className="sr-only">
+                <DialogTitle>Card da Rodada</DialogTitle>
+                <DialogDescription>Visualização técnica dos palpites da rodada para compartilhamento.</DialogDescription>
+              </DialogHeader>
               <div className="flex flex-col items-center p-3">
                  <div className="w-full flex justify-between items-center mb-1 px-2">
                     <p className="text-white/40 text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5">
