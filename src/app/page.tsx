@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -321,10 +320,10 @@ export default function Home() {
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-full transition-colors pr-3">
-                    <Avatar className="h-8 w-8 ring-2 ring-accent/30">
-                      {user?.photoURL && <AvatarImage src={user.photoURL} className="object-cover" />}
+                    <Avatar className="h-8 w-8 ring-2 ring-accent/30 bg-muted flex items-center justify-center">
+                      <AvatarImage src={user.photoURL || ""} className="object-cover" />
                       <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
-                        {user?.displayName?.substring(0,2).toUpperCase()}
+                        {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col items-start">
@@ -360,10 +359,10 @@ export default function Home() {
              <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black italic">#{currentRound}</Badge>
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Avatar className="h-10 w-10 ring-2 ring-accent/30 cursor-pointer">
-                    {user?.photoURL && <AvatarImage src={user.photoURL} className="object-cover" />}
+                  <Avatar className="h-10 w-10 ring-2 ring-accent/30 cursor-pointer bg-muted flex items-center justify-center">
+                    <AvatarImage src={user.photoURL || ""} className="object-cover" />
                     <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
-                      {user?.displayName?.substring(0,2).toUpperCase()}
+                      {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>

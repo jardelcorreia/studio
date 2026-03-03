@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
@@ -11,7 +10,7 @@ import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Label } from "./ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Camera, Loader2, Save, User as UserIcon, Check, Trash2, Crop as CropIcon, ZoomIn, ZoomOut } from "lucide-react";
+import { Camera, Loader2, Save, User as UserIcon, Check, Trash2, Crop as CropIcon, ZoomIn, ZoomOut, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Dialog, 
@@ -21,6 +20,16 @@ import {
   DialogFooter,
   DialogDescription 
 } from "./ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 import { Slider } from "./ui/slider";
 import Cropper, { Area } from "react-easy-crop";
 
@@ -31,6 +40,7 @@ export function ProfileSettings() {
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Crop States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -112,7 +122,7 @@ export function ProfileSettings() {
     if (!imageToCrop || !croppedAreaPixels || !user) return;
 
     setUploading(true);
-    setImageToCrop(null); // Fecha o dialog de crop
+    setImageToCrop(null); 
     
     try {
       const croppedBlob = await getCroppedImg(imageToCrop, croppedAreaPixels);
@@ -138,6 +148,7 @@ export function ProfileSettings() {
   const handleRemovePhoto = async () => {
     if (!user) return;
     setUploading(true);
+    setShowDeleteConfirm(false);
     
     try {
       const storageRef = ref(storage, `avatars/${user.uid}`);
@@ -165,10 +176,12 @@ export function ProfileSettings() {
         <div className="h-32 sports-gradient relative">
            <div className="absolute -bottom-16 left-8 flex items-end gap-6">
               <div className="relative group">
-                <Avatar className="h-32 w-32 border-4 border-background rounded-3xl shadow-xl bg-muted overflow-hidden">
-                  {user?.photoURL && <AvatarImage src={user.photoURL} className="object-cover w-full h-full" />}
-                  <AvatarFallback className="bg-primary/10 text-primary text-3xl font-black italic">
-                    {user?.displayName?.substring(0, 2).toUpperCase() || "AL"}
+                <Avatar className="h-32 w-32 border-4 border-background rounded-3xl shadow-xl bg-muted overflow-hidden flex items-center justify-center">
+                  {user?.photoURL ? (
+                    <AvatarImage src={user.photoURL} className="object-cover w-full h-full" />
+                  ) : null}
+                  <AvatarFallback className="bg-primary/10 text-primary text-3xl font-black italic w-full h-full flex items-center justify-center">
+                    {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : "AL"}
                   </AvatarFallback>
                 </Avatar>
                 
@@ -184,7 +197,7 @@ export function ProfileSettings() {
                   
                   {user?.photoURL && (
                     <button 
-                      onClick={handleRemovePhoto}
+                      onClick={() => setShowDeleteConfirm(true)}
                       disabled={uploading}
                       className="h-10 w-10 bg-destructive text-destructive-foreground rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
                       title="Remover Foto"
@@ -305,6 +318,30 @@ export function ProfileSettings() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="rounded-3xl border-none shadow-2xl glass-card">
+          <AlertDialogHeader>
+            <div className="h-12 w-12 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="font-black italic uppercase text-primary">Remover Foto?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">
+              Sua foto de perfil será excluída permanentemente. Seu avatar voltará ao padrão visual da liga baseado nas suas iniciais.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="rounded-xl font-bold uppercase text-[10px]">Manter Foto</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleRemovePhoto}
+              className="rounded-xl font-black italic uppercase text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir Foto
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="text-center">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-50">AlphaBet Protocol v2.6 • Perfil de Atleta</p>

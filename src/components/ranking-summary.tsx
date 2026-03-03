@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -40,15 +39,15 @@ export function RankingSummary({ scores }: RankingSummaryProps) {
           <CardContent className="p-6 flex flex-col items-center text-center space-y-3 relative z-10">
             <div className="relative">
               <Avatar className={cn(
-                 "h-16 w-16 rounded-2xl shadow-lg transform transition-transform group-hover:scale-110",
+                 "h-16 w-16 rounded-2xl shadow-lg transform transition-transform group-hover:scale-110 bg-muted flex items-center justify-center",
                  score.isWinner ? "ring-4 ring-white/30" : "ring-2 ring-muted"
               )}>
-                {score.photoUrl && <AvatarImage src={score.photoUrl} className="object-cover" />}
+                <AvatarImage src={score.photoUrl || ""} className="object-cover" />
                 <AvatarFallback className={cn(
-                  "text-2xl font-black italic",
-                  score.isWinner ? "bg-white/20 text-white" : "bg-muted/50 text-primary"
+                  "text-2xl font-black italic w-full h-full flex items-center justify-center",
+                  score.isWinner ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
                 )}>
-                  {score.name.substring(0, 2).toUpperCase()}
+                  {score.name ? score.name.substring(0, 2).toUpperCase() : "AL"}
                 </AvatarFallback>
               </Avatar>
               
