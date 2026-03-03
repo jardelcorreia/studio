@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -32,7 +33,8 @@ import {
   Settings,
   ChevronDown,
   Eye,
-  EyeOff
+  EyeOff,
+  Clock
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -77,6 +79,7 @@ export default function Home() {
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [now, setNow] = useState(new Date());
 
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
     Array.from({ length: 38 }, (_, i) => ({
@@ -105,6 +108,27 @@ export default function Home() {
   const { data: allUsers } = useCollection(usersCollectionRef);
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
+
+  // Atualiza o relógio interno a cada 30 segundos para checar auto-reveal
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Determina se o horário de algum jogo já passou (apenas para a rodada atual do campeonato)
+  const isTimePassed = useMemo(() => {
+    if (currentRound !== realCurrentRound || matches.length === 0) return false;
+    return matches.some(m => {
+      if (m.status === 'cancelled') return false;
+      const matchStartTime = new Date(m.utcDate);
+      return now >= matchStartTime;
+    });
+  }, [matches, now, currentRound, realCurrentRound]);
+
+  // VISIBILIDADE EFETIVA: Se o tempo passou, revela automaticamente, a menos que o admin tenha revelado manualmente
+  const isEffectivelyHidden = useMemo(() => {
+    return placaresOcultos && !isTimePassed;
+  }, [placaresOcultos, isTimePassed]);
 
   useEffect(() => {
     if (!showProfileDialog) {
@@ -140,51 +164,23 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
-  // Regra de Revelação Automática Baseada no Horário
-  // Apenas o Admin dispara no Firestore para sincronizar com os outros jogadores
+  // Sincronização do Admin com o Firestore (Apenas para garantir que o estado no DB mude quando o Admin abrir a página)
   useEffect(() => {
-    // CRITICAL: A revelação automática só deve ocorrer na rodada oficial ativa (realCurrentRound)
-    if (!isAdminUser || !placaresOcultos || matches.length === 0 || !roundId || currentRound !== realCurrentRound) return;
+    if (!isAdminUser || !placaresOcultos || !isTimePassed || !roundId) return;
 
-    const checkAutoReveal = () => {
-      const now = new Date();
-      // Verifica se o horário atual passou do horário de início de qualquer jogo não cancelado
-      const anyMatchStarted = matches.some(m => {
-        if (m.status === 'cancelled') return false;
-        const matchStartTime = new Date(m.utcDate);
-        return now >= matchStartTime;
-      });
-
-      if (anyMatchStarted) {
-        const roundRef = doc(db, "rounds", roundId);
-        setDocumentNonBlocking(roundRef, {
-          id: roundId,
-          isScoresHidden: false,
-          dateUpdated: serverTimestamp(),
-        }, { merge: true });
-        setPlacaresOcultos(false);
-        toast({ 
-          title: "Modo Público Ativado", 
-          description: "O horário dos jogos chegou! Palpites revelados automaticamente." 
-        });
-        return true; // Sucesso na revelação
-      }
-      return false;
-    };
-
-    // Executa verificação inicial
-    const revealed = checkAutoReveal();
-    if (revealed) return;
-
-    // Cria um intervalo para checar a cada minuto caso o Admin permaneça na página
-    const interval = setInterval(() => {
-      if (checkAutoReveal()) {
-        clearInterval(interval);
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [isAdminUser, placaresOcultos, matches, roundId, db, toast, currentRound, realCurrentRound]);
+    const roundRef = doc(db, "rounds", roundId);
+    setDocumentNonBlocking(roundRef, {
+      id: roundId,
+      isScoresHidden: false,
+      dateUpdated: serverTimestamp(),
+    }, { merge: true });
+    
+    setPlacaresOcultos(false);
+    toast({ 
+      title: "Modo Público Ativado", 
+      description: "O horário dos jogos chegou! Palpites revelados automaticamente." 
+    });
+  }, [isAdminUser, placaresOcultos, isTimePassed, roundId, db, toast]);
 
   useEffect(() => {
     if (currentRound === null) return;
@@ -525,10 +521,11 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-4 w-full md:w-auto">
                <Badge className={cn(
-                 "rounded-full px-4 py-1 text-[10px] font-black uppercase border-none h-10 flex items-center", 
-                 placaresOcultos ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
+                 "rounded-full px-4 py-1 text-[10px] font-black uppercase border-none h-10 flex items-center gap-2", 
+                 isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
                )}>
-                  {placaresOcultos ? "Modo Privado Ativo" : "Modo Público Ativo"}
+                  {isEffectivelyHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  {isEffectivelyHidden ? "Modo Privado" : (isTimePassed && placaresOcultos ? "Público (Automático)" : "Modo Público")}
                </Badge>
                <Button 
                  size="lg" 
@@ -539,7 +536,7 @@ export default function Home() {
                  )}
                >
                  {placaresOcultos ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-                 {placaresOcultos ? "Revelar Todos os Palpites" : "Ocultar Todos os Palpites"}
+                 {placaresOcultos ? "Revelar Manualmente" : "Ocultar Manualmente"}
                </Button>
             </div>
           </div>
@@ -553,7 +550,7 @@ export default function Home() {
               </div>
               {(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
            </div>
-           <RankingSummary scores={scores} isScoresHidden={placaresOcultos} />
+           <RankingSummary scores={scores} isScoresHidden={isEffectivelyHidden} />
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -601,8 +598,8 @@ export default function Home() {
                       <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Comparativo de palpites em tempo real</p>
                    </div>
                    <div className="flex items-center gap-2">
-                      <Badge className={cn("rounded-full px-3 text-[9px] font-black uppercase", placaresOcultos ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary")}>
-                        {placaresOcultos ? "Modo Privado" : "Modo Público"}
+                      <Badge className={cn("rounded-full px-3 text-[9px] font-black uppercase", isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary")}>
+                        {isEffectivelyHidden ? "Modo Privado" : "Modo Público"}
                       </Badge>
                    </div>
                 </div>
@@ -613,7 +610,7 @@ export default function Home() {
                   setPrediction={updatePrediction}
                   results={results}
                   setResult={updateResult}
-                  placaresOcultos={placaresOcultos}
+                  placaresOcultos={isEffectivelyHidden}
                   currentPlayerId={user?.uid || ""}
                   isAdmin={isAdminUser}
                   allUsers={allUsers || []}
