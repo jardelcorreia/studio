@@ -96,7 +96,7 @@ export function RankingSummary({ scores }: RankingSummaryProps) {
                            <Circle className={cn("h-3 w-3", score.isWinner ? "text-white/40" : "text-muted-foreground/30")} />
                          )}
                          <span className={cn("text-[9px] font-black uppercase tracking-wider", score.isWinner ? "text-white/80" : "text-muted-foreground")}>
-                           {score.betsCompleted ? "Finalizado" : "Em Aberto"}
+                           {score.betsCompleted ? "Quilado" : "Não quilou ainda"}
                          </span>
                       </div>
                       <span className={cn("text-[9px] font-black", score.isWinner ? "text-white" : "text-primary")}>
