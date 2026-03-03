@@ -330,24 +330,24 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-8">
             <Tabs defaultValue="calendar" className="space-y-6">
-              <TabsList className="w-full bg-muted/50 p-1 rounded-2xl h-14 overflow-x-auto no-scrollbar">
-                <TabsTrigger value="calendar" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
+              <TabsList className="w-full bg-muted/50 p-1 rounded-2xl h-14 overflow-x-auto no-scrollbar flex justify-start md:justify-center">
+                <TabsTrigger value="calendar" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <Calendar className="h-4 w-4" />
                   Jogos & Palpites
                 </TabsTrigger>
-                <TabsTrigger value="betting" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
+                <TabsTrigger value="betting" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <ListChecks className="h-4 w-4" />
                   Live Score League
                 </TabsTrigger>
-                <TabsTrigger value="overall" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
+                <TabsTrigger value="overall" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <Trophy className="h-4 w-4" />
                   Ranking
                 </TabsTrigger>
-                <TabsTrigger value="standings" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
+                <TabsTrigger value="standings" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <LayoutDashboard className="h-4 w-4" />
                   Tabela CBF
                 </TabsTrigger>
-                <TabsTrigger value="profile" className="flex-1 gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0">
+                <TabsTrigger value="profile" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <UserCircle className="h-4 w-4" />
                   Perfil
                 </TabsTrigger>
