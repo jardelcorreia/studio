@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -30,7 +31,9 @@ import {
   RefreshCw, 
   UserCircle, 
   Settings,
-  ChevronDown
+  ChevronDown,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -100,6 +103,8 @@ export default function Home() {
 
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
+
+  const isAdminUser = user?.displayName === "Jardel";
 
   // CRITICAL FIX: Ensure body pointer-events are restored after Dialog closes.
   useEffect(() => {
@@ -248,6 +253,25 @@ export default function Home() {
     });
   }, [scores, currentRound]);
 
+  const handleTogglePlacaresOcultos = () => {
+    if (!isAdminUser || !roundId) return;
+    const newValue = !placaresOcultos;
+    setPlacaresOcultos(newValue);
+    
+    // Save immediately to Firestore
+    const roundRef = doc(db, "rounds", roundId);
+    setDocumentNonBlocking(roundRef, {
+      id: roundId,
+      isScoresHidden: newValue,
+      dateUpdated: serverTimestamp(),
+    }, { merge: true });
+    
+    toast({ 
+      title: newValue ? "Modo Privado Ativado" : "Modo Público Ativado", 
+      description: newValue ? "Palpites ocultos para os jogadores." : "Todos os palpites estão visíveis!" 
+    });
+  };
+
   const handleSaveAll = async () => {
     if (!currentRound || !user || !roundId) return;
     setIsSaving(true);
@@ -310,8 +334,6 @@ export default function Home() {
     if (darkMode) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
-
-  const isAdminUser = user?.displayName === "Jardel";
 
   if (isUserLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   if (!user || mustChangePassword) return <LoginScreen forcePasswordChange={mustChangePassword} onPasswordChangeRequired={() => setMustChangePassword(true)} onPasswordChanged={() => setMustChangePassword(false)} />;
@@ -495,7 +517,13 @@ export default function Home() {
                    </div>
                    <div className="flex items-center gap-2">
                       {isAdminUser && (
-                        <Button variant="outline" size="sm" onClick={() => setPlacaresOcultos(!placaresOcultos)} className="rounded-full text-[10px] font-black uppercase h-8 px-4 border-primary/20">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleTogglePlacaresOcultos} 
+                          className="rounded-full text-[10px] font-black uppercase h-8 px-4 border-primary/20 gap-2"
+                        >
+                          {placaresOcultos ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                           {placaresOcultos ? "Revelar Tudo" : "Ocultar Tudo"}
                         </Button>
                       )}
