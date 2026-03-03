@@ -435,7 +435,7 @@ export default function Home() {
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Medal className="h-6 w-6 text-accent" />
-                <h2 className="text-xl font-black italic uppercase">Líderes da Rodada</h2>
+                <h2 className="text-xl font-black italic uppercase">Pontuação da Rodada</h2>
               </div>
               {(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
            </div>
