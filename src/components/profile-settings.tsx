@@ -3,15 +3,16 @@
 import React, { useState, useRef } from "react";
 import { useFirebase } from "@/firebase";
 import { updateProfile } from "firebase/auth";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { doc, updateDoc } from "firebase/firestore";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Label } from "./ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Camera, Loader2, Save, User as UserIcon, Check } from "lucide-react";
+import { Camera, Loader2, Save, User as UserIcon, Check, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export function ProfileSettings() {
   const { user, storage, firestore } = useFirebase();
@@ -41,6 +42,12 @@ export function ProfileSettings() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    // Validação simples de tamanho (ex: 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "Arquivo muito grande", description: "Escolha uma imagem de até 2MB para melhor performance." });
+      return;
+    }
+
     setUploading(true);
     const storageRef = ref(storage, `avatars/${user.uid}`);
     
@@ -54,7 +61,32 @@ export function ProfileSettings() {
       
       toast({ title: "Foto Atualizada!", description: "Sua nova foto de perfil está ativa." });
     } catch (error) {
-      toast({ variant: "destructive", title: "Erro no Upload", description: "Certifique-se de que o Storage está habilitado no Console." });
+      toast({ variant: "destructive", title: "Erro no Upload", description: "Certifique-se de que as regras do Storage permitem a gravação." });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!user) return;
+    setUploading(true);
+    
+    try {
+      // Opcional: Tentar deletar o arquivo físico do storage
+      const storageRef = ref(storage, `avatars/${user.uid}`);
+      try {
+        await deleteObject(storageRef);
+      } catch (e) {
+        // Ignora se o arquivo não existir fisicamente
+      }
+
+      await updateProfile(user, { photoURL: "" });
+      const userRef = doc(firestore, "users", user.uid);
+      await updateDoc(userRef, { photoUrl: "" });
+      
+      toast({ title: "Foto Removida", description: "Seu avatar voltou ao padrão da liga." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Erro", description: "Não foi possível remover a foto." });
     } finally {
       setUploading(false);
     }
@@ -66,19 +98,35 @@ export function ProfileSettings() {
         <div className="h-32 sports-gradient relative">
            <div className="absolute -bottom-16 left-8 flex items-end gap-6">
               <div className="relative group">
-                <Avatar className="h-32 w-32 border-4 border-background rounded-3xl shadow-xl bg-muted">
-                  <AvatarImage src={user?.photoURL || ""} className="object-cover" />
+                <Avatar className="h-32 w-32 border-4 border-background rounded-3xl shadow-xl bg-muted overflow-hidden">
+                  <AvatarImage src={user?.photoURL || ""} className="object-cover w-full h-full" />
                   <AvatarFallback className="bg-primary/10 text-primary text-3xl font-black italic">
                     {user?.displayName?.substring(0, 2).toUpperCase() || "AL"}
                   </AvatarFallback>
                 </Avatar>
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="absolute bottom-2 right-2 h-10 w-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
-                >
-                  {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-                </button>
+                
+                <div className="absolute -right-2 -bottom-2 flex flex-col gap-2">
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="h-10 w-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
+                    title="Alterar Foto"
+                  >
+                    {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                  </button>
+                  
+                  {user?.photoURL && (
+                    <button 
+                      onClick={handleRemovePhoto}
+                      disabled={uploading}
+                      className="h-10 w-10 bg-destructive text-destructive-foreground rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
+                      title="Remover Foto"
+                    >
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </button>
+                  )}
+                </div>
+
                 <input 
                   type="file" 
                   ref={fileInputRef} 
