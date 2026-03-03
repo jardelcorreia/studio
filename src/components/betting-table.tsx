@@ -58,73 +58,88 @@ export function BettingTable({
             </DialogTrigger>
             <DialogContent className="max-w-[640px] p-0 overflow-hidden border-none bg-transparent shadow-none">
               <div className="flex flex-col items-center">
-                 {/* 1:1 Card for Screenshot - ULTRA COMPACT 10 MATCHES */}
-                 <div className="aspect-square w-[600px] h-[600px] sports-gradient p-4 flex flex-col relative shadow-2xl overflow-hidden border-2 border-white/20">
-                    <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                 {/* 1:1 Card for Screenshot - TABLE LAYOUT */}
+                 <div className="aspect-square w-[600px] h-[600px] sports-gradient p-6 flex flex-col relative shadow-2xl overflow-hidden border-2 border-white/20">
+                    <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
                        <div className="absolute -top-10 -right-10 rotate-12 scale-150">
                           <Trophy className="h-64 w-64 text-white" />
                        </div>
                     </div>
 
-                    {/* Ultra Minimal Header */}
-                    <div className="relative z-10 flex justify-between items-center mb-3">
+                    {/* Header Minimalist */}
+                    <div className="relative z-10 flex justify-between items-end mb-4 border-b border-white/20 pb-4">
                        <div className="flex flex-col">
-                          <h2 className="text-2xl font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</h2>
-                          <span className="text-[8px] font-bold text-accent uppercase tracking-[0.4em]">Elite League 2026</span>
+                          <h2 className="text-3xl font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</h2>
+                          <span className="text-[10px] font-bold text-accent uppercase tracking-[0.4em] mt-1">Elite League 2026</span>
                        </div>
                        <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 flex items-center gap-3">
                           <div className="flex flex-col items-end">
-                            <span className="text-[8px] font-black text-white/60 uppercase leading-none">Rodada</span>
-                            <span className="text-xl font-black text-white italic leading-none">{roundName.split(' ')[1] || "38"}</span>
+                            <span className="text-[9px] font-black text-white/60 uppercase leading-none">Rodada Oficial</span>
+                            <span className="text-2xl font-black text-white italic leading-none">{roundName.split(' ')[1] || "38"}</span>
                           </div>
                        </div>
                     </div>
 
-                    {/* Optimized Grid: 2 columns, 5 rows - PERFECT FIT */}
-                    <div className="relative z-10 grid grid-cols-2 grid-rows-5 gap-2 flex-1">
-                       {Array.from({ length: 10 }).map((_, idx) => {
-                          const desc = matchDescriptions[idx];
-                          return (
-                            <div key={idx} className="bg-black/25 backdrop-blur-sm p-2 rounded-xl border border-white/10 flex flex-col justify-between">
-                               <div className="text-[7px] font-black italic uppercase text-accent/90 truncate border-b border-white/5 pb-1 mb-1.5 flex justify-between">
-                                  <span className="truncate">{desc || "CONFRONTO PENDENTE"}</span>
-                                  <span className="text-white/30 ml-1">#{idx+1}</span>
-                               </div>
-                               <div className="grid grid-cols-4 gap-1.5">
+                    {/* Table Layout - The Ultimate Space Saver */}
+                    <div className="relative z-10 flex-1 flex flex-col">
+                       {/* Table Header Row */}
+                       <div className="grid grid-cols-12 gap-1 mb-2 px-2">
+                          <div className="col-span-4 text-[9px] font-black uppercase text-accent/80">Confronto</div>
+                          {PLAYERS.map(player => (
+                            <div key={player} className="col-span-2 text-center text-[9px] font-black uppercase text-white/60">
+                               {player}
+                            </div>
+                          ))}
+                       </div>
+
+                       {/* 10 Match Rows */}
+                       <div className="flex-1 flex flex-col justify-between py-1">
+                          {Array.from({ length: 10 }).map((_, idx) => {
+                             const desc = matchDescriptions[idx];
+                             return (
+                               <div key={idx} className="grid grid-cols-12 gap-1 items-center bg-black/20 hover:bg-black/40 transition-colors p-2 rounded-xl border border-white/5">
+                                  {/* Match Name */}
+                                  <div className="col-span-4 flex items-center gap-2 overflow-hidden">
+                                     <span className="text-[8px] font-black text-white/30 italic shrink-0">#{idx+1}</span>
+                                     <span className="text-[10px] font-black italic uppercase text-white truncate leading-none">
+                                        {desc || "PENDENTE"}
+                                     </span>
+                                  </div>
+
+                                  {/* Player Predictions */}
                                   {PLAYERS.map(player => (
-                                     <div key={player} className="flex flex-col items-center">
-                                        <span className="text-[5px] font-black text-white/40 uppercase leading-none mb-1">{player.substring(0,3)}</span>
-                                        <div className="bg-white/5 w-full py-1.5 rounded-md text-center border border-white/5 shadow-inner">
-                                           <span className="text-[10px] font-black text-white leading-none">
+                                     <div key={player} className="col-span-2 flex justify-center">
+                                        <div className="bg-white/5 w-[50px] py-1.5 rounded-lg text-center border border-white/10 shadow-inner">
+                                           <span className="text-[11px] font-black text-accent leading-none tabular-nums">
                                               {predictions[player][idx]?.homeScore || "0"}-{predictions[player][idx]?.awayScore || "0"}
                                            </span>
                                         </div>
                                      </div>
                                   ))}
                                </div>
-                            </div>
-                          );
-                       })}
+                             );
+                          })}
+                       </div>
                     </div>
 
-                    {/* Ultra Minimal Footer */}
-                    <div className="relative z-10 flex justify-between items-center border-t border-white/10 pt-3 mt-3">
+                    {/* Minimal Footer */}
+                    <div className="relative z-10 flex justify-between items-center border-t border-white/10 pt-4 mt-2">
                        <div className="flex items-center gap-2">
-                          <div className="h-5 w-5 bg-accent rounded-lg flex items-center justify-center">
+                          <div className="h-6 w-6 bg-accent rounded-lg flex items-center justify-center">
                              <Trophy className="h-3 w-3 text-accent-foreground" />
                           </div>
-                          <span className="text-[8px] font-black text-white/60 uppercase tracking-widest italic">Protocolo Alpha 2026</span>
+                          <span className="text-[9px] font-black text-white/60 uppercase tracking-widest italic">Protocolo Alpha Cloud 2026</span>
                        </div>
-                       <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.3em]">alphabet-league.cloud</span>
+                       <span className="text-[8px] font-bold text-white/20 uppercase tracking-[0.3em]">alphabet-league.app</span>
                     </div>
                  </div>
                  
                  <div className="mt-6 flex flex-col items-center gap-1 bg-black/40 backdrop-blur-md p-4 rounded-3xl border border-white/10">
                     <p className="text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                       <Share2 className="h-4 w-4 text-accent" /> Capturar para Redes Sociais
+                       <Share2 className="h-4 w-4 text-accent" /> Captura de Tela Ativada
                     </p>
                     <p className="text-white/40 text-[9px] uppercase tracking-widest text-center">
-                       Formato 1:1 (600x600px) com os 10 confrontos completos.
+                       Formato de Tabela (600x600px) otimizado para WhatsApp e Instagram.
                     </p>
                  </div>
               </div>
