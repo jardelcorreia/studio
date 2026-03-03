@@ -140,11 +140,20 @@ export default function Home() {
     }
   }, [roundData, currentRound]);
 
-  // Regra de Revelação Automática: Se um jogo começar, revela para todos
+  // Regra de Revelação Automática Baseada no Horário
   // Apenas o Admin dispara no Firestore para sincronizar com os outros jogadores
   useEffect(() => {
-    if (isAdminUser && placaresOcultos && matches.length > 0 && roundId) {
-      const anyMatchStarted = matches.some(m => m.status === 'live' || m.status === 'finished');
+    if (!isAdminUser || !placaresOcultos || matches.length === 0 || !roundId) return;
+
+    const checkAutoReveal = () => {
+      const now = new Date();
+      // Verifica se o horário atual passou do horário de início de qualquer jogo não cancelado
+      const anyMatchStarted = matches.some(m => {
+        if (m.status === 'cancelled') return false;
+        const matchStartTime = new Date(m.utcDate);
+        return now >= matchStartTime;
+      });
+
       if (anyMatchStarted) {
         const roundRef = doc(db, "rounds", roundId);
         setDocumentNonBlocking(roundRef, {
@@ -155,10 +164,25 @@ export default function Home() {
         setPlacaresOcultos(false);
         toast({ 
           title: "Modo Público Ativado", 
-          description: "Os jogos começaram! Palpites revelados automaticamente." 
+          description: "O horário dos jogos chegou! Palpites revelados automaticamente." 
         });
+        return true; // Sucesso na revelação
       }
-    }
+      return false;
+    };
+
+    // Executa verificação inicial
+    const revealed = checkAutoReveal();
+    if (revealed) return;
+
+    // Cria um intervalo para checar a cada minuto caso o Admin permaneça na página
+    const interval = setInterval(() => {
+      if (checkAutoReveal()) {
+        clearInterval(interval);
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, [isAdminUser, placaresOcultos, matches, roundId, db, toast]);
 
   useEffect(() => {
