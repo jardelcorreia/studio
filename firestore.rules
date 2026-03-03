@@ -17,8 +17,8 @@ service cloud.firestore {
 
     // Regras para perfis de usuários
     match /users/{userId} {
-      // Qualquer usuário autenticado pode ler os perfis (necessário para o Ranking e Tabelas)
-      allow read: if request.auth != null;
+      // Qualquer usuário autenticado pode ler os perfis individuais e listar a coleção
+      allow get, list: if request.auth != null;
       // Apenas o próprio usuário pode criar ou atualizar seu perfil
       allow create, update: if request.auth != null && request.auth.uid == userId;
     }
@@ -30,9 +30,8 @@ service cloud.firestore {
       
       match /bets/{betId} {
         // Permitimos que todos os usuários autenticados listem as apostas da rodada.
-        // O controle de visibilidade dos placares (isScoresHidden) é gerenciado na UI,
-        // permitindo que o app mostre o status de aposta de todos sem expor os dados sensíveis.
-        allow read: if request.auth != null;
+        // O controle de visibilidade dos placares (isScoresHidden) é gerenciado na UI.
+        allow get, list: if request.auth != null;
         
         // Apenas o dono da aposta pode criar ou modificar seu palpite
         allow write: if request.auth != null && betId.startsWith(request.auth.uid);
@@ -48,7 +47,6 @@ service cloud.firestore {
     // Configurações globais do app
     match /app_settings/{docId} {
       allow read: if request.auth != null;
-      // Escrita permitida apenas pelo admin (via regra mestre)
     }
   }
 }

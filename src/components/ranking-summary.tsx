@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -22,7 +23,7 @@ export function RankingSummary({ scores }: RankingSummaryProps) {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {sortedScores.map((score, index) => (
         <Card 
-          key={score.name} 
+          key={score.id} 
           className={cn(
             "relative overflow-hidden transition-all duration-500 rounded-3xl group border-none",
             score.isWinner 

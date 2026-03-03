@@ -43,6 +43,25 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
   const formatEmail = (name: string) => `${name.toLowerCase().trim().replace(/\s+/g, '')}@alphabet.com`;
 
+  const ensureUserDocument = (uid: string, name: string) => {
+    const userRef = doc(db, "users", uid);
+    setDocumentNonBlocking(userRef, {
+      id: uid,
+      username: name,
+      isAdmin: name === "Jardel",
+      photoUrl: "",
+      dateCreated: serverTimestamp(),
+    }, { merge: true });
+
+    if (name === "Jardel") {
+      const adminRef = doc(db, "roles_admin", uid);
+      setDocumentNonBlocking(adminRef, {
+        userId: uid,
+        grantedAt: serverTimestamp(),
+      }, { merge: true });
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!playerName || !password) return;
@@ -55,14 +74,8 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // Se for o Jardel, garantimos que ele tenha o registro de admin no Firestore
-      if (playerName === "Jardel") {
-        const adminRef = doc(db, "roles_admin", userCredential.user.uid);
-        setDocumentNonBlocking(adminRef, {
-          userId: userCredential.user.uid,
-          grantedAt: serverTimestamp(),
-        }, { merge: true });
-      }
+      // Garante que o documento existe no Firestore ao logar
+      ensureUserDocument(userCredential.user.uid, playerName);
 
       if (password === "alphabet123") {
         onPasswordChangeRequired?.();
@@ -74,29 +87,13 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         });
       }
     } catch (err: any) {
-      // Se o usuário não existir ou a credencial for inválida e for a senha padrão, tentamos criar a conta
       if ((err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") && password === "alphabet123") {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName: playerName });
           
-          // Cria o documento do usuário
-          const userRef = doc(db, "users", userCredential.user.uid);
-          setDocumentNonBlocking(userRef, {
-            id: userCredential.user.uid,
-            username: playerName,
-            isAdmin: playerName === "Jardel",
-            dateCreated: serverTimestamp(),
-          }, { merge: true });
-
-          // Se for o Jardel, cria o registro de admin
-          if (playerName === "Jardel") {
-            const adminRef = doc(db, "roles_admin", userCredential.user.uid);
-            setDocumentNonBlocking(adminRef, {
-              userId: userCredential.user.uid,
-              grantedAt: serverTimestamp(),
-            }, { merge: true });
-          }
+          // Cria o documento do novo usuário
+          ensureUserDocument(userCredential.user.uid, playerName);
 
           toast({
             title: "Primeiro Acesso!",
@@ -217,7 +214,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-2">
             <div className="h-16 w-16 bg-primary rounded-2xl flex items-center justify-center rotate-3 shadow-lg">
-              <Trophy className="h-10 w-10 text-white" />
+              < Trophy className="h-10 w-10 text-white" />
             </div>
           </div>
           <CardTitle className="text-3xl font-black italic uppercase tracking-tighter">AlphaBet 2026</CardTitle>
