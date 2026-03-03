@@ -56,7 +56,7 @@ import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection, useDoc 
 import { signOut } from "firebase/auth";
 import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { cn, cleanTeamName } from "@/lib/utils";
+import { cn, cleanTeamName, determineMatchValidity } from "@/lib/utils";
 
 export default function Home() {
   const { toast } = useToast();
@@ -145,10 +145,14 @@ export default function Home() {
     if (currentRound === null) return;
     async function loadMatches() {
       setLoadingMatches(true);
-      const data = await getBrasileiraoMatches(currentRound!);
+      const rawData = await getBrasileiraoMatches(currentRound!);
+      // Aplica a regra da janela de validade
+      const data = determineMatchValidity(rawData);
       setMatches(data);
+      
       const leagueTable = await getLeagueStandings();
       setStandings(leagueTable);
+      
       if (data.length > 0) {
         const newDescriptions = Array(10).fill("");
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
@@ -209,8 +213,13 @@ export default function Home() {
         const res = results[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
         const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
+        
+        // Regra da Janela de Validade: Só conta pontos se a partida for válida
+        const isMatchValid = matches[idx]?.isValidForPoints !== false;
+
         if (hasPred) filledCount++;
-        if (hasRes && hasPred) {
+        
+        if (hasRes && hasPred && isMatchValid) {
           const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
           const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
           if (ph === rh && pa === ra) { pts += 3; exs += 1; }
@@ -236,7 +245,7 @@ export default function Home() {
       finalScores.forEach(s => { if (s.points === maxPts && s.exactScores === maxExs) s.isWinner = true; });
     }
     return finalScores.sort((a, b) => b.points - a.points || b.exactScores - a.exactScores);
-  }, [matchDescriptions, results, predictions, allUsers]);
+  }, [matchDescriptions, results, predictions, allUsers, matches]);
 
   useEffect(() => {
     if (!currentRound || scores.length === 0) return;
@@ -561,7 +570,7 @@ export default function Home() {
                 </div>
                 <BettingTable 
                   roundName={roundName}
-                  matchDescriptions={matchDescriptions}
+                  matches={matches}
                   predictions={predictions}
                   setPrediction={updatePrediction}
                   results={results}

@@ -1,6 +1,8 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { TEAMS } from "./constants"
+import { Match } from "./types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -24,4 +26,46 @@ export function cleanTeamName(name: string): string {
     .replace(/Atlético\sMineiro/gi, 'Atlético-MG')
     .replace(/Atlético\sGoianiense/gi, 'Atlético-GO')
     .trim();
+}
+
+/**
+ * Implementa a Regra da Janela de Validade (3 dias antes/depois da data principal).
+ */
+export function determineMatchValidity(matches: Match[]): Match[] {
+  if (matches.length === 0) return matches;
+
+  // 1. Encontrar a Data Principal (dia com mais jogos)
+  const dateCounts: Record<string, number> = {};
+  matches.forEach(m => {
+    const date = m.utcDate.split('T')[0];
+    dateCounts[date] = (dateCounts[date] || 0) + 1;
+  });
+
+  let mainDateStr = "";
+  let maxCount = -1;
+  for (const date in dateCounts) {
+    if (dateCounts[date] > maxCount) {
+      maxCount = dateCounts[date];
+      mainDateStr = date;
+    }
+  }
+
+  // Criar data objeto para comparação (meio-dia UTC para evitar problemas de fuso)
+  const mainDate = new Date(`${mainDateStr}T12:00:00Z`);
+  const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+
+  // 2. Definir Janela e 3. Marcar Outliers
+  return matches.map(m => {
+    const matchDate = new Date(m.utcDate);
+    // Diferença absoluta em milissegundos
+    const diff = Math.abs(matchDate.getTime() - mainDate.getTime());
+    
+    // Válido se estiver dentro de 3 dias (com tolerância de 12h para fusos)
+    const isValid = diff <= (threeDaysInMs + 12 * 60 * 60 * 1000);
+    
+    return {
+      ...m,
+      isValidForPoints: isValid
+    };
+  });
 }

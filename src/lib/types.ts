@@ -14,6 +14,7 @@ export type Match = {
   utcDate: string;
   status: 'SCHEDULED' | 'LIVE' | 'PAUSED' | 'FINISHED' | 'POSTPONED' | 'SUSPENDED' | 'CANCELED';
   matchday: number;
+  isValidForPoints?: boolean; // Indica se a partida está dentro da janela de validade da rodada
 };
 
 export type StandingEntry = {

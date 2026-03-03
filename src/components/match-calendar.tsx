@@ -7,7 +7,7 @@ import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
-import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles } from "lucide-react";
+import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { cn, cleanTeamName } from "@/lib/utils";
 import { Button } from "./ui/button";
 
@@ -99,9 +99,13 @@ export function MatchCalendar({
           const isFinished = match.status === 'FINISHED';
           const isLive = match.status === 'LIVE' || match.status === 'PAUSED';
           const currentPred = predictions[idx] || { homeScore: "", awayScore: "" };
+          const isOutlier = match.isValidForPoints === false;
 
           return (
-            <Card key={match.id} className="glass-card border-none rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500 group relative">
+            <Card key={match.id} className={cn(
+              "glass-card border-none rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500 group relative",
+              isOutlier && "border-2 border-destructive/20 opacity-90"
+            )}>
               <CardContent className="p-0">
                 {/* Status Bar */}
                 <div className="px-6 py-3 bg-muted/30 flex justify-between items-center border-b border-white/10">
@@ -109,12 +113,19 @@ export function MatchCalendar({
                       <CalendarDays className="h-3 w-3 text-muted-foreground" />
                       <span className="text-[9px] font-black uppercase text-muted-foreground">{formatDate(match.utcDate)}</span>
                    </div>
-                   <Badge className={cn(
-                     "rounded-full px-3 text-[8px] font-black uppercase border-none",
-                     isLive ? "bg-destructive text-white animate-pulse" : "bg-primary/10 text-primary"
-                   )}>
-                      {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : 'Agendado'}
-                   </Badge>
+                   <div className="flex items-center gap-2">
+                      {isOutlier && (
+                        <Badge variant="destructive" className="rounded-full px-3 text-[8px] font-black uppercase border-none animate-pulse">
+                          Outlier
+                        </Badge>
+                      )}
+                      <Badge className={cn(
+                        "rounded-full px-3 text-[8px] font-black uppercase border-none",
+                        isLive ? "bg-destructive text-white animate-pulse" : "bg-primary/10 text-primary"
+                      )}>
+                        {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : 'Agendado'}
+                      </Badge>
+                   </div>
                 </div>
 
                 {/* Conflict Area */}
@@ -168,9 +179,19 @@ export function MatchCalendar({
                 </div>
 
                 {/* Footer Info */}
-                <div className="px-6 py-4 bg-primary/5 flex justify-center items-center gap-2">
-                   <Clock className="h-3 w-3 text-primary/40" />
-                   <span className="text-[10px] font-black italic text-primary/60">{formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : "AGUARDANDO PALPITE"}</span>
+                <div className={cn(
+                  "px-6 py-4 flex flex-col items-center gap-1",
+                  isOutlier ? "bg-destructive/5" : "bg-primary/5"
+                )}>
+                   <div className="flex items-center gap-2">
+                      <Clock className="h-3 w-3 text-primary/40" />
+                      <span className="text-[10px] font-black italic text-primary/60">{formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : "AGUARDANDO PALPITE"}</span>
+                   </div>
+                   {isOutlier && (
+                     <div className="flex items-center gap-1 text-destructive font-black text-[9px] uppercase tracking-wider">
+                        <AlertTriangle className="h-3 w-3" /> Regra da Janela: Jogo não valerá pontos nesta rodada
+                     </div>
+                   )}
                 </div>
               </CardContent>
             </Card>

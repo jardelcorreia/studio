@@ -3,16 +3,16 @@
 
 import React from "react";
 import { TEAMS } from "@/lib/constants";
-import { Prediction, PlayerPredictions } from "@/lib/types";
+import { Prediction, PlayerPredictions, Match } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
-import { Trophy, UserCircle2, Swords, Share2, Camera, X } from "lucide-react";
+import { Trophy, UserCircle2, Swords, Share2, Camera, X, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
 
 interface BettingTableProps {
   roundName: string;
-  matchDescriptions: string[];
+  matches: Match[];
   predictions: PlayerPredictions;
   setPrediction: (userId: string, matchIndex: number, type: 'home' | 'away', value: string) => void;
   results: Prediction[];
@@ -25,7 +25,7 @@ interface BettingTableProps {
 
 export function BettingTable({
   roundName,
-  matchDescriptions,
+  matches,
   predictions,
   results,
   setResult,
@@ -36,6 +36,8 @@ export function BettingTable({
 }: BettingTableProps) {
   
   const getPoints = (userId: string, idx: number) => {
+    if (matches[idx]?.isValidForPoints === false) return null;
+
     const res = results[idx];
     const pred = predictions[userId]?.[idx];
     if (!res?.homeScore || !res?.awayScore || !pred?.homeScore || !pred?.awayScore) return null;
@@ -55,7 +57,6 @@ export function BettingTable({
 
   return (
     <div className="w-full space-y-4">
-      {/* Admin Actions */}
       {isAdmin && (
         <div className="flex justify-end px-2">
           <Dialog>
@@ -108,17 +109,19 @@ export function BettingTable({
 
                        <div className="flex-1 flex flex-col justify-between">
                           {Array.from({ length: 10 }).map((_, idx) => {
-                             const desc = matchDescriptions[idx];
-                             const parts = desc ? desc.split(' x ') : [];
-                             const abrevDesc = parts.length === 2 
-                                ? `${getTeamAbrev(parts[0])} x ${getTeamAbrev(parts[1])}`
-                                : "--- x ---";
+                             const match = matches[idx];
+                             const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
+                             const awayAbrev = match ? getTeamAbrev(match.awayTeam) : "---";
+                             const abrevDesc = `${homeAbrev} x ${awayAbrev}`;
 
                              return (
                                <div key={idx} className="grid grid-cols-5 gap-0.5 items-center bg-white/[0.01] py-0.2 px-0.5 rounded border border-white/[0.01] h-[calc(100%/10.8)]">
                                   <div className="flex items-center gap-1 overflow-hidden">
                                      <span className="text-[4px] font-black text-white/10 italic tabular-nums">#{idx + 1}</span>
-                                     <span className="text-[7.5px] font-black italic uppercase text-white truncate tracking-tighter">
+                                     <span className={cn(
+                                       "text-[7.5px] font-black italic uppercase truncate tracking-tighter",
+                                       match?.isValidForPoints === false ? "text-white/20" : "text-white"
+                                     )}>
                                         {abrevDesc}
                                      </span>
                                   </div>
@@ -126,7 +129,10 @@ export function BettingTable({
                                   {sortedUsers.map(u => (
                                      <div key={u.id} className="flex justify-center h-full items-center">
                                         <div className="bg-black/40 w-full py-0.2 rounded border border-white/5 flex items-center justify-center">
-                                           <span className="text-[9px] font-black text-white leading-none tabular-nums tracking-tighter">
+                                           <span className={cn(
+                                             "text-[9px] font-black leading-none tabular-nums tracking-tighter",
+                                             match?.isValidForPoints === false ? "text-white/20" : "text-white"
+                                           )}>
                                               {predictions[u.id]?.[idx]?.homeScore || "0"}-{predictions[u.id]?.[idx]?.awayScore || "0"}
                                            </span>
                                         </div>
@@ -147,7 +153,6 @@ export function BettingTable({
         </div>
       )}
 
-      {/* App View Viewport */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2 bg-muted/20 rounded-2xl border border-transparent">
         <div className="col-span-3 text-[10px] font-black uppercase text-muted-foreground">Confronto</div>
         <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-muted-foreground">Palpites da Liga</div>
@@ -155,83 +160,98 @@ export function BettingTable({
       </div>
 
       <div className="grid grid-cols-1 gap-1.5">
-        {matchDescriptions.map((desc, idx) => (
-          <div key={idx} className="glass-card border-none rounded-2xl overflow-hidden group hover:bg-primary/5 transition-all duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px]">
-              
-              <div className="md:col-span-3 px-4 py-2 flex items-center gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
-                <span className="text-[9px] font-black text-primary/40 italic">#{idx + 1}</span>
-                <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate">
-                  {desc || "---"}
-                </div>
-              </div>
+        {matches.map((match, idx) => {
+          const isOutlier = match.isValidForPoints === false;
+          const desc = `${match.homeTeam} x ${match.awayTeam}`;
 
-              <div className="md:col-span-6 px-2 py-3 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
-                {sortedUsers.map(u => {
-                  const isHidden = placaresOcultos && currentPlayerId !== u.id;
-                  const points = getPoints(u.id, idx);
-                  const isCurrent = currentPlayerId === u.id;
-
-                  return (
-                    <div key={u.id} className={cn(
-                      "flex flex-col items-center min-w-[55px] md:min-w-[70px] relative transition-all",
-                      isCurrent && "scale-105"
-                    )}>
-                      <div className="flex items-center gap-0.5 mb-1">
-                        <span className={cn(
-                          "text-[8px] font-black uppercase tracking-tighter",
-                          isCurrent ? "text-primary" : "text-muted-foreground/60"
-                        )}>
-                          <span className="md:hidden">{u.username.substring(0, 3)}</span>
-                          <span className="hidden md:inline">{u.username}</span>
-                        </span>
-                        {isCurrent && <UserCircle2 className="h-2 w-2 text-primary" />}
-                      </div>
-
-                      <div className={cn(
-                        "flex items-center justify-center gap-1 px-2 py-1 rounded-xl border transition-colors",
-                        points === 3 ? "bg-secondary text-white border-secondary shadow-md" : 
-                        points === 1 ? "bg-accent text-accent-foreground border-accent shadow-sm" : 
-                        points === 0 ? "bg-destructive/10 border-destructive/20 text-destructive" :
-                        "bg-background border-muted shadow-sm"
-                      )}>
-                        <span className="text-[11px] font-black">
-                          {isHidden ? "?" : (predictions[u.id]?.[idx]?.homeScore || "-")}
-                        </span>
-                        <span className="text-[8px] font-black opacity-30">x</span>
-                        <span className="text-[11px] font-black">
-                          {isHidden ? "?" : (predictions[u.id]?.[idx]?.awayScore || "-")}
-                        </span>
-                      </div>
+          return (
+            <div key={idx} className={cn(
+              "glass-card border-none rounded-2xl overflow-hidden group transition-all duration-200",
+              isOutlier ? "opacity-60 saturate-50" : "hover:bg-primary/5"
+            )}>
+              <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px]">
+                <div className="md:col-span-3 px-4 py-2 flex items-center gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
+                  <span className="text-[9px] font-black text-primary/40 italic">#{idx + 1}</span>
+                  <div className="flex flex-col">
+                    <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate">
+                      {desc || "---"}
                     </div>
-                  );
-                })}
-              </div>
+                    {isOutlier && (
+                      <span className="text-[8px] font-black text-destructive uppercase flex items-center gap-1 mt-0.5">
+                        <AlertCircle className="h-2 w-2" /> Outlier: Não vale pontos
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-              <div className="md:col-span-3 px-4 py-2 bg-primary/5 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3">
-                <div className="flex items-center gap-1.5">
-                  <Input
-                    type="number"
-                    value={results[idx].homeScore}
-                    onChange={(e) => setResult(idx, 'home', e.target.value)}
-                    className="w-8 h-8 text-center rounded-lg p-0 font-black text-xs border-primary/10 bg-white dark:bg-card shadow-inner"
-                    disabled={!isAdmin}
-                    placeholder="-"
-                  />
-                  <Swords className="h-3 w-3 text-primary/30" />
-                  <Input
-                    type="number"
-                    value={results[idx].awayScore}
-                    onChange={(e) => setResult(idx, 'away', e.target.value)}
-                    className="w-8 h-8 text-center rounded-lg p-0 font-black text-xs border-primary/10 bg-white dark:bg-card shadow-inner"
-                    disabled={!isAdmin}
-                    placeholder="-"
-                  />
+                <div className="md:col-span-6 px-2 py-3 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
+                  {sortedUsers.map(u => {
+                    const isHidden = placaresOcultos && currentPlayerId !== u.id;
+                    const points = getPoints(u.id, idx);
+                    const isCurrent = currentPlayerId === u.id;
+
+                    return (
+                      <div key={u.id} className={cn(
+                        "flex flex-col items-center min-w-[55px] md:min-w-[70px] relative transition-all",
+                        isCurrent && "scale-105"
+                      )}>
+                        <div className="flex items-center gap-0.5 mb-1">
+                          <span className={cn(
+                            "text-[8px] font-black uppercase tracking-tighter",
+                            isCurrent ? "text-primary" : "text-muted-foreground/60"
+                          )}>
+                            <span className="md:hidden">{u.username.substring(0, 3)}</span>
+                            <span className="hidden md:inline">{u.username}</span>
+                          </span>
+                          {isCurrent && <UserCircle2 className="h-2 w-2 text-primary" />}
+                        </div>
+
+                        <div className={cn(
+                          "flex items-center justify-center gap-1 px-2 py-1 rounded-xl border transition-colors",
+                          isOutlier ? "bg-muted/50 border-muted text-muted-foreground" :
+                          points === 3 ? "bg-secondary text-white border-secondary shadow-md" : 
+                          points === 1 ? "bg-accent text-accent-foreground border-accent shadow-sm" : 
+                          points === 0 ? "bg-destructive/10 border-destructive/20 text-destructive" :
+                          "bg-background border-muted shadow-sm"
+                        )}>
+                          <span className="text-[11px] font-black">
+                            {isHidden ? "?" : (predictions[u.id]?.[idx]?.homeScore || "-")}
+                          </span>
+                          <span className="text-[8px] font-black opacity-30">x</span>
+                          <span className="text-[11px] font-black">
+                            {isHidden ? "?" : (predictions[u.id]?.[idx]?.awayScore || "-")}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="md:col-span-3 px-4 py-2 bg-primary/5 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="number"
+                      value={results[idx].homeScore}
+                      onChange={(e) => setResult(idx, 'home', e.target.value)}
+                      className="w-8 h-8 text-center rounded-lg p-0 font-black text-xs border-primary/10 bg-white dark:bg-card shadow-inner"
+                      disabled={!isAdmin}
+                      placeholder="-"
+                    />
+                    <Swords className="h-3 w-3 text-primary/30" />
+                    <Input
+                      type="number"
+                      value={results[idx].awayScore}
+                      onChange={(e) => setResult(idx, 'away', e.target.value)}
+                      className="w-8 h-8 text-center rounded-lg p-0 font-black text-xs border-primary/10 bg-white dark:bg-card shadow-inner"
+                      disabled={!isAdmin}
+                      placeholder="-"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
