@@ -42,7 +42,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
               </div>
             )}
             
-            <CardContent className="p-3 md:p-6 flex flex-row md:flex-col items-center md:text-center gap-4 relative z-10">
+            <CardContent className="p-3 md:p-5 flex flex-row md:flex-col items-center md:text-center gap-4 relative z-10">
               {/* Avatar Section */}
               <div className="relative shrink-0">
                 <Avatar className={cn(
@@ -70,26 +70,26 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
               </div>
 
               {/* Info Section */}
-              <div className="flex-1 w-full min-w-0 space-y-1">
+              <div className="flex-1 w-full min-w-0 space-y-0.5">
                 <div className="flex flex-row md:flex-col justify-between md:justify-start items-center md:items-center">
                   <h3 className={cn(
-                    "font-black italic uppercase text-[11px] md:text-sm leading-none truncate pr-2",
+                    "font-black italic uppercase text-[13px] md:text-sm leading-none truncate pr-2",
                     score.isWinner ? "text-white" : "text-foreground"
                   )}>{score.name}</h3>
                   
                   <div className="flex items-center md:flex-col gap-2 md:gap-0">
                     <span className={cn(
-                       "text-lg md:text-2xl font-black tabular-nums",
+                       "text-xl md:text-2xl font-black tabular-nums",
                        score.isWinner ? "text-white" : "text-primary"
                     )}>
-                      {score.points} <span className="text-[8px] md:text-[10px] font-bold opacity-50">PTS</span>
+                      {score.points} <span className="text-[9px] md:text-[10px] font-bold opacity-50">PTS</span>
                     </span>
                   </div>
                 </div>
 
                 <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-2">
                    <Badge variant="outline" className={cn(
-                      "rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest border-none px-2",
+                      "rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest border-none px-2 h-4",
                       score.isWinner ? "bg-white/10 text-white" : "bg-primary/5 text-muted-foreground"
                    )}>
                      {score.exactScores} Exatos
@@ -98,12 +98,12 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                    {isScoresHidden && (
                      <div className="flex items-center gap-1.5">
                         {score.betsCompleted ? (
-                          <CheckCircle2 className={cn("h-3 w-3", score.isWinner ? "text-white" : "text-secondary")} />
+                          <CheckCircle2 className={cn("h-3.5 w-3.5", score.isWinner ? "text-white" : "text-secondary")} />
                         ) : (
-                          <div className={cn("h-2.5 w-2.5 rounded-full border-2 border-current opacity-30", score.isWinner ? "text-white" : "text-muted-foreground")} />
+                          <div className={cn("h-3 w-3 rounded-full border-2 border-current opacity-30", score.isWinner ? "text-white" : "text-muted-foreground")} />
                         )}
                         <span className={cn(
-                          "text-[9px] md:text-[10px] font-black uppercase italic tracking-tighter whitespace-nowrap",
+                          "text-[11px] md:text-[10px] font-black uppercase italic tracking-tighter whitespace-nowrap",
                           score.betsCompleted 
                             ? (score.isWinner ? "text-white" : "text-secondary") 
                             : (score.isWinner ? "text-white/60" : "text-muted-foreground/60")
@@ -119,7 +119,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                   <Progress 
                     value={progressPercentage} 
                     className={cn(
-                      "h-1 rounded-full mt-2",
+                      "h-1 rounded-full mt-1.5",
                       score.isWinner ? "bg-white/10 [&>div]:bg-white" : "bg-muted [&>div]:bg-primary"
                     )} 
                   />
