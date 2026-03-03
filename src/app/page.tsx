@@ -17,7 +17,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, Sun, Moon, Shield, Save, Trophy, Loader2, LayoutDashboard, Calendar, ListChecks, Medal, RefreshCw, UserCircle, Settings } from "lucide-react";
+import { 
+  LogOut, 
+  Sun, 
+  Moon, 
+  Shield, 
+  Trophy, 
+  Loader2, 
+  LayoutDashboard, 
+  Calendar, 
+  ListChecks, 
+  Medal, 
+  RefreshCw, 
+  UserCircle, 
+  Settings,
+  ChevronDown
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStandings } from "@/lib/football-api";
 import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
@@ -46,6 +75,7 @@ export default function Home() {
   const [results, setResults] = useState<Prediction[]>(Array(10).fill({ homeScore: "", awayScore: "" }));
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
     Array.from({ length: 38 }, (_, i) => ({
@@ -289,27 +319,65 @@ export default function Home() {
                 <span className="font-black italic text-primary">#{currentRound}</span>
              </div>
              <div className="h-6 w-px bg-border" />
-             <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8 ring-2 ring-accent/30">
-                  <AvatarImage src={user?.photoURL || ""} className="object-cover" />
-                  <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
-                    {user?.displayName?.substring(0,2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-bold italic uppercase">{user?.displayName}</span>
-             </div>
+             
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-full transition-colors pr-3">
+                    <Avatar className="h-8 w-8 ring-2 ring-accent/30">
+                      <AvatarImage src={user?.photoURL || ""} className="object-cover" />
+                      <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
+                        {user?.displayName?.substring(0,2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start">
+                      <span className="text-xs font-bold italic uppercase leading-none">{user?.displayName}</span>
+                      <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Nível Alpha</span>
+                    </div>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl border-none shadow-2xl glass-card p-2">
+                  <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-muted-foreground tracking-widest px-3 py-2">
+                    Minha Conta
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-primary/5" />
+                  <DropdownMenuItem onClick={() => setShowProfileDialog(true)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
+                    <UserCircle className="h-4 w-4 text-primary" />
+                    Editar Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDarkMode(!darkMode)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
+                    {darkMode ? <Sun className="h-4 w-4 text-accent" /> : <Moon className="h-4 w-4 text-primary" />}
+                    Tema {darkMode ? 'Claro' : 'Escuro'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-primary/5" />
+                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl gap-2 font-bold cursor-pointer py-3 text-destructive focus:bg-destructive/10">
+                    <LogOut className="h-4 w-4" />
+                    Encerrar Sessão
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+             </DropdownMenu>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-muted rounded-full transition-colors" onClick={() => setDarkMode(!darkMode)}>
-              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-destructive hover:bg-destructive/10 rounded-full">
-              <LogOut className="h-5 w-5" />
-            </Button>
+          <div className="flex md:hidden items-center gap-2">
+             <button className="p-2 hover:bg-muted rounded-full transition-colors" onClick={() => setDarkMode(!darkMode)}>
+               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+             </button>
+             <Avatar className="h-8 w-8 ring-2 ring-accent/30 cursor-pointer" onClick={() => setShowProfileDialog(true)}>
+                <AvatarImage src={user?.photoURL || ""} className="object-cover" />
+                <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
+                  {user?.displayName?.substring(0,2).toUpperCase()}
+                </AvatarFallback>
+             </Avatar>
           </div>
         </div>
       </header>
+
+      {/* Profile Dialog */}
+      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+        <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none">
+          <ProfileSettings />
+        </DialogContent>
+      </Dialog>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-10">
         <section className="space-y-4">
@@ -342,10 +410,6 @@ export default function Home() {
                 <TabsTrigger value="standings" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
                   <LayoutDashboard className="h-4 w-4" />
                   Tabela CBF
-                </TabsTrigger>
-                <TabsTrigger value="profile" className="gap-2 font-black uppercase text-[10px] rounded-xl data-[state=active]:shadow-lg shrink-0 px-6 h-10">
-                  <UserCircle className="h-4 w-4" />
-                  Perfil
                 </TabsTrigger>
               </TabsList>
 
@@ -401,10 +465,6 @@ export default function Home() {
 
               <TabsContent value="standings" className="outline-none">
                  <LeagueStandings standings={standings} />
-              </TabsContent>
-
-              <TabsContent value="profile" className="outline-none">
-                 <ProfileSettings />
               </TabsContent>
             </Tabs>
           </div>
