@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -63,8 +62,8 @@ export function BettingTable({
             </DialogTrigger>
             <DialogContent className="max-w-[95vw] sm:max-w-[620px] p-0 overflow-hidden border-none bg-black/95 backdrop-blur-xl shadow-2xl">
               <div className="flex flex-col items-center p-4">
-                 <div className="w-full flex justify-between items-center mb-3 px-2">
-                    <p className="text-white/60 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                 <div className="w-full flex justify-between items-center mb-2 px-2">
+                    <p className="text-white/60 text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
                        <Share2 className="h-3 w-3 text-accent" /> Alpha Protocol 1:1
                     </p>
                     <DialogClose className="text-white/40 hover:text-white transition-colors">
@@ -72,39 +71,39 @@ export function BettingTable({
                     </DialogClose>
                  </div>
 
-                 {/* 1:1 Static Card - Ultra Minimalist Technical Focus */}
-                 <div className="aspect-square w-full max-w-[580px] min-w-[300px] bg-[#020617] p-4 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-3xl self-center">
+                 {/* 1:1 Static Card - Optimized Ultra Minimalist */}
+                 <div className="aspect-square w-full max-w-[580px] min-w-[300px] bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl self-center">
                     
-                    {/* Compact Minimal Header */}
-                    <div className="relative z-10 flex justify-between items-center mb-3 border-b border-white/10 pb-2">
-                       <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 bg-accent rounded flex items-center justify-center -rotate-6">
-                            <Trophy className="h-3.5 w-3.5 text-black" />
+                    {/* Compact Header */}
+                    <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-1.5">
+                       <div className="flex items-center gap-1.5">
+                          <div className="h-5 w-5 bg-accent rounded flex items-center justify-center -rotate-6">
+                            <Trophy className="h-3 w-3 text-black" />
                           </div>
                           <div>
-                            <h2 className="text-sm font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</h2>
-                            <span className="text-[6px] font-bold text-accent uppercase tracking-[0.3em] opacity-80">League 2026</span>
+                            <h2 className="text-[12px] font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</h2>
+                            <span className="text-[5px] font-bold text-accent uppercase tracking-[0.3em] opacity-80">League 2026</span>
                           </div>
                        </div>
-                       <div className="bg-white/5 px-2 py-1 rounded border border-white/10">
-                          <span className="text-[10px] font-black text-accent italic leading-none">{roundName.toUpperCase()}</span>
+                       <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                          <span className="text-[9px] font-black text-accent italic leading-none">{roundName.toUpperCase()}</span>
                        </div>
                     </div>
 
-                    {/* Table Layout - Maximum Efficiency for 10 Rows */}
+                    {/* Table Layout */}
                     <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-                       {/* Table Header - 5 Equal Columns */}
-                       <div className="grid grid-cols-5 gap-1 mb-1.5 px-1.5">
-                          <div className="text-[7px] font-black uppercase text-white/30 italic">JOGO</div>
+                       {/* Table Header */}
+                       <div className="grid grid-cols-5 gap-0.5 mb-1 px-1">
+                          <div className="text-[6px] font-black uppercase text-white/30 italic">CONFRONTO</div>
                           {PLAYERS.map(player => (
-                            <div key={player} className="text-center text-[8px] font-black uppercase text-accent tracking-tighter truncate">
+                            <div key={player} className="text-center text-[7px] font-black uppercase text-accent tracking-tighter truncate">
                                {player}
                             </div>
                           ))}
                        </div>
 
-                       {/* Match List - Ultra Compact */}
-                       <div className="flex-1 flex flex-col justify-between py-1">
+                       {/* Match List - Ultra Compact Spacing */}
+                       <div className="flex-1 flex flex-col justify-between">
                           {Array.from({ length: 10 }).map((_, idx) => {
                              const desc = matchDescriptions[idx];
                              const parts = desc ? desc.split(' x ') : [];
@@ -113,20 +112,20 @@ export function BettingTable({
                                 : "--- x ---";
 
                              return (
-                               <div key={idx} className="grid grid-cols-5 gap-1 items-center bg-white/[0.02] py-1 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.5)]">
+                               <div key={idx} className="grid grid-cols-5 gap-0.5 items-center bg-white/[0.02] py-0.5 px-1 rounded border border-white/[0.01] h-[calc(100%/10.2)]">
                                   {/* Match Abrev */}
                                   <div className="flex items-center gap-1 overflow-hidden">
-                                     <span className="text-[6px] font-black text-white/20 italic tabular-nums">#{idx + 1}</span>
-                                     <span className="text-[9px] font-black italic uppercase text-white truncate tracking-tighter">
+                                     <span className="text-[5px] font-black text-white/20 italic tabular-nums">#{idx + 1}</span>
+                                     <span className="text-[8px] font-black italic uppercase text-white truncate tracking-tighter">
                                         {abrevDesc}
                                      </span>
                                   </div>
 
-                                  {/* Player Predictions - Compact Data Blocks */}
+                                  {/* Player Predictions - Compact Blocks */}
                                   {PLAYERS.map(player => (
                                      <div key={player} className="flex justify-center">
-                                        <div className="bg-black/60 w-full py-1.5 rounded text-center border border-white/5">
-                                           <span className="text-[11px] font-black text-white leading-none tabular-nums tracking-tighter">
+                                        <div className="bg-black/60 w-full py-1 rounded text-center border border-white/5">
+                                           <span className="text-[10px] font-black text-white leading-none tabular-nums tracking-tighter">
                                               {predictions[player][idx]?.homeScore || "0"}-{predictions[player][idx]?.awayScore || "0"}
                                            </span>
                                         </div>
@@ -138,18 +137,18 @@ export function BettingTable({
                        </div>
                     </div>
 
-                    {/* Minimal Footer */}
-                    <div className="relative z-10 flex justify-between items-center mt-2 pt-1 border-t border-white/5">
-                       <span className="text-[6px] font-black text-white/10 uppercase tracking-[0.4em]">Alpha Cloud Protocol</span>
+                    {/* Footer */}
+                    <div className="relative z-10 flex justify-between items-center mt-1.5 pt-1 border-t border-white/5">
+                       <span className="text-[5px] font-black text-white/10 uppercase tracking-[0.4em]">Alpha Cloud Protocol</span>
                        <div className="flex items-center gap-1">
-                          <Share2 className="h-2 w-2 text-white/10" />
+                          <Share2 className="h-1.5 w-1.5 text-white/10" />
                        </div>
                     </div>
                  </div>
                  
-                 <div className="mt-3">
-                    <p className="text-white/40 text-[9px] uppercase tracking-[0.2em] text-center font-bold">
-                       Captura 1:1 • 100% dos palpites visíveis
+                 <div className="mt-2">
+                    <p className="text-white/40 text-[8px] uppercase tracking-[0.2em] text-center font-bold">
+                       Captura 1:1 • Minimalista Técnico
                     </p>
                  </div>
               </div>
@@ -158,7 +157,7 @@ export function BettingTable({
         </div>
       )}
 
-      {/* Header Compacto - App View */}
+      {/* App View Viewport */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2 bg-muted/20 rounded-2xl border border-transparent">
         <div className="col-span-3 text-[10px] font-black uppercase text-muted-foreground">Confronto</div>
         <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-muted-foreground">Palpites da Liga</div>
