@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -50,7 +51,6 @@ export function BettingTable({
     return team ? team.abrev : cleanName.substring(0, 3).toUpperCase();
   };
 
-  // Garante uma ordem estável para as colunas baseada no ID do usuário
   const sortedUsers = [...allUsers].sort((a, b) => a.id.localeCompare(b.id));
 
   return (

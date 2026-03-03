@@ -106,7 +106,6 @@ export default function Home() {
 
   const isAdminUser = user?.displayName === "Jardel";
 
-  // CRITICAL FIX: Ensure body pointer-events are restored after Dialog closes.
   useEffect(() => {
     if (!showProfileDialog) {
       const timer = setTimeout(() => {
@@ -258,7 +257,6 @@ export default function Home() {
     const newValue = !placaresOcultos;
     setPlacaresOcultos(newValue);
     
-    // Save immediately to Firestore
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
       id: roundId,
@@ -448,7 +446,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Profile Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none focus:outline-none">
           <DialogHeader className="sr-only">
@@ -460,6 +457,40 @@ export default function Home() {
       </Dialog>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-10">
+        {/* Admin Control Bar */}
+        {isAdminUser && (
+          <div className="flex flex-col md:flex-row items-center justify-between bg-primary/5 p-5 rounded-[2rem] border border-primary/10 mb-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary">
+                <Shield className="h-6 w-6" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Painel Admin</span>
+                <h3 className="text-sm font-black italic uppercase text-primary leading-none">Controle de Visibilidade</h3>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto">
+               <Badge className={cn(
+                 "rounded-full px-4 py-1 text-[10px] font-black uppercase border-none h-10 flex items-center", 
+                 placaresOcultos ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
+               )}>
+                  {placaresOcultos ? "Modo Privado Ativo" : "Modo Público Ativo"}
+               </Badge>
+               <Button 
+                 size="lg" 
+                 onClick={handleTogglePlacaresOcultos} 
+                 className={cn(
+                   "flex-1 md:flex-none rounded-2xl text-[10px] font-black uppercase h-10 px-8 gap-3 shadow-xl transition-all hover:scale-[1.02] active:scale-95",
+                   placaresOcultos ? "bg-secondary hover:bg-secondary/90 text-white" : "bg-destructive hover:bg-destructive/90 text-white"
+                 )}
+               >
+                 {placaresOcultos ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                 {placaresOcultos ? "Revelar Todos os Palpites" : "Ocultar Todos os Palpites"}
+               </Button>
+            </div>
+          </div>
+        )}
+
         <section className="space-y-4">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -516,17 +547,6 @@ export default function Home() {
                       <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Comparativo de palpites em tempo real</p>
                    </div>
                    <div className="flex items-center gap-2">
-                      {isAdminUser && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={handleTogglePlacaresOcultos} 
-                          className="rounded-full text-[10px] font-black uppercase h-8 px-4 border-primary/20 gap-2"
-                        >
-                          {placaresOcultos ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                          {placaresOcultos ? "Revelar Tudo" : "Ocultar Tudo"}
-                        </Button>
-                      )}
                       <Badge className={cn("rounded-full px-3 text-[9px] font-black uppercase", placaresOcultos ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary")}>
                         {placaresOcultos ? "Modo Privado" : "Modo Público"}
                       </Badge>
