@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -447,7 +446,7 @@ export default function Home() {
               </div>
               {(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
            </div>
-           <RankingSummary scores={scores} />
+           <RankingSummary scores={scores} isScoresHidden={placaresOcultos} />
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

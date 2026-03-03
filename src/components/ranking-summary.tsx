@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -12,9 +11,10 @@ import { cn } from "@/lib/utils";
 
 interface RankingSummaryProps {
   scores: PlayerScore[];
+  isScoresHidden: boolean;
 }
 
-export function RankingSummary({ scores }: RankingSummaryProps) {
+export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) {
   const sortedScores = [...scores].sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     return b.exactScores - a.exactScores;
@@ -86,31 +86,33 @@ export function RankingSummary({ scores }: RankingSummaryProps) {
                   </Badge>
                 </div>
 
-                {/* Status de Participação */}
-                <div className="w-full space-y-1.5 pt-2 border-t border-dashed border-white/20">
-                   <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                         {score.betsCompleted ? (
-                           <CheckCircle2 className={cn("h-3 w-3", score.isWinner ? "text-white" : "text-secondary")} />
-                         ) : (
-                           <Circle className={cn("h-3 w-3", score.isWinner ? "text-white/40" : "text-muted-foreground/30")} />
-                         )}
-                         <span className={cn("text-[9px] font-black uppercase tracking-wider", score.isWinner ? "text-white/80" : "text-muted-foreground")}>
-                           {score.betsCompleted ? "Quilado" : "Não quilou ainda"}
-                         </span>
-                      </div>
-                      <span className={cn("text-[9px] font-black", score.isWinner ? "text-white" : "text-primary")}>
-                         {score.betsCount}/10
-                      </span>
-                   </div>
-                   <Progress 
-                      value={progressPercentage} 
-                      className={cn(
-                        "h-1 rounded-full",
-                        score.isWinner ? "bg-white/10 [&>div]:bg-white" : "bg-muted [&>div]:bg-primary"
-                      )} 
-                   />
-                </div>
+                {/* Status de Participação - Only visible when scores are hidden */}
+                {isScoresHidden && (
+                  <div className="w-full space-y-1.5 pt-2 border-t border-dashed border-white/20 animate-in fade-in duration-300">
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                           {score.betsCompleted ? (
+                             <CheckCircle2 className={cn("h-3 w-3", score.isWinner ? "text-white" : "text-secondary")} />
+                           ) : (
+                             <Circle className={cn("h-3 w-3", score.isWinner ? "text-white/40" : "text-muted-foreground/30")} />
+                           )}
+                           <span className={cn("text-[9px] font-black uppercase tracking-wider", score.isWinner ? "text-white/80" : "text-muted-foreground")}>
+                             {score.betsCompleted ? "Quilado" : "Não quilou ainda"}
+                           </span>
+                        </div>
+                        <span className={cn("text-[9px] font-black", score.isWinner ? "text-white" : "text-primary")}>
+                           {score.betsCount}/10
+                        </span>
+                     </div>
+                     <Progress 
+                        value={progressPercentage} 
+                        className={cn(
+                          "h-1 rounded-full",
+                          score.isWinner ? "bg-white/10 [&>div]:bg-white" : "bg-muted [&>div]:bg-primary"
+                        )} 
+                     />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
