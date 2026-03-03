@@ -322,7 +322,7 @@ export default function Home() {
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-full transition-colors pr-3">
                     <Avatar className="h-8 w-8 ring-2 ring-accent/30">
-                      <AvatarImage src={user?.photoURL || ""} className="object-cover" />
+                      {user?.photoURL && <AvatarImage src={user.photoURL} className="object-cover" />}
                       <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
                         {user?.displayName?.substring(0,2).toUpperCase()}
                       </AvatarFallback>
@@ -361,7 +361,7 @@ export default function Home() {
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-10 w-10 ring-2 ring-accent/30 cursor-pointer">
-                    <AvatarImage src={user?.photoURL || ""} className="object-cover" />
+                    {user?.photoURL && <AvatarImage src={user.photoURL} className="object-cover" />}
                     <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
                       {user?.displayName?.substring(0,2).toUpperCase()}
                     </AvatarFallback>

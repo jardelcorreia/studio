@@ -166,7 +166,7 @@ export function ProfileSettings() {
            <div className="absolute -bottom-16 left-8 flex items-end gap-6">
               <div className="relative group">
                 <Avatar className="h-32 w-32 border-4 border-background rounded-3xl shadow-xl bg-muted overflow-hidden">
-                  <AvatarImage src={user?.photoURL || ""} className="object-cover w-full h-full" />
+                  {user?.photoURL && <AvatarImage src={user.photoURL} className="object-cover w-full h-full" />}
                   <AvatarFallback className="bg-primary/10 text-primary text-3xl font-black italic">
                     {user?.displayName?.substring(0, 2).toUpperCase() || "AL"}
                   </AvatarFallback>

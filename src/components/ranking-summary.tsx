@@ -43,7 +43,7 @@ export function RankingSummary({ scores }: RankingSummaryProps) {
                  "h-16 w-16 rounded-2xl shadow-lg transform transition-transform group-hover:scale-110",
                  score.isWinner ? "ring-4 ring-white/30" : "ring-2 ring-muted"
               )}>
-                <AvatarImage src={score.photoUrl || ""} className="object-cover" />
+                {score.photoUrl && <AvatarImage src={score.photoUrl} className="object-cover" />}
                 <AvatarFallback className={cn(
                   "text-2xl font-black italic",
                   score.isWinner ? "bg-white/20 text-white" : "bg-muted/50 text-primary"
