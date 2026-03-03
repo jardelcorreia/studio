@@ -7,7 +7,7 @@ import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Progress } from "./ui/progress";
-import { Trophy, Medal, Star, Crown, CheckCircle2, Circle } from "lucide-react";
+import { Trophy, Medal, Star, Crown, CheckCircle2, Circle, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RankingSummaryProps {
@@ -96,14 +96,24 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                    </Badge>
 
                    {isScoresHidden && (
-                     <div className="flex items-center gap-1">
-                        {score.betsCompleted ? (
-                          <CheckCircle2 className={cn("h-2.5 w-2.5", score.isWinner ? "text-white" : "text-secondary")} />
-                        ) : (
-                          <Circle className={cn("h-2.5 w-2.5", score.isWinner ? "text-white/40" : "text-muted-foreground/30")} />
-                        )}
-                        <span className={cn("text-[7px] md:text-[9px] font-black uppercase", score.isWinner ? "text-white/80" : "text-muted-foreground")}>
-                          {score.betsCount}/10
+                     <div className="flex flex-col items-end gap-0">
+                        <div className="flex items-center gap-1">
+                           {score.betsCompleted ? (
+                             <CheckCircle2 className={cn("h-2.5 w-2.5", score.isWinner ? "text-white" : "text-secondary")} />
+                           ) : (
+                             <div className={cn("h-2 w-2 rounded-full border border-current opacity-30", score.isWinner ? "text-white" : "text-muted-foreground")} />
+                           )}
+                           <span className={cn(
+                             "text-[7px] md:text-[9px] font-black uppercase italic tracking-tighter",
+                             score.betsCompleted 
+                               ? (score.isWinner ? "text-white" : "text-secondary") 
+                               : (score.isWinner ? "text-white/60" : "text-muted-foreground/60")
+                           )}>
+                             {score.betsCompleted ? "Quilado" : "Ainda não quilou"}
+                           </span>
+                        </div>
+                        <span className={cn("text-[6px] md:text-[8px] font-bold opacity-40 tabular-nums", score.isWinner ? "text-white" : "text-muted-foreground")}>
+                          {score.betsCount}/10 palpites
                         </span>
                      </div>
                    )}
