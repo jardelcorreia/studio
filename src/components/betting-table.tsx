@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -186,36 +185,32 @@ export function BettingTable({
                     </div>
                   </div>
 
-                  {/* Placar Oficial no Cabeçalho (Mobile Only) - Cápsula de Resultado */}
-                  <div className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary shadow-sm border border-primary/20">
+                  {/* Placar Oficial no Cabeçalho (Mobile Only) - Texto Minimalista */}
+                  <div className="md:hidden flex items-center gap-1 px-2">
                     {isAdmin ? (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         <Input
                           type="number"
                           value={results[idx].homeScore}
                           onChange={(e) => setResult(idx, 'home', e.target.value)}
-                          className="w-6 h-6 text-center rounded-md p-0 font-black text-[11px] border-none bg-white text-primary shadow-none focus-visible:ring-0"
+                          className="w-5 h-5 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           placeholder="-"
                         />
-                        <span className="text-[8px] font-black text-white/50">x</span>
+                        <span className="text-[10px] font-black text-primary/30">x</span>
                         <Input
                           type="number"
                           value={results[idx].awayScore}
                           onChange={(e) => setResult(idx, 'away', e.target.value)}
-                          className="w-6 h-6 text-center rounded-md p-0 font-black text-[11px] border-none bg-white text-primary shadow-none focus-visible:ring-0"
+                          className="w-5 h-5 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           placeholder="-"
                         />
                       </div>
                     ) : (
-                      <>
-                        <span className="text-xs font-black text-white tabular-nums">
-                          {results[idx].homeScore !== "" ? results[idx].homeScore : "-"}
-                        </span>
-                        <span className="text-[8px] font-black text-white/50">x</span>
-                        <span className="text-xs font-black text-white tabular-nums">
-                          {results[idx].awayScore !== "" ? results[idx].awayScore : "-"}
-                        </span>
-                      </>
+                      <div className="flex items-center gap-1 font-black text-xs text-primary tabular-nums">
+                        <span>{results[idx].homeScore !== "" ? results[idx].homeScore : "-"}</span>
+                        <span className="text-primary/30 font-bold">x</span>
+                        <span>{results[idx].awayScore !== "" ? results[idx].awayScore : "-"}</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -294,4 +289,3 @@ export function BettingTable({
     </div>
   );
 }
-
