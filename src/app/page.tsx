@@ -321,7 +321,7 @@ export default function Home() {
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-full transition-colors pr-3">
                     <Avatar className="h-8 w-8 ring-2 ring-accent/30 bg-muted flex items-center justify-center">
-                      <AvatarImage src={user.photoURL || ""} className="object-cover" />
+                      <AvatarImage src={user.photoURL || undefined} className="object-cover" />
                       <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
                         {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                       </AvatarFallback>
@@ -338,7 +338,13 @@ export default function Home() {
                     Minha Conta
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-primary/5" />
-                  <DropdownMenuItem onClick={() => setShowProfileDialog(true)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
+                  <DropdownMenuItem 
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setShowProfileDialog(true);
+                    }}
+                    className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
+                  >
                     <UserCircle className="h-4 w-4 text-primary" />
                     Editar Perfil
                   </DropdownMenuItem>
@@ -360,7 +366,7 @@ export default function Home() {
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-10 w-10 ring-2 ring-accent/30 cursor-pointer bg-muted flex items-center justify-center">
-                    <AvatarImage src={user.photoURL || ""} className="object-cover" />
+                    <AvatarImage src={user.photoURL || undefined} className="object-cover" />
                     <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
                       {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                     </AvatarFallback>
@@ -371,7 +377,13 @@ export default function Home() {
                     Minha Conta
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-primary/5" />
-                  <DropdownMenuItem onClick={() => setShowProfileDialog(true)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
+                  <DropdownMenuItem 
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setShowProfileDialog(true);
+                    }}
+                    className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
+                  >
                     <UserCircle className="h-4 w-4 text-primary" />
                     Editar Perfil
                   </DropdownMenuItem>
@@ -392,7 +404,7 @@ export default function Home() {
 
       {/* Profile Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none">
+        <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none focus:outline-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Configurações de Perfil</DialogTitle>
             <DialogDescription>Personalize seu perfil na AlphaBet League.</DialogDescription>
