@@ -24,12 +24,14 @@ const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
 >(({ className, src, ...props }, ref) => {
-  // We pass undefined if src is an empty string to avoid console warnings
-  // but we MUST render the component so Radix can manage the fallback state correctly.
+  // If src is empty or null, we don't render the image primitive at all.
+  // This forces the Avatar.Fallback to render immediately.
+  if (!src) return null;
+
   return (
     <AvatarPrimitive.Image
       ref={ref}
-      src={src || undefined}
+      src={src}
       className={cn("aspect-square h-full w-full", className)}
       {...props}
     />

@@ -101,6 +101,19 @@ export default function Home() {
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
 
+  // CRITICAL FIX: Ensure body pointer-events are restored after Dialog closes.
+  // Radix UI sometimes fails to clean up when opening a Dialog from a DropdownMenu.
+  useEffect(() => {
+    if (!showProfileDialog) {
+      // Small timeout to allow Radix cleanup to happen, then force reset if it failed.
+      const timer = setTimeout(() => {
+        document.body.style.pointerEvents = 'auto';
+        document.body.style.overflow = 'auto';
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [showProfileDialog]);
+
   useEffect(() => {
     async function init() {
       const matchday = await getBrasileiraoCurrentMatchday();
@@ -321,7 +334,7 @@ export default function Home() {
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-full transition-colors pr-3">
                     <Avatar className="h-8 w-8 ring-2 ring-accent/30 bg-muted flex items-center justify-center">
-                      <AvatarImage src={user.photoURL || undefined} className="object-cover" />
+                      <AvatarImage src={user.photoURL || undefined} />
                       <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
                         {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                       </AvatarFallback>
@@ -341,10 +354,10 @@ export default function Home() {
                   <DropdownMenuItem 
                     onSelect={(e) => {
                       e.preventDefault();
-                      // Timeout to ensure Dropdown closes before Dialog opens, preventing UI freeze
+                      // Wait for DropdownMenu to start closing before showing Dialog
                       setTimeout(() => {
                         setShowProfileDialog(true);
-                      }, 100);
+                      }, 150);
                     }}
                     className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
                   >
@@ -369,7 +382,7 @@ export default function Home() {
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-10 w-10 ring-2 ring-accent/30 cursor-pointer bg-muted flex items-center justify-center">
-                    <AvatarImage src={user.photoURL || undefined} className="object-cover" />
+                    <AvatarImage src={user.photoURL || undefined} />
                     <AvatarFallback className="bg-accent/20 text-accent font-black text-[10px]">
                       {user?.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
                     </AvatarFallback>
@@ -385,7 +398,7 @@ export default function Home() {
                       e.preventDefault();
                       setTimeout(() => {
                         setShowProfileDialog(true);
-                      }, 100);
+                      }, 150);
                     }}
                     className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10"
                   >
