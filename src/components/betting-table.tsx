@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -161,13 +160,13 @@ export function BettingTable({
 
       <div className="grid grid-cols-1 gap-1.5">
         {matches.map((match, idx) => {
-          const isOutlier = match.isValidForPoints === false;
+          const isOutOfWindow = match.isValidForPoints === false;
           const desc = `${match.homeTeam} x ${match.awayTeam}`;
 
           return (
             <div key={idx} className={cn(
               "glass-card border-none rounded-2xl overflow-hidden group transition-all duration-200",
-              isOutlier ? "opacity-60 saturate-50" : "hover:bg-primary/5"
+              isOutOfWindow ? "opacity-60 saturate-50" : "hover:bg-primary/5"
             )}>
               <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px]">
                 <div className="md:col-span-3 px-4 py-2 flex items-center gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
@@ -176,9 +175,9 @@ export function BettingTable({
                     <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate">
                       {desc || "---"}
                     </div>
-                    {isOutlier && (
+                    {isOutOfWindow && (
                       <span className="text-[8px] font-black text-destructive uppercase flex items-center gap-1 mt-0.5">
-                        <AlertCircle className="h-2 w-2" /> Outlier: Não vale pontos
+                        <AlertCircle className="h-2 w-2" /> Fora da Janela: Não vale pontos
                       </span>
                     )}
                   </div>
@@ -208,7 +207,7 @@ export function BettingTable({
 
                         <div className={cn(
                           "flex items-center justify-center gap-1 px-2 py-1 rounded-xl border transition-colors",
-                          isOutlier ? "bg-muted/50 border-muted text-muted-foreground" :
+                          isOutOfWindow ? "bg-muted/50 border-muted text-muted-foreground" :
                           points === 3 ? "bg-secondary text-white border-secondary shadow-md" : 
                           points === 1 ? "bg-accent text-accent-foreground border-accent shadow-sm" : 
                           points === 0 ? "bg-destructive/10 border-destructive/20 text-destructive" :

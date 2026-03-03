@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -100,12 +99,12 @@ export function MatchCalendar({
           const isLive = match.status === 'live';
           const isCancelled = match.status === 'cancelled';
           const currentPred = predictions[idx] || { homeScore: "", awayScore: "" };
-          const isOutlier = match.isValidForPoints === false;
+          const isOutOfWindow = match.isValidForPoints === false;
 
           return (
             <Card key={match.id} className={cn(
               "glass-card border-none rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500 group relative",
-              isOutlier && "border-2 border-destructive/20 opacity-90"
+              isOutOfWindow && "border-2 border-destructive/20 opacity-90"
             )}>
               <CardContent className="p-0">
                 {/* Status Bar */}
@@ -115,9 +114,9 @@ export function MatchCalendar({
                       <span className="text-[9px] font-black uppercase text-muted-foreground">{formatDate(match.utcDate)}</span>
                    </div>
                    <div className="flex items-center gap-2">
-                      {isOutlier && (
+                      {isOutOfWindow && (
                         <Badge variant="destructive" className="rounded-full px-3 text-[8px] font-black uppercase border-none animate-pulse">
-                          Outlier
+                          Fora da Janela
                         </Badge>
                       )}
                       <Badge className={cn(
@@ -184,7 +183,7 @@ export function MatchCalendar({
                 {/* Footer Info */}
                 <div className={cn(
                   "px-6 py-4 flex flex-col items-center gap-1",
-                  isOutlier ? "bg-destructive/5" : "bg-primary/5"
+                  isOutOfWindow ? "bg-destructive/5" : "bg-primary/5"
                 )}>
                    <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3 text-primary/40" />
@@ -192,9 +191,9 @@ export function MatchCalendar({
                         {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isCancelled ? "PARTIDA ADIADA" : "AGUARDANDO PALPITE"}
                       </span>
                    </div>
-                   {isOutlier && (
-                     <div className="flex items-center gap-1 text-destructive font-black text-[9px] uppercase tracking-wider">
-                        <AlertTriangle className="h-3 w-3" /> Regra da Janela: Jogo não valerá pontos nesta rodada
+                   {isOutOfWindow && (
+                     <div className="flex items-center gap-1 text-destructive font-black text-[9px] uppercase tracking-wider text-center px-4">
+                        <AlertTriangle className="h-3 w-3" /> Regra da Janela: Jogo fora da janela de validade da rodada
                      </div>
                    )}
                 </div>
