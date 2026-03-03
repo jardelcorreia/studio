@@ -43,17 +43,19 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
   const formatEmail = (name: string) => `${name.toLowerCase().trim().replace(/\s+/g, '')}@alphabet.com`;
 
-  const ensureUserDocument = (uid: string, name: string) => {
+  const ensureUserDocument = (uid: string, name: string, email: string) => {
+    const isAdmin = email === "jardel@alphabet.com";
     const userRef = doc(db, "users", uid);
+    
     setDocumentNonBlocking(userRef, {
       id: uid,
       username: name,
-      isAdmin: name === "Jardel",
+      isAdmin: isAdmin,
       photoUrl: "",
       dateCreated: serverTimestamp(),
     }, { merge: true });
 
-    if (name === "Jardel") {
+    if (isAdmin) {
       const adminRef = doc(db, "roles_admin", uid);
       setDocumentNonBlocking(adminRef, {
         userId: uid,
@@ -75,7 +77,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
       // Garante que o documento existe no Firestore ao logar
-      ensureUserDocument(userCredential.user.uid, playerName);
+      ensureUserDocument(userCredential.user.uid, playerName, email);
 
       if (password === "alphabet123") {
         onPasswordChangeRequired?.();
@@ -93,7 +95,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
           await updateProfile(userCredential.user, { displayName: playerName });
           
           // Cria o documento do novo usuário
-          ensureUserDocument(userCredential.user.uid, playerName);
+          ensureUserDocument(userCredential.user.uid, playerName, email);
 
           toast({
             title: "Primeiro Acesso!",
