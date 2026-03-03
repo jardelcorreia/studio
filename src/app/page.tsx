@@ -277,22 +277,26 @@ export default function Home() {
     if (!currentRound || !user || !roundId) return;
     setIsSaving(true);
     try {
-      const roundRef = doc(db, "rounds", roundId);
-      setDocumentNonBlocking(roundRef, {
-        id: roundId,
-        roundNumber: currentRound,
-        name: roundName,
-        isScoresHidden: placaresOcultos,
-        dateUpdated: serverTimestamp(),
-        dateCreated: roundData?.dateCreated || serverTimestamp(),
-      }, { merge: true });
+      // Apenas Admins salvam metadados da rodada e configurações de campeonato
+      if (isAdminUser) {
+        const roundRef = doc(db, "rounds", roundId);
+        setDocumentNonBlocking(roundRef, {
+          id: roundId,
+          roundNumber: currentRound,
+          name: roundName,
+          isScoresHidden: placaresOcultos,
+          dateUpdated: serverTimestamp(),
+          dateCreated: roundData?.dateCreated || serverTimestamp(),
+        }, { merge: true });
 
-      const settingsRef = doc(db, "app_settings", "championship");
-      setDocumentNonBlocking(settingsRef, {
-        history: roundWinners,
-        lastUpdated: serverTimestamp(),
-      }, { merge: true });
+        const settingsRef = doc(db, "app_settings", "championship");
+        setDocumentNonBlocking(settingsRef, {
+          history: roundWinners,
+          lastUpdated: serverTimestamp(),
+        }, { merge: true });
+      }
 
+      // Todos os usuários salvam seus próprios palpites
       const myPreds = predictions[user.uid];
       if (myPreds) {
         myPreds.forEach((pred, idx) => {
