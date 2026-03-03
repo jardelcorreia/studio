@@ -104,9 +104,11 @@ export default function Home() {
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
 
-  const isAdminUser = user?.displayName === "Jardel";
+  // Verificação de Admin baseada no e-mail fixo para evitar perda de acesso ao mudar nome de perfil
+  const isAdminUser = user?.email === "jardel@alphabet.com";
 
   useEffect(() => {
+    // Hack para garantir que o scroll e eventos de ponteiro voltem ao normal após fechar Dialogs do Radix
     if (!showProfileDialog) {
       const timer = setTimeout(() => {
         document.body.style.pointerEvents = 'auto';
@@ -257,6 +259,7 @@ export default function Home() {
     const newValue = !placaresOcultos;
     setPlacaresOcultos(newValue);
     
+    // Gravação imediata no Firestore para sincronizar com todos os clientes
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
       id: roundId,
@@ -457,7 +460,7 @@ export default function Home() {
       </Dialog>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-        {/* Admin Control Bar */}
+        {/* Admin Control Bar - Visível para Jardel através do e-mail oficial */}
         {isAdminUser && (
           <div className="flex flex-col md:flex-row items-center justify-between bg-primary/5 p-5 rounded-[2rem] border border-primary/10 mb-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center gap-4">
