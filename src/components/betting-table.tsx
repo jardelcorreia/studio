@@ -1,12 +1,14 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { PLAYERS } from "@/lib/constants";
 import { Prediction, PlayerPredictions } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
-import { Trophy, UserCircle2, Swords } from "lucide-react";
+import { Trophy, UserCircle2, Swords, Share2, Camera, Download, X } from "lucide-react";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 interface BettingTableProps {
   roundName: string;
@@ -21,6 +23,7 @@ interface BettingTableProps {
 }
 
 export function BettingTable({
+  roundName,
   matchDescriptions,
   predictions,
   results,
@@ -42,7 +45,83 @@ export function BettingTable({
   };
 
   return (
-    <div className="w-full space-y-2">
+    <div className="w-full space-y-4">
+      {/* Admin Actions */}
+      {isAdmin && (
+        <div className="flex justify-end px-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground font-black italic uppercase rounded-full gap-2 shadow-lg shadow-accent/20">
+                <Camera className="h-4 w-4" />
+                Gerar Card da Rodada
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none sm:rounded-none">
+              <div className="flex flex-col items-center">
+                 {/* 1:1 Card for Screenshot */}
+                 <div className="aspect-square w-full max-w-[600px] sports-gradient p-8 flex flex-col justify-between relative shadow-2xl overflow-hidden border-4 border-white/10">
+                    <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                       <div className="absolute top-10 right-10 rotate-12 scale-150">
+                          <Trophy className="h-64 w-64 text-white" />
+                       </div>
+                    </div>
+
+                    <div className="relative z-10 flex justify-between items-start">
+                       <div className="flex flex-col">
+                          <h2 className="text-3xl font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</h2>
+                          <span className="text-[10px] font-bold text-accent uppercase tracking-[0.3em]">Brasileirão Elite</span>
+                       </div>
+                       <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 text-center">
+                          <span className="text-[10px] font-black text-white/60 uppercase block">Rodada</span>
+                          <span className="text-xl font-black text-white italic leading-none">{roundName.split(' ')[1] || "38"}</span>
+                       </div>
+                    </div>
+
+                    <div className="relative z-10 grid grid-cols-2 gap-3 my-6">
+                       {matchDescriptions.filter(d => d && d !== "").map((desc, idx) => (
+                          <div key={idx} className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 flex flex-col gap-2">
+                             <div className="text-[9px] font-black italic uppercase text-accent/80 truncate border-b border-white/5 pb-1">
+                                {desc}
+                             </div>
+                             <div className="grid grid-cols-2 gap-1.5">
+                                {PLAYERS.map(player => (
+                                   <div key={player} className="flex flex-col items-center">
+                                      <span className="text-[7px] font-bold text-white/40 uppercase mb-0.5">{player.substring(0,3)}</span>
+                                      <div className="bg-black/20 w-full py-0.5 rounded-md text-center">
+                                         <span className="text-[9px] font-black text-white">
+                                            {predictions[player][idx].homeScore || "0"}x{predictions[player][idx].awayScore || "0"}
+                                         </span>
+                                      </div>
+                                   </div>
+                                ))}
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+
+                    <div className="relative z-10 flex justify-between items-end border-t border-white/10 pt-4">
+                       <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 bg-accent rounded-lg flex items-center justify-center">
+                             <Trophy className="h-3 w-3 text-accent-foreground" />
+                          </div>
+                          <span className="text-[10px] font-black text-white/60 uppercase tracking-widest italic">Protocolo Alpha 2026</span>
+                       </div>
+                       <span className="text-[8px] font-bold text-white/30 uppercase">alphabet-league.app</span>
+                    </div>
+                 </div>
+                 
+                 <div className="mt-6 flex flex-col items-center gap-2">
+                    <p className="text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                       <Share2 className="h-4 w-4" /> Screenshot para compartilhar
+                    </p>
+                    <p className="text-white/40 text-[9px] uppercase tracking-widest">Ajuste o zoom da tela se necessário</p>
+                 </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+
       {/* Header Compacto - Desktop Only Labeling */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2 bg-muted/20 rounded-2xl border border-transparent">
         <div className="col-span-3 text-[10px] font-black uppercase text-muted-foreground">Confronto</div>
@@ -80,7 +159,6 @@ export function BettingTable({
                           "text-[8px] font-black uppercase tracking-tighter",
                           isCurrent ? "text-primary" : "text-muted-foreground/60"
                         )}>
-                          {/* Abreviar no mobile */}
                           <span className="md:hidden">{player.substring(0, 3)}</span>
                           <span className="hidden md:inline">{player}</span>
                         </span>
