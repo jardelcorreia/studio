@@ -266,14 +266,19 @@ export default function Home() {
         photoUrl: u.photoUrl
       };
     });
+    
     const finalScores = playerStats.map(p => ({ ...p, isWinner: false }));
     const maxPts = Math.max(...finalScores.map(s => s.points));
+    
+    // Só define ganhador se houver pontuação
     if (maxPts > 0) {
       const candidates = finalScores.filter(s => s.points === maxPts);
       const maxExs = Math.max(...candidates.map(s => s.exactScores));
       finalScores.forEach(s => { if (s.points === maxPts && s.exactScores === maxExs) s.isWinner = true; });
     }
-    return finalScores.sort((a, b) => b.points - a.points || b.exactScores - a.exactScores);
+    
+    // Ordenação: Pontos desc, Exatos desc, Nome asc
+    return finalScores.sort((a, b) => b.points - a.points || b.exactScores - a.exactScores || a.name.localeCompare(b.name));
   }, [matchDescriptions, results, predictions, allUsers, matches]);
 
   useEffect(() => {

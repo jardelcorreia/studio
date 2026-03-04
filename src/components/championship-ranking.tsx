@@ -90,10 +90,12 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
     });
 
     return Object.values(stats).sort((a, b) => {
+      // Ordenação: Vitórias, Empates, Pontos, Saldo, Nome
       if (b.wins !== a.wins) return b.wins - a.wins;
       if (b.draws !== a.draws) return b.draws - a.draws;
       if (b.points !== a.points) return b.points - a.points;
-      return b.balance - a.balance;
+      if (b.balance !== a.balance) return b.balance - a.balance;
+      return a.name.localeCompare(b.name);
     });
   }, [roundWinners, allUsers]);
 
@@ -150,7 +152,9 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
            {overallStats.map((player, index) => {
-              const isFirst = index === 0;
+              // Só aplica efeitos de primeiro lugar se houver algum dado de performance
+              const hasActivity = player.wins > 0 || player.draws > 0 || player.points > 0 || player.balance !== 0;
+              const isFirst = index === 0 && hasActivity;
               const isPositive = player.balance >= 0;
 
               return (
@@ -163,10 +167,9 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                        "p-8 flex flex-col items-center text-center relative overflow-hidden",
                        isFirst ? "bg-accent/10" : "bg-primary/[0.03]"
                      )}>
-                        <Trophy className={cn(
-                          "absolute -top-4 -right-4 h-24 w-24 opacity-[0.03] transition-transform duration-700 group-hover:rotate-12 group-hover:scale-110",
-                          isFirst ? "text-accent opacity-[0.08]" : "text-primary"
-                        )} />
+                        {isFirst && (
+                          <Trophy className="absolute -top-4 -right-4 h-24 w-24 opacity-[0.08] text-accent transition-transform duration-700 group-hover:rotate-12 group-hover:scale-110" />
+                        )}
 
                         <div className="relative mb-6">
                            <div className={cn(
@@ -187,14 +190,16 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                               </Avatar>
                            </div>
                            
-                           <div className={cn(
-                             "absolute -top-2 -right-2 h-10 w-10 rounded-full flex items-center justify-center shadow-xl border-4 border-background z-20 transition-transform group-hover:rotate-12",
-                             index === 0 ? "bg-accent" : index === 1 ? "bg-slate-300" : index === 2 ? "bg-amber-600" : "bg-muted"
-                           )}>
-                              {index === 0 ? <Trophy className="h-5 w-5 text-accent-foreground" /> : 
-                               index === 1 ? <Medal className="h-5 w-5 text-slate-600" /> :
-                               <Star className="h-4 w-4 text-white" />}
-                           </div>
+                           {hasActivity && (
+                             <div className={cn(
+                               "absolute -top-2 -right-2 h-10 w-10 rounded-full flex items-center justify-center shadow-xl border-4 border-background z-20 transition-transform group-hover:rotate-12",
+                               index === 0 ? "bg-accent" : index === 1 ? "bg-slate-300" : index === 2 ? "bg-amber-600" : "bg-muted"
+                             )}>
+                                {index === 0 ? <Trophy className="h-5 w-5 text-accent-foreground" /> : 
+                                 index === 1 ? <Medal className="h-5 w-5 text-slate-600" /> :
+                                 <Star className="h-4 w-4 text-white" />}
+                             </div>
+                           )}
                         </div>
 
                         <div className="space-y-1 relative z-10">
@@ -203,7 +208,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                              "rounded-full text-[9px] font-black uppercase tracking-[0.2em] px-4 py-0.5 border-primary/10 bg-white/50 dark:bg-black/20",
                              isFirst ? "text-accent border-accent/20" : "text-muted-foreground"
                           )}>
-                             {isFirst ? "Líder Geral" : `Top ${index + 1}`}
+                             {isFirst ? "Líder Geral" : `Posição ${index + 1}`}
                           </Badge>
                         </div>
                      </div>
