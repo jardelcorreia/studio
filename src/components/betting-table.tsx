@@ -41,10 +41,11 @@ function RoundCardView({
   const captureRef = useRef<HTMLDivElement>(null);
 
   // Dimensões rígidas para garantir alinhamento no Canvas
-  const COL_WIDTH = 140;
-  const CONFRONTO_WIDTH = 140; // Aumentado para dar mais ar aos times
+  // Ajustado COL_WIDTH de 140 para 110 e CONFRONTO_WIDTH para 110
+  const COL_WIDTH = 110;
+  const CONFRONTO_WIDTH = 110; 
   const BASE_WIDTH = CONFRONTO_WIDTH + sortedUsers.length * COL_WIDTH;
-  const BASE_HEIGHT = 700; // Aumentado para fontes maiores
+  const BASE_HEIGHT = 700;
 
   useEffect(() => {
     const calculateScale = () => {
@@ -66,10 +67,10 @@ function RoundCardView({
     try {
       const html2canvas = (await import("html2canvas")).default;
 
-      // Captura o card OCULTO
+      // Captura o card OCULTO em alta definição
       const cardCanvas = await html2canvas(captureRef.current, {
         backgroundColor: "#020617",
-        scale: 2, // Alta definição
+        scale: 2, 
         useCORS: true,
         logging: false,
         width: BASE_WIDTH,
