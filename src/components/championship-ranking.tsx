@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo } from "react";
@@ -7,6 +8,7 @@ import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
 import { Trophy, Medal, Wallet } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface ChampionshipRankingProps {
@@ -39,7 +41,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
       if (!rw.winners || !rw.winners.trim()) return;
       
       const winnersList = rw.winners.split(",").map((s) => s.trim());
-      // Encontra os IDs dos vencedores baseados nos nomes salvos no histórico
       const winnerIds = allUsers.filter(u => winnersList.includes(u.username)).map(u => u.id);
       
       if (winnerIds.length === 0) return;
@@ -86,14 +87,18 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                    index === 0 ? "bg-accent/10" : "bg-muted/30"
                  )}>
                     <div className="relative mb-4">
-                       <div className={cn(
-                         "h-20 w-20 rounded-2xl flex items-center justify-center text-2xl font-black italic shadow-lg overflow-hidden",
+                       <Avatar className={cn(
+                         "h-20 w-20 rounded-2xl shadow-lg bg-muted flex items-center justify-center",
                          index === 0 ? "sports-gradient text-white rotate-6" : "bg-white dark:bg-card border-2"
                        )}>
-                          {player.photoUrl ? (
-                            <img src={player.photoUrl} alt={player.name} className="w-full h-full object-cover" />
-                          ) : player.name.substring(0, 2).toUpperCase()}
-                       </div>
+                         {player.photoUrl && <AvatarImage src={player.photoUrl} className="object-cover" />}
+                         <AvatarFallback className={cn(
+                           "text-2xl font-black italic w-full h-full flex items-center justify-center",
+                           index === 0 ? "text-white" : "text-primary"
+                         )}>
+                           {player.name.substring(0, 2).toUpperCase()}
+                         </AvatarFallback>
+                       </Avatar>
                        {index === 0 && (
                          <div className="absolute -top-3 -right-3 h-8 w-8 bg-accent rounded-full flex items-center justify-center shadow-lg border-2 border-white">
                             <Trophy className="h-4 w-4 text-accent-foreground" />

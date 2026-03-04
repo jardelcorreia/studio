@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -6,7 +7,7 @@ import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Progress } from "./ui/progress";
-import { Trophy, Medal, Star, Crown, CheckCircle2 } from "lucide-react";
+import { Trophy, Medal, Star, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RankingSummaryProps {
@@ -48,7 +49,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                    "h-12 w-12 md:h-16 md:w-16 rounded-xl shadow-md bg-muted flex items-center justify-center",
                    score.isWinner ? "ring-2 ring-white/30" : "ring-1 ring-muted"
                 )}>
-                  <AvatarImage src={score.photoUrl || ""} className="object-cover" />
+                  {score.photoUrl && <AvatarImage src={score.photoUrl} className="object-cover" />}
                   <AvatarFallback className={cn(
                     "text-lg md:text-2xl font-black italic w-full h-full flex items-center justify-center",
                     score.isWinner ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
