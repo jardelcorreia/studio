@@ -7,14 +7,8 @@ import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Progress } from "./ui/progress";
-import { Trophy, Medal, Star, Crown, Info } from "lucide-react";
+import { Trophy, Medal, Star, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
 
 interface RankingSummaryProps {
   scores: PlayerScore[];
@@ -35,33 +29,6 @@ export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: Rank
             {isRoundFinished ? "Classificação Final" : "Classificação em Tempo Real"}
           </span>
         </div>
-        
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-primary/60 hover:text-primary transition-colors">
-                <Info className="h-3 w-3" />
-                Regras de Pontuação
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="bg-popover border-primary/10 p-4 max-w-xs rounded-2xl shadow-2xl">
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase text-primary italic">Pontuação por Jogo</p>
-                  <ul className="text-[10px] space-y-1 font-medium">
-                    <li className="flex justify-between"><span>Placar Exato:</span> <span className="font-black text-secondary">3 pts</span></li>
-                    <li className="flex justify-between"><span>Acertar Vencedor/Empate:</span> <span className="font-black text-accent">1 pt</span></li>
-                    <li className="flex justify-between"><span>Erro total:</span> <span className="font-black text-destructive">0 pts</span></li>
-                  </ul>
-                </div>
-                <div className="pt-2 border-t border-dashed border-primary/10">
-                  <p className="text-[10px] font-black uppercase text-primary italic">Desempate</p>
-                  <p className="text-[10px] font-medium leading-relaxed">Em caso de empate em pontos, vence quem tiver o maior número de **Placares Exatos**.</p>
-                </div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
 
       <div className="flex flex-col md:grid md:grid-cols-4 gap-4">
