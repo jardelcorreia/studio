@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -49,7 +50,7 @@ export function AiBetAssistant() {
           </div>
           <div>
             <CardTitle className="text-xl font-black italic uppercase text-primary">AlphaAI Agent</CardTitle>
-            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Oráculo de Probabilidades</CardDescription>
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Assistente de Probabilidades</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -59,7 +60,7 @@ export function AiBetAssistant() {
           <div className="flex flex-col items-center py-8 gap-6">
             <div className="text-center space-y-2">
                <p className="text-xs font-medium leading-relaxed max-w-[240px]">
-                 Nossa rede neural analisa dados de forma, histórico H2H e performance atual para sugerir o placar mais provável.
+                 Nossa rede neural analisa dados de forma, histórico e performance atual para sugerir o placar mais provável.
                </p>
             </div>
             <Button onClick={generateSuggestion} disabled={loading} className="w-full h-12 rounded-2xl gap-2 font-black italic uppercase shadow-xl shadow-primary/20">
@@ -76,7 +77,7 @@ export function AiBetAssistant() {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10">
               <div className="flex justify-between items-center mb-6">
-                <span className="text-[9px] font-black uppercase text-primary tracking-widest">Predição Neural</span>
+                <span className="text-[9px] font-black uppercase text-primary tracking-widest">Predição Sugerida</span>
                 <Badge className="bg-accent text-accent-foreground font-black italic rounded-full px-3">{suggestion.prediction}</Badge>
               </div>
               
@@ -98,7 +99,7 @@ export function AiBetAssistant() {
             </div>
             
             <Button variant="ghost" size="sm" onClick={() => setSuggestion(null)} className="w-full text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 rounded-xl">
-              Reiniciar Protocolo
+              Nova Análise
             </Button>
           </div>
         )}

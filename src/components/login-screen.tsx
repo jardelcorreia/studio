@@ -43,10 +43,6 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
   const formatEmail = (name: string) => `${name.toLowerCase().trim().replace(/\s+/g, '')}@alphabet.com`;
 
-  /**
-   * Garante a existência do documento do usuário no Firestore.
-   * Não incluímos photoUrl aqui para evitar sobrescrever a foto existente no login.
-   */
   const ensureUserDocument = (uid: string, name: string, email: string, isInitialCreation: boolean = false) => {
     const isAdmin = email === "jardel@alphabet.com";
     const userRef = doc(db, "users", uid);
@@ -57,8 +53,6 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       dateUpdated: serverTimestamp(),
     };
 
-    // Só definimos o username e photoUrl se for a criação inicial do usuário
-    // para evitar que logins subsequentes resetem personalizações do perfil.
     if (isInitialCreation) {
       userData.username = name;
       userData.photoUrl = "";
@@ -87,8 +81,6 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Sincroniza dados básicos sem resetar perfil
       ensureUserDocument(userCredential.user.uid, playerName, email, false);
 
       if (password === "alphabet123") {
@@ -97,22 +89,19 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       } else {
         toast({
           title: `Bem-vindo, ${playerName}!`,
-          description: "Acesso autorizado ao Alpha Protocol.",
+          description: "Acesso autorizado à plataforma AlphaBet.",
         });
       }
     } catch (err: any) {
-      // Se o usuário não existe e usa a senha padrão, criamos a conta
       if ((err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") && password === "alphabet123") {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName: playerName });
-          
-          // Criação inicial do documento
           ensureUserDocument(userCredential.user.uid, playerName, email, true);
 
           toast({
             title: "Primeiro Acesso!",
-            description: "Agora defina sua senha secreta para garantir a segurança.",
+            description: "Agora defina sua senha para garantir a segurança da sua conta.",
           });
           onPasswordChangeRequired?.();
           setShowPasswordChange(true);
@@ -149,7 +138,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       if (auth.currentUser) {
         await updatePassword(auth.currentUser, newPassword);
         toast({
-          title: "Senha Blindada!",
+          title: "Senha Atualizada!",
           description: "Sua conta agora está protegida.",
         });
         onPasswordChanged?.();
@@ -171,8 +160,8 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
                 <KeyRound className="h-10 w-10 text-white" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-black italic uppercase tracking-tighter">Segurança Alpha</CardTitle>
-            <CardDescription>Defina sua nova senha pessoal de acesso.</CardDescription>
+            <CardTitle className="text-2xl font-black italic uppercase tracking-tighter">Alterar Senha</CardTitle>
+            <CardDescription>Defina sua nova senha de acesso.</CardDescription>
           </CardHeader>
           <form onSubmit={handleChangePassword}>
             <CardContent className="space-y-4">
@@ -233,15 +222,15 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
             </div>
           </div>
           <CardTitle className="text-3xl font-black italic uppercase tracking-tighter">AlphaBet 2026</CardTitle>
-          <CardDescription>Entre com seu codinome e senha</CardDescription>
+          <CardDescription>Entre com seu nome e senha</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="player">Quem é você?</Label>
+              <Label htmlFor="player">Selecione seu Perfil</Label>
               <Select onValueChange={setPlayerName} value={playerName}>
                 <SelectTrigger id="player" className="h-12">
-                  <SelectValue placeholder="Selecione seu nome" />
+                  <SelectValue placeholder="Escolha seu nome" />
                 </SelectTrigger>
                 <SelectContent>
                   {PLAYERS.map((player) => (
@@ -263,7 +252,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
                 onChange={(e) => setPassword(e.target.value)}
               />
               <p className="text-[10px] text-muted-foreground italic">
-                * Primeiro acesso? Use a senha do protocolo inicial.
+                * Primeiro acesso? Use a senha inicial.
               </p>
             </div>
             {error && (
@@ -275,7 +264,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full h-12 text-lg font-bold gap-2" disabled={loading || !playerName}>
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "ENTRAR NO JOGO"}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "ENTRAR"}
             </Button>
           </CardFooter>
         </form>

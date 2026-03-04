@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -74,7 +75,7 @@ export function BettingTable({
               <div className="flex flex-col items-center p-3">
                  <div className="w-full flex justify-between items-center mb-1 px-2">
                     <p className="text-white/40 text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                       <Share2 className="h-2.5 w-2.5 text-accent" /> Alpha Protocol
+                       <Share2 className="h-2.5 w-2.5 text-accent" /> AlphaBet League
                     </p>
                     <DialogClose className="text-white/40 hover:text-white transition-colors">
                        <X className="h-4 w-4" />
@@ -144,7 +145,7 @@ export function BettingTable({
                        </div>
                     </div>
                     <div className="relative z-10 flex justify-center items-center mt-1 pt-0.5 border-t border-white/5">
-                       <span className="text-[4px] font-black text-white/10 uppercase tracking-[0.5em]">Alpha Cloud Protocol • High Density Data View</span>
+                       <span className="text-[4px] font-black text-white/10 uppercase tracking-[0.5em]">AlphaBet League • Visão de Dados</span>
                     </div>
                  </div>
               </div>
@@ -153,10 +154,9 @@ export function BettingTable({
         </div>
       )}
 
-      {/* Tabela Header Desktop */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-3 bg-primary/5 rounded-2xl border border-primary/10 mb-2">
-        <div className="col-span-3 text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Confronto Direto</div>
-        <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Palpites Protocolados</div>
+        <div className="col-span-3 text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Confronto</div>
+        <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Palpites dos Jogadores</div>
         <div className="col-span-3 text-center text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Placar Oficial</div>
       </div>
 
@@ -171,7 +171,6 @@ export function BettingTable({
               isOutOfWindow ? "opacity-60 saturate-50" : "hover:bg-primary/[0.02]"
             )}>
               <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[70px]">
-                {/* Coluna Confronto */}
                 <div className="md:col-span-3 px-6 py-4 flex items-center justify-between md:justify-start gap-4 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-primary/40 italic tabular-nums">#{idx + 1}</span>
@@ -187,7 +186,6 @@ export function BettingTable({
                     </div>
                   </div>
 
-                  {/* Mobile Results (Minimal) */}
                   <div className="md:hidden flex items-center gap-1 px-2">
                     {isAdmin ? (
                       <div className="flex items-center gap-0.5">
@@ -217,7 +215,6 @@ export function BettingTable({
                   </div>
                 </div>
 
-                {/* Coluna Palpites */}
                 <div className="md:col-span-6 px-4 py-4 flex items-center justify-around gap-2 md:gap-6 overflow-x-auto no-scrollbar">
                   {sortedUsers.map(u => {
                     const isHidden = placaresOcultos && currentPlayerId !== u.id;
@@ -259,7 +256,6 @@ export function BettingTable({
                   })}
                 </div>
 
-                {/* Coluna Resultado Oficial (Refinada - Sem fundo azul estranho) */}
                 <div className={cn(
                   "md:col-span-3 px-6 py-4 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex",
                 )}>

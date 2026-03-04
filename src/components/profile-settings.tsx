@@ -36,7 +36,6 @@ export function ProfileSettings() {
   const [uploading, setUploading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  // Crop States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -167,7 +166,6 @@ export function ProfileSettings() {
     }
   };
 
-  // Se estiver em modo de recorte, exibe apenas o editor dentro do card
   if (imageToCrop) {
     return (
       <Card className="glass-card border-none rounded-3xl overflow-hidden shadow-2xl w-full max-w-xl mx-auto">
@@ -175,9 +173,9 @@ export function ProfileSettings() {
           <div>
             <h3 className="font-black italic uppercase flex items-center gap-2">
               <CropIcon className="h-5 w-5" />
-              Enquadramento Alpha
+              Ajustar Foto
             </h3>
-            <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Ajuste para o formato oficial</p>
+            <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Enquadre sua imagem</p>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setImageToCrop(null)} className="text-white hover:bg-white/10 rounded-full">
             <X className="h-5 w-5" />
@@ -222,7 +220,7 @@ export function ProfileSettings() {
             </Button>
             <Button onClick={handleUploadCroppedImage} disabled={uploading} className="flex-[2] rounded-2xl font-black italic uppercase text-xs gap-2 h-12 shadow-lg shadow-primary/20">
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              Confirmar Ajuste
+              Salvar Alteração
             </Button>
           </div>
         </div>
@@ -277,7 +275,7 @@ export function ProfileSettings() {
         </div>
         
         <CardHeader className="pt-20 pb-4">
-          <CardTitle className="text-2xl font-black italic uppercase text-primary">Configurações de Elite</CardTitle>
+          <CardTitle className="text-2xl font-black italic uppercase text-primary">Configurações de Perfil</CardTitle>
           <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Personalize sua identidade na AlphaBet League</CardDescription>
         </CardHeader>
 
@@ -291,7 +289,7 @@ export function ProfileSettings() {
                   id="display-name"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Seu nome de guerra"
+                  placeholder="Seu nome no jogo"
                   className="h-12 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-bold focus:ring-primary/20"
                 />
               </div>
@@ -311,7 +309,7 @@ export function ProfileSettings() {
              </div>
              <div>
                 <p className="text-xs font-bold text-secondary uppercase italic">Sincronização em tempo real</p>
-                <p className="text-[10px] text-muted-foreground">Suas alterações serão refletidas instantaneamente em todos os rankings da liga.</p>
+                <p className="text-[10px] text-muted-foreground">Suas alterações serão refletidas em todos os rankings da liga.</p>
              </div>
           </div>
         </CardContent>
@@ -342,4 +340,3 @@ export function ProfileSettings() {
     </div>
   );
 }
-

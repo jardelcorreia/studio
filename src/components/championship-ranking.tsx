@@ -86,19 +86,16 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                 isFirst && "ring-2 ring-accent ring-offset-4 ring-offset-background shadow-2xl shadow-accent/20"
               )}>
                 <CardContent className="p-0">
-                   {/* Header Section with Squircle Avatar */}
                    <div className={cn(
                      "p-8 flex flex-col items-center text-center relative overflow-hidden",
                      isFirst ? "bg-accent/10" : "bg-primary/[0.03]"
                    )}>
-                      {/* Decorative Background Icon */}
                       <Trophy className={cn(
                         "absolute -top-4 -right-4 h-24 w-24 opacity-[0.03] transition-transform duration-700 group-hover:rotate-12 group-hover:scale-110",
                         isFirst ? "text-accent opacity-[0.08]" : "text-primary"
                       )} />
 
                       <div className="relative mb-6">
-                         {/* Squircle Container */}
                          <div className={cn(
                            "relative h-24 w-24 flex items-center justify-center rounded-[2.25rem] shadow-inner transition-all duration-500 group-hover:scale-105",
                            isFirst ? "sports-gradient shadow-lg" : "bg-primary/5 border border-primary/10"
@@ -117,7 +114,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                             </Avatar>
                          </div>
                          
-                         {/* Rank Badge Floating */}
                          <div className={cn(
                            "absolute -top-2 -right-2 h-10 w-10 rounded-full flex items-center justify-center shadow-xl border-4 border-background z-20 transition-transform group-hover:rotate-12",
                            index === 0 ? "bg-accent" : index === 1 ? "bg-slate-300" : index === 2 ? "bg-amber-600" : "bg-muted"
@@ -134,12 +130,11 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                            "rounded-full text-[9px] font-black uppercase tracking-[0.2em] px-4 py-0.5 border-primary/10 bg-white/50 dark:bg-black/20",
                            isFirst ? "text-accent border-accent/20" : "text-muted-foreground"
                         )}>
-                           {isFirst ? "Líder Alpha" : `Top ${index + 1} Elite`}
+                           {isFirst ? "Líder Geral" : `Top ${index + 1}`}
                         </Badge>
                       </div>
                    </div>
 
-                   {/* Stats Grid */}
                    <div className="p-8 space-y-8">
                       <div className="grid grid-cols-3 gap-4">
                         <div className="flex flex-col items-center">
@@ -156,7 +151,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                         </div>
                       </div>
 
-                      {/* Balance Section */}
                       <div className={cn(
                         "p-5 rounded-3xl border border-dashed flex items-center justify-between transition-colors",
                         isPositive ? "bg-secondary/5 border-secondary/20" : "bg-destructive/5 border-destructive/20"
@@ -170,7 +164,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                            </div>
                            <div className="flex flex-col">
                               <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Saldo Financeiro</span>
-                              <span className="text-[10px] font-bold uppercase italic opacity-60">Resultados da Liga</span>
+                              <span className="text-[10px] font-bold uppercase italic opacity-60">Resultados</span>
                            </div>
                         </div>
                         <div className="text-right">
@@ -189,7 +183,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
          })}
       </div>
 
-      {/* History Sidebar */}
       <div className="lg:col-span-4">
         <Card className="glass-card border-none rounded-[2.5rem] overflow-hidden sticky top-24">
            <CardHeader className="bg-primary p-8">
@@ -199,7 +192,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                  </div>
                  <div>
                     <CardTitle className="text-white font-black italic uppercase text-lg leading-tight">Histórico</CardTitle>
-                    <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Protocolo de Rodadas</p>
+                    <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Registro de Rodadas</p>
                  </div>
               </div>
            </CardHeader>
@@ -215,7 +208,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                              <div className="flex flex-col">
                                 <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Campeão</span>
                                 <span className="text-[12px] font-black italic uppercase text-primary truncate max-w-[140px]">
-                                   {rw.winners || "Processando..."}
+                                   {rw.winners || "Calculando..."}
                                 </span>
                              </div>
                           </div>
@@ -236,7 +229,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
               </ScrollArea>
               <div className="p-6 bg-primary/5 border-t border-dashed">
                  <p className="text-[9px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
-                    Os valores são calculados automaticamente com base no número de participantes ativos.
+                    Os valores são calculados automaticamente com base no número de participantes.
                  </p>
               </div>
            </CardContent>

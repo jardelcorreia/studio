@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -73,13 +74,12 @@ export function MatchCalendar({
 
   return (
     <div className="space-y-8">
-      {/* Round Selector Premium */}
       <div className="flex items-center justify-between glass-card p-4 rounded-3xl shadow-lg border-none">
         <Button variant="ghost" size="icon" onClick={onPrev} disabled={round <= 1} className="rounded-2xl hover:bg-primary/10">
           <ChevronLeft className="h-6 w-6" />
         </Button>
         <div className="flex flex-col items-center">
-          <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase mb-1 px-3">Brasileirão Elite</Badge>
+          <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase mb-1 px-3">Brasileirão 2026</Badge>
           <div className="flex items-baseline gap-2">
              <span className="text-xs font-bold text-muted-foreground uppercase">Rodada</span>
              <span className="text-2xl font-black italic text-primary leading-none">#{round}</span>
@@ -90,7 +90,6 @@ export function MatchCalendar({
         </Button>
       </div>
 
-      {/* Matches Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {matches.map((match, idx) => {
           const home = getTeamInfo(match.homeTeam);
@@ -107,7 +106,6 @@ export function MatchCalendar({
               isOutOfWindow && "border-2 border-destructive/20 opacity-90"
             )}>
               <CardContent className="p-0">
-                {/* Status Bar */}
                 <div className="px-6 py-3 bg-muted/30 flex justify-between items-center border-b border-white/10">
                    <div className="flex items-center gap-2">
                       <CalendarDays className="h-3 w-3 text-muted-foreground" />
@@ -125,12 +123,11 @@ export function MatchCalendar({
                         isFinished ? "bg-primary/20 text-primary" : 
                         isCancelled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
                       )}>
-                        {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : isCancelled ? 'Adiado/Cancelado' : 'Agendado'}
+                        {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : isCancelled ? 'Adiado' : 'Agendado'}
                       </Badge>
                    </div>
                 </div>
 
-                {/* Conflict Area */}
                 <div className="p-8 flex items-center justify-between gap-2">
                   <div className="flex flex-col items-center gap-2 w-1/3 text-center">
                     <img src={home.escudo} alt={home.nome} className="w-14 h-14 md:w-16 md:h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
@@ -182,7 +179,6 @@ export function MatchCalendar({
                   </div>
                 </div>
 
-                {/* Footer Info */}
                 <div className={cn(
                   "px-6 py-4 flex flex-col items-center gap-1",
                   isOutOfWindow ? "bg-destructive/5" : "bg-primary/5"
@@ -195,7 +191,7 @@ export function MatchCalendar({
                    </div>
                    {isOutOfWindow && (
                      <div className="flex items-center gap-1 text-destructive font-black text-[9px] uppercase tracking-wider text-center px-4">
-                        <AlertTriangle className="h-3 w-3" /> Jogo fora da janela de validade da rodada
+                        <AlertTriangle className="h-3 w-3" /> Jogo indisponível para pontuação
                      </div>
                    )}
                 </div>
@@ -213,7 +209,7 @@ export function MatchCalendar({
           className="h-16 px-12 rounded-3xl gap-4 font-black italic uppercase text-xl sports-gradient shadow-2xl shadow-primary/40 hover:scale-[1.05] transition-transform active:scale-95"
         >
           {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : <Sparkles className="h-6 w-6 fill-current" />}
-          {isSaving ? "Sincronizando..." : "CONFIRMAR TODOS PALPITES"}
+          {isSaving ? "Sincronizando..." : "CONFIRMAR PALPITES"}
         </Button>
       </div>
     </div>

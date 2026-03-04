@@ -177,7 +177,7 @@ export default function Home() {
     }, { merge: true });
     setPlacaresOcultos(false);
     toast({
-      title: "Modo Público Ativado",
+      title: "Resultados Liberados",
       description: "O horário dos jogos chegou! Palpites revelados automaticamente."
     });
   }, [isAdminUser, placaresOcultos, isTimePassed, roundId, db, toast, loadingMatches]);
@@ -302,8 +302,8 @@ export default function Home() {
       dateUpdated: serverTimestamp(),
     }, { merge: true });
     toast({
-      title: newValue ? "Modo Privado Ativado" : "Modo Público Ativado",
-      description: newValue ? "Palpites ocultos para os jogadores." : "Todos os palpites estão visíveis!"
+      title: newValue ? "Palpites Ocultos" : "Palpites Liberados",
+      description: newValue ? "Os jogadores não verão os palpites dos outros." : "Todos os palpites estão visíveis!"
     });
   };
 
@@ -346,7 +346,7 @@ export default function Home() {
           }, { merge: true });
         });
       }
-      toast({ title: "Sincronizado!", description: "Dados salvos no AlphaBet Cloud." });
+      toast({ title: "Salvo!", description: "Dados sincronizados com sucesso." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Falha na sincronização." });
     } finally { setIsSaving(false); }
@@ -389,7 +389,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center bg-muted/30 rounded-2xl p-1 gap-1 border border-primary/5">
             <button
               onClick={() => setActiveTab("jogos")}
@@ -399,7 +398,7 @@ export default function Home() {
               )}
             >
               <Calendar className="h-3 w-3" />
-              Jogos/Quila
+              Jogos
             </button>
             <button
               onClick={() => setActiveTab("palpites")}
@@ -435,27 +434,29 @@ export default function Home() {
 
           <div className="flex items-center gap-2 md:gap-3">
              {isAdminUser && (
-               <Button
-                 variant="ghost"
-                 size="icon"
+               <button
                  onClick={() => setShowAdminBar(!showAdminBar)}
                  className={cn(
-                   "rounded-xl transition-all h-9 w-9",
-                   showAdminBar ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                   "p-2 rounded-xl transition-all",
+                   showAdminBar ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                  )}
                >
                  <Shield className="h-5 w-5" />
-               </Button>
+               </button>
              )}
              <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black italic hidden sm:inline-flex">#{currentRound}</Badge>
              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Avatar className="h-9 w-9 ring-2 ring-accent/30 cursor-pointer bg-muted flex items-center justify-center">
-                    <AvatarImage src={currentUserFirestore?.photoUrl || user.photoURL || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-black text-[10px]">
-                      {currentUserFirestore?.username ? currentUserFirestore.username.substring(0,2).toUpperCase() : user.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative group cursor-pointer transition-transform active:scale-95">
+                    <div className="h-9 w-9 bg-primary/5 rounded-xl flex items-center justify-center p-[2px] border border-primary/10 shadow-sm">
+                      <Avatar className="h-full w-full rounded-lg border border-background shadow-md overflow-hidden bg-muted flex items-center justify-center">
+                        <AvatarImage src={currentUserFirestore?.photoUrl || user.photoURL || undefined} className="object-cover" />
+                        <AvatarFallback className="bg-primary/10 text-primary font-black text-[10px]">
+                          {currentUserFirestore?.username ? currentUserFirestore.username.substring(0,2).toUpperCase() : user.displayName ? user.displayName.substring(0,2).toUpperCase() : "AL"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 rounded-2xl border bg-background shadow-2xl p-2 z-[60]">
                   <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-muted-foreground tracking-widest px-3 py-2">
@@ -486,31 +487,30 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Admin Bar */}
         {isAdminUser && showAdminBar && (
-          <div className="border-t border-primary/5 bg-primary/[0.03] animate-in slide-in-from-top duration-300 overflow-hidden">
+          <div className="border-t border-primary/5 bg-primary/[0.03] animate-in slide-in-from-top duration-300 overflow-hidden shadow-inner">
              <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
                <div className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-primary" />
-                  <h3 className="text-[10px] font-black italic uppercase text-primary">Controle Admin</h3>
+                  <h3 className="text-[10px] font-black italic uppercase text-primary">Controle Administrativo</h3>
                </div>
                <div className="flex items-center gap-2">
                   <Badge className={cn(
                     "rounded-full px-3 py-1 text-[8px] font-black uppercase border-none",
                     isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
                   )}>
-                     {isEffectivelyHidden ? "Privado" : "Público"}
+                     {isEffectivelyHidden ? "Visibilidade: Privada" : "Visibilidade: Pública"}
                   </Badge>
                   <Button
                     size="sm"
                     onClick={handleTogglePlacaresOcultos}
                     className={cn(
-                      "rounded-xl text-[8px] font-black uppercase h-7 px-4 gap-2 border-none",
-                      placaresOcultos ? "bg-secondary text-white" : "bg-destructive text-white"
+                      "rounded-xl text-[8px] font-black uppercase h-7 px-4 gap-2 border-none transition-all",
+                      placaresOcultos ? "bg-secondary text-white shadow-lg shadow-secondary/20" : "bg-destructive text-white shadow-lg shadow-destructive/20"
                     )}
                   >
                     {placaresOcultos ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                    {placaresOcultos ? "Revelar" : "Ocultar"}
+                    {placaresOcultos ? "Tornar Público" : "Ocultar Palpites"}
                   </Button>
                </div>
              </div>
@@ -592,8 +592,8 @@ export default function Home() {
           {activeTab === "ranking" && (
             <div className="space-y-6">
               <div className="flex flex-col">
-                <h3 className="font-black italic uppercase text-lg text-primary">Elite AlphaBet</h3>
-                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação Geral do Campeonato</p>
+                <h3 className="font-black italic uppercase text-lg text-primary">Ranking Geral</h3>
+                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação do Campeonato</p>
               </div>
               <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} />
             </div>
@@ -602,8 +602,8 @@ export default function Home() {
           {activeTab === "tabela" && (
             <div className="space-y-6">
               <div className="flex flex-col">
-                <h3 className="font-black italic uppercase text-lg text-primary">Tabela CBF</h3>
-                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação Oficial Série A</p>
+                <h3 className="font-black italic uppercase text-lg text-primary">Tabela Oficial</h3>
+                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação Série A</p>
               </div>
               <LeagueStandings standings={standings} />
             </div>
@@ -611,7 +611,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Bottom Navigation Bar (Mobile Only) */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-primary/10 rounded-none h-20 px-6 pb-2 md:hidden">
         <div className="max-w-md mx-auto h-full flex items-center justify-between">
           <button
@@ -622,7 +621,7 @@ export default function Home() {
             )}
           >
             <Calendar className={cn("h-6 w-6", activeTab === "jogos" && "fill-current")} />
-            <span className="text-[9px] font-black uppercase italic text-center">Jogos/Quila</span>
+            <span className="text-[9px] font-black uppercase italic text-center">Jogos</span>
           </button>
 
           <button
