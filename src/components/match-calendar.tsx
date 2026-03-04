@@ -132,20 +132,21 @@ export function MatchCalendar({
                 </div>
 
                 {/* Conflict Area */}
-                <div className="p-8 flex items-center justify-between gap-4">
-                  <div className="flex flex-col items-center gap-3 w-1/3 text-center">
-                    <img src={home.escudo} alt={home.nome} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
-                    <div className="flex flex-col">
-                       <span className="text-sm font-black italic uppercase leading-tight line-clamp-1">{home.nome}</span>
+                <div className="p-8 flex items-center justify-between gap-2">
+                  <div className="flex flex-col items-center gap-2 w-1/3 text-center">
+                    <img src={home.escudo} alt={home.nome} className="w-14 h-14 md:w-16 md:h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+                    <div className="flex flex-col items-center">
+                       <span className="text-2xl font-black italic uppercase text-primary leading-none">{home.abrev}</span>
+                       <span className="text-[8px] font-bold text-muted-foreground uppercase leading-tight line-clamp-1">{home.nome}</span>
                     </div>
                   </div>
 
                   <div className="flex flex-col items-center justify-center w-1/3">
                     {isFinished ? (
-                      <div className="flex items-center gap-4">
-                        <span className="text-4xl font-black italic text-primary">{match.homeScore}</span>
-                        <div className="h-8 w-[2px] bg-muted/50 rotate-12" />
-                        <span className="text-4xl font-black italic text-primary">{match.awayScore}</span>
+                      <div className="flex items-center gap-2 md:gap-4">
+                        <span className="text-3xl md:text-4xl font-black italic text-primary">{match.homeScore}</span>
+                        <div className="h-6 md:h-8 w-[2px] bg-muted/50 rotate-12" />
+                        <span className="text-3xl md:text-4xl font-black italic text-primary">{match.awayScore}</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-2">
@@ -173,10 +174,11 @@ export function MatchCalendar({
                     )}
                   </div>
 
-                  <div className="flex flex-col items-center gap-3 w-1/3 text-center">
-                    <img src={away.escudo} alt={away.nome} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
-                    <div className="flex flex-col">
-                       <span className="text-sm font-black italic uppercase leading-tight line-clamp-1">{away.nome}</span>
+                  <div className="flex flex-col items-center gap-2 w-1/3 text-center">
+                    <img src={away.escudo} alt={away.nome} className="w-14 h-14 md:w-16 md:h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+                    <div className="flex flex-col items-center">
+                       <span className="text-2xl font-black italic uppercase text-primary leading-none">{away.abrev}</span>
+                       <span className="text-[8px] font-bold text-muted-foreground uppercase leading-tight line-clamp-1">{away.nome}</span>
                     </div>
                   </div>
                 </div>
