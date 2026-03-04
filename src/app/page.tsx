@@ -352,6 +352,21 @@ export default function Home() {
     } finally { setIsSaving(false); }
   };
 
+  const handleSaveSettingsOnly = async () => {
+    if (!isAdminUser) return;
+    setIsSaving(true);
+    try {
+      const settingsRef = doc(db, "app_settings", "championship");
+      setDocumentNonBlocking(settingsRef, {
+        history: roundWinners,
+        lastUpdated: serverTimestamp(),
+      }, { merge: true });
+      toast({ title: "Configurações Salvas", description: "Valores das rodadas foram atualizados no banco de dados." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Erro", description: "Falha ao salvar configurações." });
+    } finally { setIsSaving(false); }
+  };
+
   const handleLogout = () => { setMustChangePassword(false); signOut(auth); };
 
   const updatePrediction = (userId: string, idx: number, type: 'home' | 'away', value: string) => {
@@ -600,6 +615,8 @@ export default function Home() {
                 setRoundWinners={setRoundWinners} 
                 allUsers={allUsers || []} 
                 isAdmin={isAdminUser}
+                onSave={handleSaveSettingsOnly}
+                isSaving={isSaving}
               />
             </div>
           )}

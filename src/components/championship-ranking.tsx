@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, Wallet, Star, TrendingUp, TrendingDown, Settings2, CheckCircle2 } from "lucide-react";
+import { Trophy, Medal, Wallet, Star, TrendingUp, TrendingDown, Settings2, CheckCircle2, Save, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
@@ -18,9 +18,11 @@ interface ChampionshipRankingProps {
   setRoundWinners: React.Dispatch<React.SetStateAction<ChampionshipWinner[]>>;
   allUsers: any[];
   isAdmin?: boolean;
+  onSave?: () => Promise<void>;
+  isSaving?: boolean;
 }
 
-export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, isAdmin }: ChampionshipRankingProps) {
+export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, isAdmin, onSave, isSaving }: ChampionshipRankingProps) {
   const { toast } = useToast();
   const [turn1Value, setTurn1Value] = useState(6);
   const [turn2Value, setTurn2Value] = useState(6);
@@ -35,8 +37,8 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
       value: rw.round <= 19 ? turn1Value : turn2Value
     })));
     toast({
-      title: "Valores Atualizados",
-      description: `Aplicado R$ ${turn1Value} para o 1º turno e R$ ${turn2Value} para o 2º turno.`
+      title: "Valores Atualizados na Memória",
+      description: `Aplicado R$ ${turn1Value} para o 1º turno e R$ ${turn2Value} para o 2º turno. Clique em SALVAR para persistir.`
     });
   };
 
@@ -96,9 +98,21 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
       {isAdmin && (
         <Card className="glass-card border-none rounded-[2rem] overflow-hidden border-l-4 border-l-primary">
           <CardHeader className="bg-primary/5 pb-2">
-            <div className="flex items-center gap-3">
-              <Settings2 className="h-5 w-5 text-primary" />
-              <CardTitle className="text-sm font-black italic uppercase text-primary">Configurações de Valores (Admin)</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Settings2 className="h-5 w-5 text-primary" />
+                <CardTitle className="text-sm font-black italic uppercase text-primary">Configurações de Valores (Admin)</CardTitle>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onSave} 
+                disabled={isSaving}
+                className="rounded-xl h-8 border-primary/20 text-primary font-black uppercase text-[10px] gap-2 hover:bg-primary/5"
+              >
+                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                Salvar Configurações
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="p-6">
@@ -136,7 +150,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
               </Button>
             </div>
             <p className="mt-4 text-[9px] font-medium text-muted-foreground italic">
-              * Isso atualizará o valor de todas as rodadas. Você ainda pode ajustar rodadas específicas individualmente no histórico abaixo.
+              * Isso atualizará o valor de todas as rodadas na tela. Não esqueça de clicar em **Salvar Configurações** para gravar no banco de dados.
             </p>
           </CardContent>
         </Card>
@@ -254,14 +268,27 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
         <div className="lg:col-span-4">
           <Card className="glass-card border-none rounded-[2.5rem] overflow-hidden sticky top-24">
              <CardHeader className="bg-primary p-8">
-                <div className="flex items-center gap-4">
-                   <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center text-white -rotate-6">
-                      <Medal className="h-6 w-6" />
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center text-white -rotate-6">
+                         <Medal className="h-6 w-6" />
+                      </div>
+                      <div>
+                         <CardTitle className="text-white font-black italic uppercase text-lg leading-tight">Histórico</CardTitle>
+                         <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Registro de Rodadas</p>
+                      </div>
                    </div>
-                   <div>
-                      <CardTitle className="text-white font-black italic uppercase text-lg leading-tight">Histórico</CardTitle>
-                      <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Registro de Rodadas</p>
-                   </div>
+                   {isAdmin && (
+                     <Button 
+                       variant="ghost" 
+                       size="icon" 
+                       onClick={onSave} 
+                       disabled={isSaving}
+                       className="text-white hover:bg-white/10 rounded-xl"
+                     >
+                       {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                     </Button>
+                   )}
                 </div>
              </CardHeader>
              <CardContent className="p-0">
