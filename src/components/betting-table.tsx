@@ -1,11 +1,12 @@
+
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { TEAMS } from "@/lib/constants";
 import { Prediction, PlayerPredictions, Match } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn, cleanTeamName } from "@/lib/utils";
-import { Trophy, Swords, Share2, Camera, X, AlertCircle } from "lucide-react";
+import { Trophy, Swords, Share2, Camera, X, AlertCircle, Download, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
 
@@ -36,6 +37,8 @@ function RoundCardView({
   getTeamAbrev: (name: string) => string;
 }) {
   const [cardScale, setCardScale] = useState(1);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const COL_WIDTH = 140;
   const CONFRONTO_WIDTH = 120;
@@ -45,8 +48,9 @@ function RoundCardView({
   useEffect(() => {
     const calculateScale = () => {
       if (typeof window === "undefined") return;
-      
-      const availableWidth = window.innerWidth - 32; 
+      // Dialog é max-w-[95vw] com p-4 (16px) em cada lado = 32px de padding interno
+      const dialogWidth = Math.min(window.innerWidth * 0.95, 700);
+      const availableWidth = dialogWidth - 32;
       const newScale = Math.min(1, availableWidth / BASE_WIDTH);
       setCardScale(newScale);
     };
@@ -56,120 +60,177 @@ function RoundCardView({
     return () => window.removeEventListener("resize", calculateScale);
   }, [BASE_WIDTH]);
 
+  const handleDownload = async () => {
+    if (!cardRef.current) return;
+    setIsDownloading(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+
+      // Captura o card em alta resolução (2×)
+      const cardCanvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      // Canvas quadrado: maior lado define o tamanho
+      const size = Math.max(cardCanvas.width, cardCanvas.height);
+      const squareCanvas = document.createElement("canvas");
+      squareCanvas.width = size;
+      squareCanvas.height = size;
+
+      const ctx = squareCanvas.getContext("2d")!;
+
+      // Fundo idêntico ao card
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, size, size);
+
+      // Centraliza o card no canvas quadrado
+      const offsetX = Math.round((size - cardCanvas.width) / 2);
+      const offsetY = Math.round((size - cardCanvas.height) / 2);
+      ctx.drawImage(cardCanvas, offsetX, offsetY);
+
+      const link = document.createElement("a");
+      link.download = `${roundName.replace(/\s+/g, "-").toLowerCase()}-alphabet.png`;
+      link.href = squareCanvas.toDataURL("image/png");
+      link.click();
+    } catch (e) {
+      console.error("Erro ao gerar imagem:", e);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Wrapper tem as dimensões ESCALADAS reais, o layout reserva o espaço correto.
+  // transformOrigin "top left" faz o card escalar a partir do canto superior esquerdo,
+  // preenchendo o wrapper exatamente — sem deslocamento lateral.
   const scaledWidth = BASE_WIDTH * cardScale;
   const scaledHeight = BASE_HEIGHT * cardScale;
 
   return (
-    <div
-      className="w-full flex justify-center overflow-hidden"
-      style={{ height: scaledHeight }}
-    >
-      <div
-        className="bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl shrink-0"
-        style={{
-          width: BASE_WIDTH,
-          height: BASE_HEIGHT,
-          transform: `scale(${cardScale})`,
-          transformOrigin: "top center",
-        }}
-      >
-        <div className="absolute inset-0 pointer-events-none opacity-20">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
-        </div>
+    <div className="w-full flex flex-col items-center gap-3">
+      <div style={{ width: scaledWidth, height: scaledHeight, overflow: "hidden", flexShrink: 0 }}>
+        <div
+          ref={cardRef}
+          className="bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl"
+          style={{
+            width: BASE_WIDTH,
+            height: BASE_HEIGHT,
+            transform: `scale(${cardScale})`,
+            transformOrigin: "top left",
+          }}
+        >
+          <div className="absolute inset-0 pointer-events-none opacity-20">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
+          </div>
 
-        <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
-              <Trophy className="h-4 w-4 text-black" />
+          <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
+                <Trophy className="h-4 w-4 text-black" />
+              </div>
+              <div className="flex flex-col -space-y-1">
+                <div className="text-[18px] font-black italic uppercase text-white leading-none tracking-tighter">
+                  AlphaBet
+                </div>
+                <div className="text-[8px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">
+                  League 2026
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col -space-y-1">
-              <div className="text-[18px] font-black italic uppercase text-white leading-none tracking-tighter">
-                AlphaBet
-              </div>
-              <div className="text-[8px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">
-                League 2026
-              </div>
+            <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
+              <span className="text-[11px] font-black text-accent italic leading-none">
+                {roundName.toUpperCase()}
+              </span>
             </div>
           </div>
-          <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
-            <span className="text-[11px] font-black text-accent italic leading-none">
-              {roundName.toUpperCase()}
+
+          <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
+            <div
+              className="gap-1 mb-1 px-1"
+              style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
+            >
+              <div className="text-[8px] font-black uppercase text-white/20 italic">CONFRONTO</div>
+              {sortedUsers.map((u) => (
+                <div
+                  key={u.id}
+                  className="text-center text-[13px] font-black uppercase text-accent tracking-tighter truncate px-1"
+                >
+                  {u.username}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex-1 flex flex-col justify-between">
+              {Array.from({ length: 10 }).map((_, idx) => {
+                const match = matches[idx];
+                const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
+                const awayAbrev = match ? getTeamAbrev(match.awayTeam) : "---";
+                const abrevDesc = `${homeAbrev} x ${awayAbrev}`;
+                const isInvalid = match?.isValidForPoints === false;
+
+                return (
+                  <div
+                    key={idx}
+                    className="items-center bg-white/[0.02] py-0.5 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.8)]"
+                    style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="text-[7px] font-black text-white/10 italic tabular-nums">
+                        #{idx + 1}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[12px] font-black italic uppercase truncate tracking-tighter",
+                          isInvalid ? "text-white/20" : "text-white"
+                        )}
+                      >
+                        {abrevDesc}
+                      </span>
+                    </div>
+
+                    {sortedUsers.map((u) => (
+                      <div key={u.id} className="flex justify-center h-full items-center px-0.5">
+                        <div className="bg-black/40 w-full py-0.5 rounded border border-white/5 flex items-center justify-center">
+                          <span
+                            className={cn(
+                              "text-[15px] font-black leading-none tabular-nums tracking-tighter",
+                              isInvalid ? "text-white/20" : "text-white"
+                            )}
+                          >
+                            {predictions[u.id]?.[idx]?.homeScore || "0"}-
+                            {predictions[u.id]?.[idx]?.awayScore || "0"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
+            <span className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">
+              AlphaBet League • Visão de Dados Técnica
             </span>
           </div>
         </div>
-
-        <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-          <div
-            className="gap-1 mb-1 px-1"
-            style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
-          >
-            <div className="text-[8px] font-black uppercase text-white/20 italic">CONFRONTO</div>
-            {sortedUsers.map((u) => (
-              <div
-                key={u.id}
-                className="text-center text-[13px] font-black uppercase text-accent tracking-tighter truncate px-1"
-              >
-                {u.username}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex-1 flex flex-col justify-between">
-            {Array.from({ length: 10 }).map((_, idx) => {
-              const match = matches[idx];
-              const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
-              const awayAbrev = match ? getTeamAbrev(match.awayTeam) : "---";
-              const abrevDesc = `${homeAbrev} x ${awayAbrev}`;
-              const isInvalid = match?.isValidForPoints === false;
-
-              return (
-                <div
-                  key={idx}
-                  className="items-center bg-white/[0.02] py-0.5 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.8)]"
-                  style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
-                >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <span className="text-[7px] font-black text-white/10 italic tabular-nums">
-                      #{idx + 1}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-[12px] font-black italic uppercase truncate tracking-tighter",
-                        isInvalid ? "text-white/20" : "text-white"
-                      )}
-                    >
-                      {abrevDesc}
-                    </span>
-                  </div>
-
-                  {sortedUsers.map((u) => (
-                    <div key={u.id} className="flex justify-center h-full items-center px-0.5">
-                      <div className="bg-black/40 w-full py-0.5 rounded border border-white/5 flex items-center justify-center">
-                        <span
-                          className={cn(
-                            "text-[15px] font-black leading-none tabular-nums tracking-tighter",
-                            isInvalid ? "text-white/20" : "text-white"
-                          )}
-                        >
-                          {predictions[u.id]?.[idx]?.homeScore || "0"}-
-                          {predictions[u.id]?.[idx]?.awayScore || "0"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
-          <span className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">
-            AlphaBet League • Visão de Dados Técnica
-          </span>
-        </div>
       </div>
+
+      <Button
+        onClick={handleDownload}
+        disabled={isDownloading}
+        size="sm"
+        className="bg-white/10 hover:bg-white/20 text-white border border-white/10 font-black italic uppercase rounded-full gap-2 transition-all"
+      >
+        {isDownloading
+          ? <><Loader2 className="h-4 w-4 animate-spin" /> Gerando...</>
+          : <><Download className="h-4 w-4" /> Baixar Card</>
+        }
+      </Button>
     </div>
   );
 }
