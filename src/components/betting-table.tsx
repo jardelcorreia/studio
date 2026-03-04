@@ -280,7 +280,7 @@ export function BettingTable({
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-primary/40 italic tabular-nums">#{idx + 1}</span>
                     <div className="flex flex-col">
-                      <div className="text-[11px] md:text-xs font-black italic uppercase text-foreground leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
+                      <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
                         {desc || "---"}
                       </div>
                       {isOutOfWindow && (
