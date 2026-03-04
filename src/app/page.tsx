@@ -27,7 +27,6 @@ import {
   Radar,
   RefreshCw,
   UserCircle,
-  ChevronDown,
   Eye,
   EyeOff,
   Medal
@@ -78,6 +77,7 @@ export default function Home() {
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showAdminBar, setShowAdminBar] = useState(false);
   const [now, setNow] = useState(new Date());
 
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
@@ -106,14 +106,13 @@ export default function Home() {
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
 
-  // Get current user from firestore for display consistency
   const currentUserFirestore = useMemo(() => {
     return allUsers?.find(u => u.id === user?.uid);
   }, [allUsers, user]);
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Force reactive pointer events cleanup and handle backdrop body locking
+  // Desbloqueia cursor ao fechar diálogo
   useEffect(() => {
     if (!showProfileDialog) {
       const cleanupBody = () => {
@@ -391,8 +390,21 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-             <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black italic">#{currentRound}</Badge>
+          <div className="flex items-center gap-2 md:gap-3">
+             {isAdminUser && (
+               <Button
+                 variant="ghost"
+                 size="icon"
+                 onClick={() => setShowAdminBar(!showAdminBar)}
+                 className={cn(
+                   "rounded-xl transition-all h-9 w-9",
+                   showAdminBar ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                 )}
+               >
+                 <Shield className="h-5 w-5" />
+               </Button>
+             )}
+             <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black italic hidden sm:inline-flex">#{currentRound}</Badge>
              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-9 w-9 ring-2 ring-accent/30 cursor-pointer bg-muted flex items-center justify-center">
@@ -430,6 +442,37 @@ export default function Home() {
              </DropdownMenu>
           </div>
         </div>
+
+        {/* Admin Bar (Drawer acoplado ao cabeçalho) */}
+        {isAdminUser && showAdminBar && (
+          <div className="border-t border-primary/5 bg-primary/[0.03] animate-in slide-in-from-top duration-300 overflow-hidden">
+             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+               <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <h3 className="text-[10px] font-black italic uppercase text-primary">Controle Admin</h3>
+               </div>
+               <div className="flex items-center gap-2">
+                  <Badge className={cn(
+                    "rounded-full px-3 py-1 text-[8px] font-black uppercase border-none",
+                    isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
+                  )}>
+                     {isEffectivelyHidden ? "Privado" : "Público"}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    onClick={handleTogglePlacaresOcultos}
+                    className={cn(
+                      "rounded-xl text-[8px] font-black uppercase h-7 px-4 gap-2 border-none",
+                      placaresOcultos ? "bg-secondary text-white" : "bg-destructive text-white"
+                    )}
+                  >
+                    {placaresOcultos ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                    {placaresOcultos ? "Revelar" : "Ocultar"}
+                  </Button>
+               </div>
+             </div>
+          </div>
+        )}
       </header>
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
@@ -445,35 +488,6 @@ export default function Home() {
       </Dialog>
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-8">
-        {isAdminUser && (
-          <div className="flex flex-col md:flex-row items-center justify-between bg-primary/5 p-4 rounded-[1.5rem] border border-primary/10 gap-3">
-            <div className="flex items-center gap-3">
-              <Shield className="h-5 w-5 text-primary" />
-              <h3 className="text-xs font-black italic uppercase text-primary">Controle Admin</h3>
-            </div>
-            <div className="flex items-center gap-3 w-full md:w-auto">
-               <Badge className={cn(
-                 "rounded-full px-3 py-1 text-[9px] font-black uppercase border-none",
-                 isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
-               )}>
-                  {isEffectivelyHidden ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
-                  {isEffectivelyHidden ? "Privado" : "Público"}
-               </Badge>
-               <Button
-                 size="sm"
-                 onClick={handleTogglePlacaresOcultos}
-                 className={cn(
-                   "flex-1 md:flex-none rounded-xl text-[9px] font-black uppercase h-8 px-6 gap-2",
-                   placaresOcultos ? "bg-secondary text-white" : "bg-destructive text-white"
-                 )}
-               >
-                 {placaresOcultos ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                 Mudar Visibilidade
-               </Button>
-            </div>
-          </div>
-        )}
-
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {activeTab === "jogos" && (
             <div className="space-y-8">
@@ -565,7 +579,7 @@ export default function Home() {
             )}
           >
             <Calendar className={cn("h-6 w-6", activeTab === "jogos" && "fill-current")} />
-            <span className="text-[9px] font-black uppercase italic">Jogos/Quila</span>
+            <span className="text-[9px] font-black uppercase italic text-center">Jogos/Quila</span>
           </button>
 
           <button
@@ -576,7 +590,7 @@ export default function Home() {
             )}
           >
             <Radar className={cn("h-6 w-6", activeTab === "palpites" && "fill-current")} />
-            <span className="text-[9px] font-black uppercase italic">Palpites</span>
+            <span className="text-[9px] font-black uppercase italic text-center">Palpites</span>
           </button>
 
           <button
@@ -587,7 +601,7 @@ export default function Home() {
             )}
           >
             <Trophy className={cn("h-6 w-6", activeTab === "ranking" && "fill-current")} />
-            <span className="text-[9px] font-black uppercase italic">Ranking</span>
+            <span className="text-[9px] font-black uppercase italic text-center">Ranking</span>
           </button>
 
           <button
@@ -598,11 +612,10 @@ export default function Home() {
             )}
           >
             <LayoutDashboard className={cn("h-6 w-6", activeTab === "tabela" && "fill-current")} />
-            <span className="text-[9px] font-black uppercase italic">Tabela</span>
+            <span className="text-[9px] font-black uppercase italic text-center">Tabela</span>
           </button>
         </div>
       </nav>
     </div>
   );
 }
-
