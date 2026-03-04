@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -301,7 +300,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                                </div>
                             </div>
                             <div className="flex flex-col items-end">
-                               <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Custo</span>
+                               <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Valor</span>
                                <div className="flex items-center gap-1 group-hover:scale-110 transition-transform">
                                   <span className="text-[10px] font-black text-primary">R$</span>
                                   <Input 
