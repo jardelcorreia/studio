@@ -56,6 +56,7 @@ function RoundCardView({
     return () => window.removeEventListener("resize", calculateScale);
   }, [BASE_WIDTH]);
 
+  const scaledWidth = BASE_WIDTH * cardScale;
   const scaledHeight = BASE_HEIGHT * cardScale;
 
   return (
@@ -79,20 +80,20 @@ function RoundCardView({
 
         <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
           <div className="flex items-center gap-2">
-            <div className="h-5 w-5 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
-              <Trophy className="h-3 w-3 text-black" />
+            <div className="h-6 w-6 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
+              <Trophy className="h-4 w-4 text-black" />
             </div>
-            <div className="flex flex-col -space-y-0.5">
-              <div className="text-[14px] font-black italic uppercase text-white leading-none tracking-tighter">
+            <div className="flex flex-col -space-y-1">
+              <div className="text-[18px] font-black italic uppercase text-white leading-none tracking-tighter">
                 AlphaBet
               </div>
-              <div className="text-[6px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">
+              <div className="text-[8px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">
                 League 2026
               </div>
             </div>
           </div>
           <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
-            <span className="text-[10px] font-black text-accent italic leading-none">
+            <span className="text-[11px] font-black text-accent italic leading-none">
               {roundName.toUpperCase()}
             </span>
           </div>
@@ -103,11 +104,11 @@ function RoundCardView({
             className="gap-1 mb-1 px-1"
             style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
           >
-            <div className="text-[7px] font-black uppercase text-white/20 italic">CONFRONTO</div>
+            <div className="text-[8px] font-black uppercase text-white/20 italic">CONFRONTO</div>
             {sortedUsers.map((u) => (
               <div
                 key={u.id}
-                className="text-center text-[10px] font-black uppercase text-accent tracking-tighter truncate px-1"
+                className="text-center text-[13px] font-black uppercase text-accent tracking-tighter truncate px-1"
               >
                 {u.username}
               </div>
@@ -129,12 +130,12 @@ function RoundCardView({
                   style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
-                    <span className="text-[6px] font-black text-white/10 italic tabular-nums">
+                    <span className="text-[7px] font-black text-white/10 italic tabular-nums">
                       #{idx + 1}
                     </span>
                     <span
                       className={cn(
-                        "text-[10px] font-black italic uppercase truncate tracking-tighter",
+                        "text-[12px] font-black italic uppercase truncate tracking-tighter",
                         isInvalid ? "text-white/20" : "text-white"
                       )}
                     >
@@ -147,7 +148,7 @@ function RoundCardView({
                       <div className="bg-black/40 w-full py-0.5 rounded border border-white/5 flex items-center justify-center">
                         <span
                           className={cn(
-                            "text-[12px] font-black leading-none tabular-nums tracking-tighter",
+                            "text-[15px] font-black leading-none tabular-nums tracking-tighter",
                             isInvalid ? "text-white/20" : "text-white"
                           )}
                         >
@@ -164,7 +165,7 @@ function RoundCardView({
         </div>
 
         <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
-          <span className="text-[6px] font-black text-white/10 uppercase tracking-[0.5em]">
+          <span className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">
             AlphaBet League • Visão de Dados Técnica
           </span>
         </div>
@@ -216,7 +217,7 @@ export function BettingTable({
               </Button>
             </DialogTrigger>
 
-            <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[95vh] overflow-y-auto p-0 border-none bg-black/95 backdrop-blur-xl shadow-2xl focus:outline-none rounded-[2rem]">
+            <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[95vh] p-0 border-none bg-black/95 backdrop-blur-xl shadow-2xl focus:outline-none rounded-[2rem] overflow-hidden">
               <DialogHeader className="sr-only">
                 <DialogTitle>Card da Rodada</DialogTitle>
                 <DialogDescription>Visualização técnica dos palpites da rodada para compartilhamento.</DialogDescription>
@@ -294,15 +295,15 @@ export function BettingTable({
                   </div>
                 </div>
 
-                <div className="md:col-span-6 px-4 py-3 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
-                  <div className="flex items-center justify-around gap-2 md:gap-3 min-w-max md:min-w-0 md:w-full">
+                <div className="md:col-span-6 px-4 py-3 flex items-center overflow-x-auto no-scrollbar">
+                  <div className="flex items-center gap-2 min-w-max md:w-full md:justify-around">
                     {sortedUsers.map(u => {
                       const isHidden = placaresOcultos && currentPlayerId !== u.id;
                       const points = getPoints(u.id, idx);
                       const isCurrent = currentPlayerId === u.id;
 
                       return (
-                        <div key={u.id} className={cn("flex flex-col items-center min-w-[65px] md:min-w-[80px] relative transition-all", isCurrent && "scale-105 sm:scale-110 z-10")}>
+                        <div key={u.id} className={cn("flex flex-col items-center min-w-[60px] md:min-w-[80px] relative transition-all", isCurrent && "scale-105 z-10")}>
                           <div className="flex items-center gap-1 mb-1 px-1 w-full justify-center">
                             <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/50")}>
                               {u.username}
