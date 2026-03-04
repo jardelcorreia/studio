@@ -91,6 +91,13 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
 
     return Object.values(stats).sort((a, b) => {
       // Ordenação: Vitórias, Empates, Pontos, Saldo, Nome
+      const aPointsTotal = a.wins + a.draws + a.points + Math.abs(a.balance);
+      const bPointsTotal = b.wins + b.draws + b.points + Math.abs(b.balance);
+      
+      if (aPointsTotal === 0 && bPointsTotal === 0) {
+        return a.name.localeCompare(b.name);
+      }
+
       if (b.wins !== a.wins) return b.wins - a.wins;
       if (b.draws !== a.draws) return b.draws - a.draws;
       if (b.points !== a.points) return b.points - a.points;
@@ -104,41 +111,41 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
     const winnersList = rw.winners ? rw.winners.split(",").map(s => s.trim()) : [];
 
     return (
-      <div key={idx} className="group relative flex items-center justify-between p-4 rounded-3xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
+      <div key={idx} className="group relative flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className={cn(
-            "h-10 w-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            hasWinners ? "bg-primary text-white shadow-primary/20" : "bg-muted text-muted-foreground"
+            "h-8 w-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 shadow-sm transition-transform group-hover:rotate-3",
+            hasWinners ? "bg-primary text-white shadow-primary/10" : "bg-muted text-muted-foreground"
           )}>
             {rw.round}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1">
+            <span className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest flex items-center gap-1">
               {hasWinners ? <Trophy className="h-2 w-2 text-accent" /> : <Clock className="h-2 w-2" />}
-              {hasWinners ? "Campeão" : "Aguardando Resultados"}
+              {hasWinners ? "Campeão" : "Aguardando"}
             </span>
             <div className="flex flex-wrap gap-1 mt-0.5">
               {hasWinners ? (
                 winnersList.map((w, i) => (
-                  <span key={i} className="text-[12px] font-black italic uppercase text-primary truncate max-w-[120px]">
+                  <span key={i} className="text-[11px] font-black italic uppercase text-primary truncate max-w-[120px]">
                     {w}{i < winnersList.length - 1 ? "," : ""}
                   </span>
                 ))
               ) : (
-                <span className="text-[11px] font-medium italic text-muted-foreground/60">Rodada não finalizada</span>
+                <span className="text-[10px] font-medium italic text-muted-foreground/40">Pendente</span>
               )}
             </div>
           </div>
         </div>
         
-        <div className="flex flex-col items-end shrink-0 ml-4">
-          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Valor</span>
-          <div className="flex items-center gap-1 group-hover:scale-110 transition-transform">
-            <span className="text-[11px] font-black text-primary">R$</span>
+        <div className="flex flex-col items-end shrink-0 ml-3">
+          <span className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest">Custo</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] font-black text-primary/60">R$</span>
             <Input 
               type="number" value={rw.value} 
               onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
-              className="w-12 h-6 p-0 text-right bg-transparent border-none font-black text-sm focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-10 h-5 p-0 text-right bg-transparent border-none font-black text-xs focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               disabled={!isAdmin}
             />
           </div>
@@ -152,7 +159,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
            {overallStats.map((player, index) => {
-              // Só aplica efeitos de primeiro lugar se houver algum dado de performance
               const hasActivity = player.wins > 0 || player.draws > 0 || player.points > 0 || player.balance !== 0;
               const isFirst = index === 0 && hasActivity;
               const isPositive = player.balance >= 0;
@@ -241,8 +247,8 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                                 {isPositive ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                              </div>
                              <div className="flex flex-col">
-                                <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Saldo Financeiro</span>
-                                <span className="text-[10px] font-bold uppercase italic opacity-60">Resultados</span>
+                                <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Saldo</span>
+                                <span className="text-[10px] font-bold uppercase italic opacity-60">Financeiro</span>
                              </div>
                           </div>
                           <div className="text-right">
@@ -262,64 +268,61 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
         </div>
 
         <div className="lg:col-span-4">
-          <Card className="glass-card border-none rounded-[2.5rem] overflow-hidden sticky top-24 shadow-2xl">
-             <CardHeader className="bg-primary p-8">
+          <Card className="glass-card border-none rounded-[2rem] overflow-hidden sticky top-24 shadow-xl">
+             <CardHeader className="p-6 border-b border-primary/5">
                 <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center text-white -rotate-6">
-                         <History className="h-6 w-6" />
-                      </div>
+                   <div className="flex items-center gap-3">
+                      <History className="h-5 w-5 text-primary" />
                       <div>
-                         <CardTitle className="text-white font-black italic uppercase text-lg leading-tight">Histórico</CardTitle>
-                         <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Registro de Rodadas</p>
+                         <CardTitle className="text-sm font-black italic uppercase text-primary leading-tight">Histórico</CardTitle>
+                         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">Registro de Rodadas</p>
                       </div>
                    </div>
                    {isAdmin && (
                      <Button 
                        variant="ghost" 
-                       size="icon" 
+                       size="sm" 
                        onClick={() => onSave?.()} 
                        disabled={isSaving}
-                       className="text-white hover:bg-white/10 rounded-xl"
+                       className="rounded-xl h-8 px-3 text-[10px] font-black uppercase italic gap-2 text-primary hover:bg-primary/10"
                      >
-                       {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                       {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                       Salvar
                      </Button>
                    )}
                 </div>
              </CardHeader>
              <CardContent className="p-0">
                 <Accordion type="single" collapsible className="w-full">
-                   {/* 1º Turno */}
                    <AccordionItem value="turno1" className="border-none">
                       <AccordionTrigger className="px-6 hover:no-underline hover:bg-primary/5 py-4 transition-colors">
                         <div className="flex items-center gap-2">
-                           <Badge variant="outline" className="rounded-full text-[11px] font-black uppercase text-primary border-primary/20 bg-primary/5 px-4 h-7">
+                           <Badge variant="outline" className="rounded-full text-[11px] font-black uppercase text-primary border-primary/10 bg-primary/5 px-4 h-7">
                              1º Turno (R1 a R19)
                            </Badge>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="px-6 pb-6 pt-2 space-y-3">
+                      <AccordionContent className="px-6 pb-6 pt-1 space-y-2">
                         {roundWinners.slice(0, 19).map((rw, idx) => renderRoundItem(rw, idx))}
                       </AccordionContent>
                    </AccordionItem>
 
-                   {/* 2º Turno */}
                    <AccordionItem value="turno2" className="border-none">
                       <AccordionTrigger className="px-6 hover:no-underline hover:bg-primary/5 py-4 transition-colors">
                         <div className="flex items-center gap-2">
-                           <Badge variant="outline" className="rounded-full text-[11px] font-black uppercase text-primary border-primary/20 bg-primary/5 px-4 h-7">
+                           <Badge variant="outline" className="rounded-full text-[11px] font-black uppercase text-primary border-primary/10 bg-primary/5 px-4 h-7">
                              2º Turno (R20 a R38)
                            </Badge>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="px-6 pb-6 pt-2 space-y-3">
+                      <AccordionContent className="px-6 pb-6 pt-1 space-y-2">
                         {roundWinners.slice(19, 38).map((rw, idx) => renderRoundItem(rw, idx + 19))}
                       </AccordionContent>
                    </AccordionItem>
                 </Accordion>
-                <div className="p-6 bg-primary/5 border-t border-dashed">
-                   <p className="text-[10px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
-                      Os vencedores e saldos são atualizados automaticamente ao preencher os resultados oficiais.
+                <div className="px-6 py-4 border-t border-primary/5">
+                   <p className="text-[9px] font-bold text-muted-foreground/60 uppercase text-center tracking-tighter">
+                      Atualização automática via resultados oficiais
                    </p>
                 </div>
              </CardContent>
@@ -352,11 +355,11 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                     <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">1º Turno (R1 a R19)</label>
                     <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-2xl border border-primary/5">
                       <span className="text-xs font-black text-primary">R$</span>
-                      <Input 
+                      <input 
                         type="number" 
                         value={turn1Value} 
                         onChange={(e) => setTurn1Value(parseFloat(e.target.value) || 0)}
-                        className="border-none bg-transparent font-black text-lg focus-visible:ring-0 h-8"
+                        className="border-none bg-transparent font-black text-lg focus:outline-none w-full h-8"
                       />
                     </div>
                   </div>
@@ -364,11 +367,11 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                     <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">2º Turno (R20 a R38)</label>
                     <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-2xl border border-primary/5">
                       <span className="text-xs font-black text-primary">R$</span>
-                      <Input 
+                      <input 
                         type="number" 
                         value={turn2Value} 
                         onChange={(e) => setTurn2Value(parseFloat(e.target.value) || 0)}
-                        className="border-none bg-transparent font-black text-lg focus-visible:ring-0 h-8"
+                        className="border-none bg-transparent font-black text-lg focus:outline-none w-full h-8"
                       />
                     </div>
                   </div>
