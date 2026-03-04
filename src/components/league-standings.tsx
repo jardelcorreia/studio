@@ -14,7 +14,7 @@ interface LeagueStandingsProps {
 export function LeagueStandings({ standings }: LeagueStandingsProps) {
   if (!standings || standings.length === 0) {
     return (
-      <div className="p-12 text-center glass-card rounded-3xl border-dashed border-2 flex flex-col items-center gap-4">
+      <div className="p-12 text-center glass-card rounded-3xl border-dashed border-2 flex flex-col items-center gap-4 max-w-4xl mx-auto">
         <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
         <span className="text-sm font-black italic uppercase text-muted-foreground">Sincronizando com a CBF...</span>
       </div>
@@ -22,7 +22,7 @@ export function LeagueStandings({ standings }: LeagueStandingsProps) {
   }
 
   return (
-    <Card className="glass-card border-none rounded-3xl overflow-hidden">
+    <Card className="glass-card border-none rounded-3xl overflow-hidden max-w-4xl mx-auto shadow-xl">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader className="bg-muted/30">
