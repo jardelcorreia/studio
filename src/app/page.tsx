@@ -112,7 +112,6 @@ export default function Home() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Desbloqueia cursor ao fechar diálogo
   useEffect(() => {
     if (!showProfileDialog) {
       const cleanupBody = () => {
@@ -377,7 +376,7 @@ export default function Home() {
   if (!user || mustChangePassword) return <LoginScreen forcePasswordChange={mustChangePassword} onPasswordChangeRequired={() => setMustChangePassword(true)} onPasswordChanged={() => setMustChangePassword(false)} />;
 
   return (
-    <div className="flex-1 min-h-screen bg-background pb-24">
+    <div className="flex-1 min-h-screen bg-background pb-24 md:pb-8">
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -388,6 +387,50 @@ export default function Home() {
               <h1 className="text-lg font-black italic uppercase tracking-tighter text-primary leading-none">AlphaBet</h1>
               <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Brasileirão 2026</span>
             </div>
+          </div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center bg-muted/30 rounded-2xl p-1 gap-1 border border-primary/5">
+            <button
+              onClick={() => setActiveTab("jogos")}
+              className={cn(
+                "px-5 py-2 rounded-xl text-[10px] font-black uppercase italic transition-all flex items-center gap-2",
+                activeTab === "jogos" ? "bg-primary text-white shadow-lg" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+              )}
+            >
+              <Calendar className="h-3 w-3" />
+              Jogos/Quila
+            </button>
+            <button
+              onClick={() => setActiveTab("palpites")}
+              className={cn(
+                "px-5 py-2 rounded-xl text-[10px] font-black uppercase italic transition-all flex items-center gap-2",
+                activeTab === "palpites" ? "bg-primary text-white shadow-lg" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+              )}
+            >
+              <Radar className="h-3 w-3" />
+              Palpites
+            </button>
+            <button
+              onClick={() => setActiveTab("ranking")}
+              className={cn(
+                "px-5 py-2 rounded-xl text-[10px] font-black uppercase italic transition-all flex items-center gap-2",
+                activeTab === "ranking" ? "bg-primary text-white shadow-lg" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+              )}
+            >
+              <Trophy className="h-3 w-3" />
+              Ranking
+            </button>
+            <button
+              onClick={() => setActiveTab("tabela")}
+              className={cn(
+                "px-5 py-2 rounded-xl text-[10px] font-black uppercase italic transition-all flex items-center gap-2",
+                activeTab === "tabela" ? "bg-primary text-white shadow-lg" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+              )}
+            >
+              <LayoutDashboard className="h-3 w-3" />
+              Tabela
+            </button>
           </div>
 
           <div className="flex items-center gap-2 md:gap-3">
@@ -443,7 +486,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Admin Bar (Drawer acoplado ao cabeçalho) */}
+        {/* Admin Bar */}
         {isAdminUser && showAdminBar && (
           <div className="border-t border-primary/5 bg-primary/[0.03] animate-in slide-in-from-top duration-300 overflow-hidden">
              <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -568,8 +611,8 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-primary/10 rounded-none h-20 px-6 pb-2">
+      {/* Bottom Navigation Bar (Mobile Only) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-primary/10 rounded-none h-20 px-6 pb-2 md:hidden">
         <div className="max-w-md mx-auto h-full flex items-center justify-between">
           <button
             onClick={() => setActiveTab("jogos")}
