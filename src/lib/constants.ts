@@ -30,9 +30,9 @@ export const TEAMS: Record<string, TeamInfo> = {
   "Sport CR": { abrev: "SPT", nome: "Sport", escudo: "https://logodetimes.com/times/sport-recife/logo-sport-recife-256.png" },
   "Ceará SC": { abrev: "CEA", nome: "Ceará", escudo: "https://logodetimes.com/times/ceara/logo-ceara-256.png" },
   "Goiás EC": { abrev: "GOI", nome: "Goiás", escudo: "https://logodetimes.com/times/goias/logo-goias-256.png" },
-  "Coritiba FC": { abrev: "COR", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
-  "Coritiba FBPC": { abrev: "COR", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
-  "Coritiba FBC": { abrev: "COR", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
+  "Coritiba FC": { abrev: "CFC", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
+  "Coritiba FBPC": { abrev: "CFC", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
+  "Coritiba FBC": { abrev: "CFC", nome: "Coritiba", escudo: "https://logodetimes.com/times/coritiba/logo-coritiba-256.png" },
   "América FC MG": { abrev: "AME", nome: "América-MG", escudo: "https://logodetimes.com/times/america-mineiro/logo-america-mineiro-256.png" },
   "Clube do Remo": { abrev: "REM", nome: "Remo", escudo: "https://logodetimes.com/times/remo/logo-remo-256.png" },
 };

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -120,7 +119,6 @@ export default function Home() {
         document.body.style.pointerEvents = "auto";
         document.body.style.overflow = "auto";
       };
-      // Run once immediately and once after a small delay to catch Radix late changes
       cleanupBody();
       const timer = setTimeout(cleanupBody, 300);
       return () => clearTimeout(timer);

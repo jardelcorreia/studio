@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -97,11 +96,6 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
 
                    {isScoresHidden && (
                      <div className="flex items-center gap-1.5">
-                        {score.betsCompleted ? (
-                          <CheckCircle2 className={cn("h-3.5 w-3.5", score.isWinner ? "text-white" : "text-secondary")} />
-                        ) : (
-                          <div className={cn("h-3 w-3 rounded-full border-2 border-current opacity-30", score.isWinner ? "text-white" : "text-muted-foreground")} />
-                        )}
                         <span className={cn(
                           "text-[11px] md:text-[10px] font-black uppercase italic tracking-tighter whitespace-nowrap",
                           score.betsCompleted 
