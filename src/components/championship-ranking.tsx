@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, Wallet } from "lucide-react";
+import { Trophy, Medal, Wallet, Star, TrendingUp, TrendingDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -25,8 +25,8 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
   const overallStats = useMemo(() => {
     if (!allUsers || allUsers.length === 0) return [];
 
-    const stats: Record<string, PlayerOverallStats & { photoUrl?: string }> = Object.fromEntries(
-      allUsers.map((u) => [u.id, { name: u.username, wins: 0, draws: 0, points: 0, balance: 0, photoUrl: u.photoUrl }])
+    const stats: Record<string, PlayerOverallStats & { id: string; photoUrl?: string }> = Object.fromEntries(
+      allUsers.map((u) => [u.id, { id: u.id, name: u.username, wins: 0, draws: 0, points: 0, balance: 0, photoUrl: u.photoUrl }])
     );
 
     roundWinners.forEach((rw) => {
@@ -74,106 +74,159 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
   }, [roundWinners, allUsers]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-         {overallStats.map((player, index) => (
-            <Card key={player.name} className={cn(
-              "glass-card border-none rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.03]",
-              index === 0 && "ring-2 ring-accent ring-offset-4 ring-offset-background"
-            )}>
-              <CardContent className="p-0">
-                 <div className={cn(
-                   "p-6 flex flex-col items-center text-center",
-                   index === 0 ? "bg-accent/10" : "bg-muted/30"
-                 )}>
-                    <div className="relative mb-4">
-                       <Avatar className={cn(
-                         "h-20 w-20 rounded-2xl shadow-lg bg-muted flex items-center justify-center",
-                         index === 0 ? "sports-gradient text-white rotate-6" : "bg-white dark:bg-card border-2"
-                       )}>
-                         {player.photoUrl && <AvatarImage src={player.photoUrl} className="object-cover" />}
-                         <AvatarFallback className={cn(
-                           "text-2xl font-black italic w-full h-full flex items-center justify-center",
-                           index === 0 ? "text-white" : "text-primary"
-                         )}>
-                           {player.name.substring(0, 2).toUpperCase()}
-                         </AvatarFallback>
-                       </Avatar>
-                       {index === 0 && (
-                         <div className="absolute -top-3 -right-3 h-8 w-8 bg-accent rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                            <Trophy className="h-4 w-4 text-accent-foreground" />
-                         </div>
-                       )}
-                    </div>
-                    <h3 className="text-xl font-black italic uppercase text-primary leading-none mb-2">{player.name}</h3>
-                    <Badge variant="outline" className="rounded-full text-[8px] font-black uppercase tracking-widest border-primary/20 px-4">
-                       {index === 0 ? "Líder Alpha" : `Top ${index + 1} Elite`}
-                    </Badge>
-                 </div>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+      <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+         {overallStats.map((player, index) => {
+            const isFirst = index === 0;
+            const isPositive = player.balance >= 0;
 
-                 <div className="p-6 grid grid-cols-3 gap-2">
-                    <div className="text-center">
-                       <div className="text-3xl font-black text-primary leading-none">{player.wins}</div>
-                       <div className="text-[8px] font-bold text-muted-foreground uppercase mt-1">Vitórias</div>
-                    </div>
-                    <div className="text-center">
-                       <div className="text-xl font-black">{player.draws}</div>
-                       <div className="text-[8px] font-bold text-muted-foreground uppercase mt-1">Empates</div>
-                    </div>
-                    <div className="text-center">
-                       <div className="text-xl font-black">{player.points}</div>
-                       <div className="text-[8px] font-bold text-muted-foreground uppercase mt-1">Total Pts</div>
-                    </div>
-                    <div className="col-span-3 pt-4 border-t border-dashed flex items-center justify-between mt-2">
-                       <div className="flex items-center gap-2">
-                          <Wallet className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-[9px] font-bold text-muted-foreground uppercase">Saldo</span>
-                       </div>
-                       <span className={cn(
-                         "text-lg font-black italic",
-                         player.balance >= 0 ? "text-secondary" : "text-destructive"
-                       )}>
-                          R$ {player.balance.toFixed(2)}
-                       </span>
-                    </div>
-                 </div>
-              </CardContent>
-            </Card>
-         ))}
+            return (
+              <Card key={player.id} className={cn(
+                "glass-card border-none rounded-[2.5rem] overflow-hidden transition-all duration-500 group relative",
+                isFirst && "ring-2 ring-accent ring-offset-4 ring-offset-background shadow-2xl shadow-accent/20"
+              )}>
+                <CardContent className="p-0">
+                   {/* Header Section with Squircle Avatar */}
+                   <div className={cn(
+                     "p-8 flex flex-col items-center text-center relative overflow-hidden",
+                     isFirst ? "bg-accent/10" : "bg-primary/[0.03]"
+                   )}>
+                      {/* Decorative Background Icon */}
+                      <Trophy className={cn(
+                        "absolute -top-4 -right-4 h-24 w-24 opacity-[0.03] transition-transform duration-700 group-hover:rotate-12 group-hover:scale-110",
+                        isFirst ? "text-accent opacity-[0.08]" : "text-primary"
+                      )} />
+
+                      <div className="relative mb-6">
+                         {/* Squircle Container */}
+                         <div className={cn(
+                           "relative h-24 w-24 flex items-center justify-center rounded-[2.25rem] shadow-inner transition-all duration-500 group-hover:scale-105",
+                           isFirst ? "sports-gradient shadow-lg" : "bg-primary/5 border border-primary/10"
+                         )}>
+                            <Avatar className={cn(
+                               "h-[82px] w-[82px] rounded-full border-4 border-background shadow-xl bg-muted flex items-center justify-center transition-all",
+                               isFirst && "border-white/40"
+                            )}>
+                              <AvatarImage src={player.photoUrl || undefined} className="object-cover" />
+                              <AvatarFallback className={cn(
+                                "text-3xl font-black italic w-full h-full flex items-center justify-center",
+                                isFirst ? "bg-white text-primary" : "bg-primary/10 text-primary"
+                              )}>
+                                {player.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                         </div>
+                         
+                         {/* Rank Badge Floating */}
+                         <div className={cn(
+                           "absolute -top-2 -right-2 h-10 w-10 rounded-full flex items-center justify-center shadow-xl border-4 border-background z-20 transition-transform group-hover:rotate-12",
+                           index === 0 ? "bg-accent" : index === 1 ? "bg-slate-300" : index === 2 ? "bg-amber-600" : "bg-muted"
+                         )}>
+                            {index === 0 ? <Trophy className="h-5 w-5 text-accent-foreground" /> : 
+                             index === 1 ? <Medal className="h-5 w-5 text-slate-600" /> :
+                             <Star className="h-4 w-4 text-white" />}
+                         </div>
+                      </div>
+
+                      <div className="space-y-1 relative z-10">
+                        <h3 className="text-2xl font-black italic uppercase text-primary leading-none tracking-tighter">{player.name}</h3>
+                        <Badge variant="outline" className={cn(
+                           "rounded-full text-[9px] font-black uppercase tracking-[0.2em] px-4 py-0.5 border-primary/10 bg-white/50 dark:bg-black/20",
+                           isFirst ? "text-accent border-accent/20" : "text-muted-foreground"
+                        )}>
+                           {isFirst ? "Líder Alpha" : `Top ${index + 1} Elite`}
+                        </Badge>
+                      </div>
+                   </div>
+
+                   {/* Stats Grid */}
+                   <div className="p-8 space-y-8">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="flex flex-col items-center">
+                           <span className="text-3xl font-black italic text-primary leading-none">{player.wins}</span>
+                           <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Vitórias</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                           <span className="text-xl font-black italic text-foreground leading-none">{player.draws}</span>
+                           <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Empates</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                           <span className="text-xl font-black italic text-foreground leading-none">{player.points}</span>
+                           <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Pontos</span>
+                        </div>
+                      </div>
+
+                      {/* Balance Section */}
+                      <div className={cn(
+                        "p-5 rounded-3xl border border-dashed flex items-center justify-between transition-colors",
+                        isPositive ? "bg-secondary/5 border-secondary/20" : "bg-destructive/5 border-destructive/20"
+                      )}>
+                        <div className="flex items-center gap-3">
+                           <div className={cn(
+                             "h-10 w-10 rounded-xl flex items-center justify-center shadow-sm",
+                             isPositive ? "bg-secondary text-white" : "bg-destructive text-white"
+                           )}>
+                              {isPositive ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+                           </div>
+                           <div className="flex flex-col">
+                              <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Saldo Financeiro</span>
+                              <span className="text-[10px] font-bold uppercase italic opacity-60">Resultados da Liga</span>
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <span className={cn(
+                             "text-2xl font-black italic leading-none",
+                             isPositive ? "text-secondary" : "text-destructive"
+                           )}>
+                              R$ {player.balance.toFixed(2)}
+                           </span>
+                        </div>
+                      </div>
+                   </div>
+                </CardContent>
+              </Card>
+            );
+         })}
       </div>
 
-      <div className="lg:col-span-4 space-y-4">
-        <Card className="glass-card border-none rounded-3xl overflow-hidden h-full">
-           <CardHeader className="bg-primary p-6">
-              <CardTitle className="text-white font-black italic uppercase text-sm flex items-center gap-2">
-                 <Medal className="h-5 w-5" />
-                 Histórico das Rodadas
-              </CardTitle>
+      {/* History Sidebar */}
+      <div className="lg:col-span-4">
+        <Card className="glass-card border-none rounded-[2.5rem] overflow-hidden sticky top-24">
+           <CardHeader className="bg-primary p-8">
+              <div className="flex items-center gap-4">
+                 <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center text-white -rotate-6">
+                    <Medal className="h-6 w-6" />
+                 </div>
+                 <div>
+                    <CardTitle className="text-white font-black italic uppercase text-lg leading-tight">Histórico</CardTitle>
+                    <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Protocolo de Rodadas</p>
+                 </div>
+              </div>
            </CardHeader>
            <CardContent className="p-0">
               <ScrollArea className="h-[500px]">
-                 <div className="p-4 space-y-2">
+                 <div className="p-6 space-y-3">
                     {roundWinners.map((rw, idx) => (
-                       <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-transparent hover:border-primary/20 transition-all">
-                          <div className="flex items-center gap-3">
-                             <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
+                       <div key={idx} className="group flex items-center justify-between p-4 rounded-3xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
+                          <div className="flex items-center gap-4">
+                             <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform">
                                 {rw.round}
                              </div>
                              <div className="flex flex-col">
-                                <span className="text-[8px] font-black uppercase text-muted-foreground">Campeão</span>
-                                <span className="text-[11px] font-black italic uppercase text-primary truncate max-w-[120px]">
-                                   {rw.winners || "Pendente"}
+                                <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Campeão</span>
+                                <span className="text-[12px] font-black italic uppercase text-primary truncate max-w-[140px]">
+                                   {rw.winners || "Processando..."}
                                 </span>
                              </div>
                           </div>
                           <div className="flex flex-col items-end">
-                             <span className="text-[8px] font-black uppercase text-muted-foreground">Custo</span>
-                             <div className="flex items-center gap-1">
-                                <span className="text-[9px] font-bold text-primary">R$</span>
+                             <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Custo</span>
+                             <div className="flex items-center gap-1 group-hover:scale-110 transition-transform">
+                                <span className="text-[10px] font-black text-primary">R$</span>
                                 <Input 
                                   type="number" value={rw.value} 
                                   onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
-                                  className="w-10 h-6 p-0 text-right bg-transparent border-none font-black text-xs focus-visible:ring-0"
+                                  className="w-12 h-6 p-0 text-right bg-transparent border-none font-black text-sm focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                              </div>
                           </div>
@@ -181,6 +234,11 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers }:
                     ))}
                  </div>
               </ScrollArea>
+              <div className="p-6 bg-primary/5 border-t border-dashed">
+                 <p className="text-[9px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
+                    Os valores são calculados automaticamente com base no número de participantes ativos.
+                 </p>
+              </div>
            </CardContent>
         </Card>
       </div>
