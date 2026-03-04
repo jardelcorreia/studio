@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -10,22 +9,9 @@ import { Trophy, Swords, Share2, Camera, X, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
 
-interface BettingTableProps {
-  roundName: string;
-  matches: Match[];
-  predictions: PlayerPredictions;
-  setPrediction: (userId: string, matchIndex: number, type: 'home' | 'away', value: string) => void;
-  results: Prediction[];
-  setResult: (matchIndex: number, type: 'home' | 'away', value: string) => void;
-  placaresOcultos: boolean;
-  currentPlayerId: string;
-  isAdmin?: boolean;
-  allUsers: any[];
-}
-
 /**
  * Componente interno que lida com a escala "congelada" do card.
- * Utiliza ResizeObserver para garantir responsividade real e escala matemática precisa.
+ * BASE_WIDTH agora é dinâmica — cresce com o número de usuários.
  */
 function RoundCardView({ 
   roundName, 
@@ -43,40 +29,40 @@ function RoundCardView({
   const [cardScale, setCardScale] = useState(1);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Dimensão base do card (design reference)
-  const BASE_SIZE = 580;
+  // Largura base cresce com o nº de usuários (140px por coluna de usuário + 120px para confronto)
+  const COL_WIDTH = 140;
+  const CONFRONTO_WIDTH = 120;
+  const BASE_WIDTH = CONFRONTO_WIDTH + (sortedUsers.length * COL_WIDTH);
+  const BASE_HEIGHT = 580; // altura sempre fixa
 
   useEffect(() => {
     if (!wrapperRef.current) return;
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          // Calcula a escala baseada no menor valor entre largura e altura disponível
-          const scaleByWidth = width / BASE_SIZE;
-          const scaleByHeight = height / BASE_SIZE;
-          // Limita a escala máxima em 1 (100%)
-          setCardScale(Math.min(1, scaleByWidth, scaleByHeight));
+        const { width } = entry.contentRect;
+        if (width > 0) {
+          // Escala baseada na largura disponível vs largura total necessária
+          setCardScale(Math.min(1, width / BASE_WIDTH));
         }
       }
     });
 
     observer.observe(wrapperRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [BASE_WIDTH]);
 
   return (
     <div 
       ref={wrapperRef} 
-      className="w-full flex items-center justify-center overflow-hidden"
-      style={{ minHeight: BASE_SIZE * cardScale }}
+      className="w-full flex justify-center overflow-hidden"
+      style={{ height: BASE_HEIGHT * cardScale }}
     >
       <div 
-        className="aspect-square bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl shrink-0"
+        className="bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl shrink-0"
         style={{ 
-          width: BASE_SIZE,
-          height: BASE_SIZE,
+          width: BASE_WIDTH,
+          height: BASE_HEIGHT,
           transform: `scale(${cardScale})`,
           transformOrigin: 'top center'
         }}
@@ -103,7 +89,11 @@ function RoundCardView({
         </div>
 
         <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-          <div className="grid grid-cols-5 gap-1 mb-1 px-1">
+          {/* Header das colunas com grid dinâmico */}
+          <div 
+            className="gap-1 mb-1 px-1"
+            style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
+          >
             <div className="text-[7px] font-black uppercase text-white/20 italic">CONFRONTO</div>
             {sortedUsers.map(u => (
               <div key={u.id} className="text-center text-[10px] font-black uppercase text-accent tracking-tighter truncate px-1">
@@ -121,7 +111,11 @@ function RoundCardView({
               const isInvalid = match?.isValidForPoints === false;
 
               return (
-                <div key={idx} className="grid grid-cols-5 gap-1 items-center bg-white/[0.02] py-0.5 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.8)]">
+                <div 
+                  key={idx} 
+                  className="items-center bg-white/[0.02] py-0.5 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.8)]"
+                  style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
+                >
                   <div className="flex items-center gap-2 overflow-hidden">
                     <span className="text-[6px] font-black text-white/10 italic tabular-nums">#{idx + 1}</span>
                     <span className={cn(
@@ -201,7 +195,7 @@ export function BettingTable({
                 Gerar Card da Rodada
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-[620px] p-0 overflow-hidden border-none bg-black/95 backdrop-blur-xl shadow-2xl focus:outline-none rounded-[2rem]">
+            <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[90vh] overflow-y-auto p-0 border-none bg-black/95 backdrop-blur-xl shadow-2xl focus:outline-none rounded-[2rem]">
               <DialogHeader className="sr-only">
                 <DialogTitle>Card da Rodada</DialogTitle>
                 <DialogDescription>Visualização técnica dos palpites da rodada para compartilhamento.</DialogDescription>
