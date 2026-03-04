@@ -111,7 +111,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
             {rw.round}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1">
+            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1">
               {hasWinners ? <Trophy className="h-2 w-2 text-accent" /> : <Clock className="h-2 w-2" />}
               {hasWinners ? "Campeão" : "Aguardando Resultados"}
             </span>
@@ -130,9 +130,9 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
         </div>
         
         <div className="flex flex-col items-end shrink-0 ml-4">
-          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Valor</span>
+          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Valor</span>
           <div className="flex items-center gap-1 group-hover:scale-110 transition-transform">
-            <span className="text-[10px] font-black text-primary">R$</span>
+            <span className="text-[11px] font-black text-primary">R$</span>
             <Input 
               type="number" value={rw.value} 
               onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
@@ -288,7 +288,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                    <AccordionItem value="turno1" className="border-none">
                       <AccordionTrigger className="px-6 hover:no-underline hover:bg-primary/5 py-4 transition-colors">
                         <div className="flex items-center gap-2">
-                           <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase text-primary border-primary/20 bg-primary/5">
+                           <Badge variant="outline" className="rounded-full text-[11px] font-black uppercase text-primary border-primary/20 bg-primary/5 px-4 h-7">
                              1º Turno (R1 a R19)
                            </Badge>
                         </div>
@@ -302,7 +302,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                    <AccordionItem value="turno2" className="border-none">
                       <AccordionTrigger className="px-6 hover:no-underline hover:bg-primary/5 py-4 transition-colors">
                         <div className="flex items-center gap-2">
-                           <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase text-primary border-primary/20 bg-primary/5">
+                           <Badge variant="outline" className="rounded-full text-[11px] font-black uppercase text-primary border-primary/20 bg-primary/5 px-4 h-7">
                              2º Turno (R20 a R38)
                            </Badge>
                         </div>
@@ -313,7 +313,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                    </AccordionItem>
                 </Accordion>
                 <div className="p-6 bg-primary/5 border-t border-dashed">
-                   <p className="text-[9px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
+                   <p className="text-[10px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
                       Os vencedores e saldos são atualizados automaticamente ao preencher os resultados oficiais.
                    </p>
                 </div>
