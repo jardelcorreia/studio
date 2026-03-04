@@ -88,7 +88,7 @@ function RoundCardView({
                 <div className="text-[20px] font-black italic uppercase text-white tracking-tighter" style={{ lineHeight: '20px' }}>
                   AlphaBet
                 </div>
-                <div className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 mt-1" style={{ lineHeight: '9px' }}>
+                <div className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 mt-1" style={{ lineHeight: '8px' }}>
                   League 2026
                 </div>
               </div>
@@ -180,7 +180,7 @@ function RoundCardView({
       </div>
       <div className="text-center py-4">
         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">
-          Card pronto para print! Ajuste o zoom se necessário.
+          Card pronto para print manual!
         </p>
       </div>
     </div>
@@ -280,7 +280,7 @@ export function BettingTable({
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-primary/40 italic tabular-nums">#{idx + 1}</span>
                     <div className="flex flex-col">
-                      <div className="text-[11px] md:text-xs font-black italic uppercase text-white leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
+                      <div className="text-[11px] md:text-xs font-black italic uppercase text-foreground leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
                         {desc || "---"}
                       </div>
                       {isOutOfWindow && (
