@@ -63,6 +63,9 @@ function RoundCardView({
     if (!cardRef.current) return;
     setIsDownloading(true);
     try {
+      await document.fonts.ready;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       const html2canvas = (await import("html2canvas")).default;
 
       const cardCanvas = await html2canvas(cardRef.current, {
@@ -70,6 +73,9 @@ function RoundCardView({
         scale: 2,
         useCORS: true,
         logging: false,
+        onclone: (_: any, element: HTMLElement) => {
+          element.style.transform = "none";
+        }
       });
 
       const size = Math.max(cardCanvas.width, cardCanvas.height);
@@ -117,22 +123,22 @@ function RoundCardView({
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
           </div>
 
-          <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-2">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
+          <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
                 <Trophy className="h-5 w-5 text-black" />
               </div>
-              <div className="flex flex-col -space-y-1">
-                <div className="text-[20px] font-black italic uppercase text-white leading-none tracking-tighter">
+              <div className="flex flex-col gap-0.5 justify-center">
+                <div className="text-[20px] font-black italic uppercase text-white tracking-tighter" style={{ lineHeight: 1 }}>
                   AlphaBet
                 </div>
-                <div className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none mt-1">
+                <div className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] opacity-80" style={{ lineHeight: 1 }}>
                   League 2026
                 </div>
               </div>
             </div>
-            <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
-              <span className="text-[12px] font-black text-accent italic leading-none uppercase">
+            <div className="bg-white/5 px-2 py-1.5 rounded border border-white/10 flex items-center justify-center">
+              <span className="text-[12px] font-black text-accent italic uppercase pb-0.5" style={{ lineHeight: 1 }}>
                 {roundName}
               </span>
             </div>
@@ -140,13 +146,16 @@ function RoundCardView({
 
           <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
             <div className="flex items-center mb-1 px-2">
-              <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[8px] font-black uppercase text-white/20 italic">
+              <div 
+                style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} 
+                className="text-[8px] font-black uppercase text-white/20 italic"
+              >
                 CONFRONTO
               </div>
               {sortedUsers.map((u) => (
                 <div
                   key={u.id}
-                  style={{ width: COL_WIDTH, flexShrink: 0 }}
+                  style={{ width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH, flexShrink: 0 }}
                   className="text-center text-[12px] font-black uppercase text-accent tracking-tighter truncate px-1"
                 >
                   {u.username}
@@ -168,33 +177,46 @@ function RoundCardView({
                     className="flex items-center bg-white/[0.03] py-1 px-2 rounded-xl border border-white/[0.02]"
                     style={{ height: 44 }}
                   >
-                    <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="flex items-center gap-1.5 overflow-hidden pr-2">
-                      <span className="text-[7px] font-black text-white/10 italic tabular-nums">
+                    <div 
+                      style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} 
+                      className="flex items-center gap-1.5 overflow-hidden pr-2"
+                    >
+                      <span className="text-[7px] font-black text-white/10 italic tabular-nums leading-none">
                         #{idx + 1}
                       </span>
-                      <span
-                        className={cn(
-                          "text-[11px] font-black italic uppercase truncate tracking-tighter",
-                          isInvalid ? "text-white/20" : "text-white"
-                        )}
-                      >
-                        {abrevDesc}
-                      </span>
+                      <div className="flex-1 overflow-hidden">
+                        <span
+                          className={cn(
+                            "block text-[11px] font-black italic uppercase truncate tracking-tighter pt-0.5 pb-1",
+                            isInvalid ? "text-white/20" : "text-white"
+                          )}
+                        >
+                          {abrevDesc}
+                        </span>
+                      </div>
                     </div>
 
                     {sortedUsers.map((u) => (
-                      <div key={u.id} style={{ width: COL_WIDTH, flexShrink: 0 }} className="flex justify-center h-full items-center px-1">
+                      <div 
+                        key={u.id} 
+                        style={{ width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH, flexShrink: 0 }} 
+                        className="flex justify-center h-full items-center px-1"
+                      >
                         <div className="bg-black/60 w-full h-8 rounded-xl border border-white/5 flex items-center justify-center shadow-inner">
-                          <span
+                          <div
                             className={cn(
-                              "text-[16px] font-black leading-none tabular-nums tracking-tighter",
+                              "flex items-center justify-center w-full gap-1",
                               isInvalid ? "text-white/20" : "text-white"
                             )}
                           >
-                            {predictions[u.id]?.[idx]?.homeScore || "0"}
-                            <span className="mx-0 opacity-30 text-[12px]">-</span>
-                            {predictions[u.id]?.[idx]?.awayScore || "0"}
-                          </span>
+                            <span className="text-[16px] font-black tabular-nums tracking-tighter pb-0.5">
+                              {predictions[u.id]?.[idx]?.homeScore || "0"}
+                            </span>
+                            <span className="text-[12px] font-black opacity-30 pb-0.5">-</span>
+                            <span className="text-[16px] font-black tabular-nums tracking-tighter pb-0.5">
+                              {predictions[u.id]?.[idx]?.awayScore || "0"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -204,8 +226,8 @@ function RoundCardView({
             </div>
           </div>
 
-          <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
-            <span className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">
+          <div className="relative z-10 flex justify-center items-center mt-2 pt-2 border-t border-white/5">
+            <span className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em] pb-1">
               AlphaBet League • Visão de Dados Técnica
             </span>
           </div>
@@ -216,7 +238,7 @@ function RoundCardView({
         onClick={handleDownload}
         disabled={isDownloading}
         size="sm"
-        className="bg-white/10 hover:bg-white/20 text-white border border-white/10 font-black italic uppercase rounded-full gap-2 transition-all mt-4"
+        className="bg-white/10 hover:bg-white/20 text-white border border-white/10 font-black italic uppercase rounded-full gap-2 transition-all mt-4 px-6"
       >
         {isDownloading
           ? <><Loader2 className="h-4 w-4 animate-spin" /> Gerando...</>
