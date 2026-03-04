@@ -25,7 +25,7 @@ interface BettingTableProps {
 
 /**
  * Componente interno que lida com a escala "congelada" do card.
- * Ele mede o espaço disponível assim que o diálogo abre.
+ * Utiliza ResizeObserver para garantir responsividade real e escala matemática precisa.
  */
 function RoundCardView({ 
   roundName, 
@@ -41,50 +41,48 @@ function RoundCardView({
   getTeamAbrev: (name: string) => string 
 }) {
   const [cardScale, setCardScale] = useState(1);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Dimensão base do card (design reference)
+  const BASE_SIZE = 580;
 
   useEffect(() => {
-    const updateScale = () => {
-      if (containerRef.current) {
-        // Pega a largura do container pai (o DialogContent)
-        const parentWidth = containerRef.current.offsetWidth;
-        const targetWidth = 580; // Largura base do design
-        
-        if (parentWidth > 0) {
-          const newScale = Math.min(1, parentWidth / targetWidth);
-          setCardScale(newScale);
+    if (!wrapperRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          // Calcula a escala baseada no menor valor entre largura e altura disponível
+          const scaleByWidth = width / BASE_SIZE;
+          const scaleByHeight = height / BASE_SIZE;
+          // Limita a escala máxima em 1 (100%)
+          setCardScale(Math.min(1, scaleByWidth, scaleByHeight));
         }
       }
-    };
+    });
 
-    // Executa imediatamente e após um pequeno delay para garantir o render
-    updateScale();
-    const timer = setTimeout(updateScale, 100);
-    window.addEventListener('resize', updateScale);
-    
-    return () => {
-      window.removeEventListener('resize', updateScale);
-      clearTimeout(timer);
-    };
+    observer.observe(wrapperRef.current);
+    return () => observer.disconnect();
   }, []);
 
   return (
     <div 
-      ref={containerRef} 
-      className="w-full flex justify-center overflow-hidden"
-      style={{ height: 580 * cardScale }}
+      ref={wrapperRef} 
+      className="w-full flex items-center justify-center overflow-hidden"
+      style={{ minHeight: BASE_SIZE * cardScale }}
     >
       <div 
         className="aspect-square bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl shrink-0"
         style={{ 
-          width: 580,
-          height: 580,
+          width: BASE_SIZE,
+          height: BASE_SIZE,
           transform: `scale(${cardScale})`,
           transformOrigin: 'top center'
         }}
       >
         {/* Efeitos de Fundo do Card */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
+        <div className="absolute inset-0 pointer-events-none opacity-20">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
         </div>
@@ -120,6 +118,7 @@ function RoundCardView({
               const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
               const awayAbrev = match ? getTeamAbrev(match.awayTeam) : "---";
               const abrevDesc = `${homeAbrev} x ${awayAbrev}`;
+              const isInvalid = match?.isValidForPoints === false;
 
               return (
                 <div key={idx} className="grid grid-cols-5 gap-1 items-center bg-white/[0.02] py-0.5 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.8)]">
@@ -127,7 +126,7 @@ function RoundCardView({
                     <span className="text-[6px] font-black text-white/10 italic tabular-nums">#{idx + 1}</span>
                     <span className={cn(
                       "text-[10px] font-black italic uppercase truncate tracking-tighter",
-                      match?.isValidForPoints === false ? "text-white/20" : "text-white"
+                      isInvalid ? "text-white/20" : "text-white"
                     )}>
                       {abrevDesc}
                     </span>
@@ -138,7 +137,7 @@ function RoundCardView({
                       <div className="bg-black/40 w-full py-0.5 rounded border border-white/5 flex items-center justify-center">
                         <span className={cn(
                           "text-[12px] font-black leading-none tabular-nums tracking-tighter",
-                          match?.isValidForPoints === false ? "text-white/20" : "text-white"
+                          isInvalid ? "text-white/20" : "text-white"
                         )}>
                           {predictions[u.id]?.[idx]?.homeScore || "0"}-{predictions[u.id]?.[idx]?.awayScore || "0"}
                         </span>
