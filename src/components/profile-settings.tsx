@@ -11,16 +11,8 @@ import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Label } from "./ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Camera, Loader2, Save, User as UserIcon, Check, Trash2, Crop as CropIcon, ZoomIn, ZoomOut, AlertTriangle } from "lucide-react";
+import { Camera, Loader2, Save, User as UserIcon, Check, Trash2, Crop as CropIcon, ZoomIn, ZoomOut, AlertTriangle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter,
-  DialogDescription 
-} from "./ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +25,7 @@ import {
 } from "./ui/alert-dialog";
 import { Slider } from "./ui/slider";
 import Cropper, { Area } from "react-easy-crop";
+import { cn } from "@/lib/utils";
 
 export function ProfileSettings() {
   const { user, storage, firestore, refreshUser } = useFirebase();
@@ -97,16 +90,10 @@ export function ProfileSettings() {
     if (!user || !displayName.trim()) return;
     setLoading(true);
     try {
-      // 1. Atualiza Perfil de Autenticação
       await updateProfile(user, { displayName: displayName.trim() });
-      
-      // 2. Atualiza Documento do Firestore
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { username: displayName.trim() });
-      
-      // 3. Força atualização reativa em todo o app
       await refreshUser();
-      
       toast({ title: "Perfil Atualizado!", description: "Seu nome de exibição foi alterado." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Não foi possível atualizar o nome." });
@@ -145,11 +132,11 @@ export function ProfileSettings() {
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { photoUrl: url });
       
-      await refreshUser(); // Force UI update
+      await refreshUser();
       
-      toast({ title: "Foto Atualizada!", description: "Sua foto de perfil foi recortada e salva." });
+      toast({ title: "Foto Atualizada!", description: "Sua foto de perfil foi salva." });
     } catch (error) {
-      toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível salvar a imagem recortada." });
+      toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível salvar a imagem." });
     } finally {
       setUploading(false);
       setZoom(1);
@@ -165,23 +152,83 @@ export function ProfileSettings() {
       const storageRef = ref(storage, `avatars/${user.uid}`);
       try {
         await deleteObject(storageRef);
-      } catch (e) {
-        // Ignora se o arquivo não existir
-      }
+      } catch (e) {}
 
       await updateProfile(user, { photoURL: "" });
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { photoUrl: "" });
       
-      await refreshUser(); // Force UI update
-      
-      toast({ title: "Foto Removida", description: "Seu avatar voltou ao padrão da liga." });
+      await refreshUser();
+      toast({ title: "Foto Removida", description: "Seu avatar voltou ao padrão." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Não foi possível remover a foto." });
     } finally {
       setUploading(false);
     }
   };
+
+  // Se estiver em modo de recorte, exibe apenas o editor dentro do card
+  if (imageToCrop) {
+    return (
+      <Card className="glass-card border-none rounded-3xl overflow-hidden shadow-2xl w-full max-w-xl mx-auto">
+        <div className="p-6 bg-primary text-white flex justify-between items-center">
+          <div>
+            <h3 className="font-black italic uppercase flex items-center gap-2">
+              <CropIcon className="h-5 w-5" />
+              Enquadramento Alpha
+            </h3>
+            <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Ajuste para o formato oficial</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setImageToCrop(null)} className="text-white hover:bg-white/10 rounded-full">
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="relative h-[350px] md:h-[400px] w-full bg-black">
+          <Cropper
+            image={imageToCrop}
+            crop={crop}
+            zoom={zoom}
+            aspect={1}
+            onCropChange={setCrop}
+            onCropComplete={onCropComplete}
+            onZoomChange={setZoom}
+          />
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+              <span>Nível de Zoom</span>
+              <span className="text-primary">{Math.round(zoom * 100)}%</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <ZoomOut className="h-4 w-4 text-muted-foreground" />
+              <Slider
+                value={[zoom]}
+                min={1}
+                max={3}
+                step={0.1}
+                onValueChange={(vals) => setZoom(vals[0])}
+                className="flex-1"
+              />
+              <ZoomIn className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImageToCrop(null)} className="flex-1 rounded-2xl font-bold uppercase text-xs h-12">
+              Cancelar
+            </Button>
+            <Button onClick={handleUploadCroppedImage} disabled={uploading} className="flex-[2] rounded-2xl font-black italic uppercase text-xs gap-2 h-12 shadow-lg shadow-primary/20">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Confirmar Ajuste
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -190,9 +237,7 @@ export function ProfileSettings() {
            <div className="absolute -bottom-16 left-8 flex items-end gap-6">
               <div className="relative group">
                 <Avatar className="h-32 w-32 border-4 border-background rounded-3xl shadow-xl bg-muted overflow-hidden flex items-center justify-center">
-                  {user?.photoURL ? (
-                    <AvatarImage src={user.photoURL} className="object-cover w-full h-full" />
-                  ) : null}
+                  <AvatarImage src={user?.photoURL || ""} className="object-cover w-full h-full" />
                   <AvatarFallback className="bg-primary/10 text-primary text-3xl font-black italic w-full h-full flex items-center justify-center">
                     {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : "AL"}
                   </AvatarFallback>
@@ -215,7 +260,7 @@ export function ProfileSettings() {
                       className="h-10 w-10 bg-destructive text-destructive-foreground rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
                       title="Remover Foto"
                     >
-                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   )}
                 </div>
@@ -272,67 +317,6 @@ export function ProfileSettings() {
         </CardContent>
       </Card>
 
-      {/* Manual Crop Dialog */}
-      <Dialog open={!!imageToCrop} onOpenChange={() => setImageToCrop(null)}>
-        <DialogContent className="max-w-xl p-0 border-none bg-background overflow-hidden">
-          <DialogHeader className="p-6 bg-primary text-white">
-            <DialogTitle className="font-black italic uppercase flex items-center gap-2">
-              <CropIcon className="h-5 w-5" />
-              Enquadramento Alpha
-            </DialogTitle>
-            <DialogDescription className="text-white/60 text-[10px] font-bold uppercase tracking-widest">
-              Ajuste sua imagem para o formato oficial da liga
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="relative h-[400px] w-full bg-black">
-            {imageToCrop && (
-              <Cropper
-                image={imageToCrop}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                onCropChange={setCrop}
-                onCropComplete={onCropComplete}
-                onZoomChange={setZoom}
-              />
-            )}
-          </div>
-
-          <div className="p-6 space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                <span>Nível de Zoom</span>
-                <span className="text-primary">{Math.round(zoom * 100)}%</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <ZoomOut className="h-4 w-4 text-muted-foreground" />
-                <Slider
-                  value={[zoom]}
-                  min={1}
-                  max={3}
-                  step={0.1}
-                  onValueChange={(vals) => setZoom(vals[0])}
-                  className="flex-1"
-                />
-                <ZoomIn className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="ghost" onClick={() => setImageToCrop(null)} className="rounded-xl font-bold uppercase text-[10px]">
-                Cancelar
-              </Button>
-              <Button onClick={handleUploadCroppedImage} className="rounded-xl font-black italic uppercase text-xs gap-2 px-8">
-                <Check className="h-4 w-4" />
-                Confirmar Ajuste
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Alert */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-3xl border-none shadow-2xl glass-card">
           <AlertDialogHeader>
@@ -341,7 +325,7 @@ export function ProfileSettings() {
             </div>
             <AlertDialogTitle className="font-black italic uppercase text-primary">Remover Foto?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs font-medium leading-relaxed">
-              Sua foto de perfil será excluída permanentemente. Seu avatar voltará ao padrão visual da liga baseado nas suas iniciais.
+              Sua foto de perfil será excluída permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-0">
@@ -355,10 +339,7 @@ export function ProfileSettings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <div className="text-center">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-50">AlphaBet Protocol v2.6 • Perfil de Atleta</p>
-      </div>
     </div>
   );
 }
+

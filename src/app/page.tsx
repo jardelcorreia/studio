@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -112,7 +113,7 @@ export default function Home() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Force reactive pointer events cleanup
+  // Force reactive pointer events cleanup and handle backdrop body locking
   useEffect(() => {
     if (!showProfileDialog) {
       const cleanupBody = () => {
@@ -401,7 +402,7 @@ export default function Home() {
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-2xl border-none shadow-2xl glass-card p-2 z-[60]">
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl border bg-background shadow-2xl p-2 z-[60]">
                   <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-muted-foreground tracking-widest px-3 py-2">
                     Minha Conta
                   </DropdownMenuLabel>
@@ -432,12 +433,14 @@ export default function Home() {
       </header>
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none focus:outline-none z-[70]">
+        <DialogContent className="max-w-2xl p-0 border-none bg-background shadow-2xl focus:outline-none z-[70] overflow-hidden rounded-3xl">
           <DialogHeader className="sr-only">
             <DialogTitle>Configurações de Perfil</DialogTitle>
             <DialogDescription>Personalize seu perfil na AlphaBet League.</DialogDescription>
           </DialogHeader>
-          <ProfileSettings />
+          <div className="max-h-[90vh] overflow-y-auto">
+            <ProfileSettings />
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -602,3 +605,4 @@ export default function Home() {
     </div>
   );
 }
+
