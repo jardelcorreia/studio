@@ -102,7 +102,7 @@ function RoundCardView({
 
           <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
             <div className="flex items-center mb-1 px-2">
-              <div style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[8px] font-black uppercase text-white/20 italic">
+              <div style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[9px] font-black uppercase text-white/20 italic">
                 CONFRONTO
               </div>
               {sortedUsers.map((u) => (
@@ -137,7 +137,7 @@ function RoundCardView({
                       <div className="flex-1 overflow-hidden">
                         <span
                           className={cn(
-                            "block text-[11px] font-black italic uppercase truncate tracking-tighter pt-0.5 pb-1",
+                            "block text-[13px] font-black italic uppercase truncate tracking-tighter pt-0.5 pb-1",
                             isInvalid ? "text-white/20" : "text-white"
                           )}
                         >
