@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { TEAMS } from "@/lib/constants";
 import { Prediction, PlayerPredictions, Match } from "@/lib/types";
 import { Input } from "./ui/input";
@@ -9,96 +9,113 @@ import { Trophy, Swords, Share2, Camera, X, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
 
-/**
- * Componente interno que lida com a escala "congelada" do card.
- * BASE_WIDTH agora é dinâmica — cresce com o número de usuários.
- * A escala agora é baseada no window.innerWidth para evitar bugs de medição em Dialogs mobile.
- */
-function RoundCardView({ 
-  roundName, 
-  matches, 
-  predictions, 
+interface BettingTableProps {
+  roundName: string;
+  matches: Match[];
+  predictions: PlayerPredictions;
+  setPrediction: (userId: string, matchIndex: number, type: 'home' | 'away', value: string) => void;
+  results: Prediction[];
+  setResult: (matchIndex: number, type: 'home' | 'away', value: string) => void;
+  placaresOcultos: boolean;
+  currentPlayerId: string;
+  isAdmin?: boolean;
+  allUsers: any[];
+}
+
+function RoundCardView({
+  roundName,
+  matches,
+  predictions,
   sortedUsers,
-  getTeamAbrev 
-}: { 
-  roundName: string, 
-  matches: Match[], 
-  predictions: PlayerPredictions, 
-  sortedUsers: any[],
-  getTeamAbrev: (name: string) => string 
+  getTeamAbrev,
+}: {
+  roundName: string;
+  matches: Match[];
+  predictions: PlayerPredictions;
+  sortedUsers: any[];
+  getTeamAbrev: (name: string) => string;
 }) {
   const [cardScale, setCardScale] = useState(1);
 
-  // Largura base cresce com o nº de usuários (140px por coluna de usuário + 120px para confronto)
   const COL_WIDTH = 140;
   const CONFRONTO_WIDTH = 120;
-  const BASE_WIDTH = CONFRONTO_WIDTH + (sortedUsers.length * COL_WIDTH);
-  const BASE_HEIGHT = 580; // altura sempre fixa
+  const BASE_WIDTH = CONFRONTO_WIDTH + sortedUsers.length * COL_WIDTH;
+  const BASE_HEIGHT = 580;
 
   useEffect(() => {
     const calculateScale = () => {
-      // No mobile, o Dialog ocupa max-w-[95vw]. No desktop sm:max-w-[700px].
-      // Usamos uma margem de segurança baseada na largura da janela.
-      const padding = window.innerWidth < 640 ? 40 : 100;
-      const availableWidth = Math.min(window.innerWidth - padding, 600); // 600px é o limite interno confortável do dialog
+      if (typeof window === "undefined") return;
       
-      setCardScale(Math.min(1, availableWidth / BASE_WIDTH));
+      // Margens de segurança (paddings do Dialog e respiro da viewport)
+      const horizontalPadding = 32; 
+      const availableWidth = window.innerWidth - horizontalPadding;
+      
+      // Escala baseada na largura da janela
+      const newScale = Math.min(1, availableWidth / BASE_WIDTH);
+      setCardScale(newScale);
     };
 
-    // Pequeno delay para garantir que o Dialog e seu conteúdo foram injetados no DOM
-    const timer = setTimeout(calculateScale, 50);
-    
-    window.addEventListener('resize', calculateScale);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', calculateScale);
-    };
+    calculateScale();
+    window.addEventListener("resize", calculateScale);
+    return () => window.removeEventListener("resize", calculateScale);
   }, [BASE_WIDTH]);
 
+  const scaledHeight = BASE_HEIGHT * cardScale;
+
   return (
-    <div 
+    <div
       className="w-full flex justify-center overflow-hidden"
-      style={{ height: BASE_HEIGHT * cardScale }}
+      style={{ height: scaledHeight }}
     >
-      <div 
+      <div
         className="bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl shrink-0"
-        style={{ 
+        style={{
           width: BASE_WIDTH,
           height: BASE_HEIGHT,
           transform: `scale(${cardScale})`,
-          transformOrigin: 'top center'
+          transformOrigin: "top center",
         }}
       >
-        {/* Efeitos de Fundo do Card */}
+        {/* Efeitos de Fundo */}
         <div className="absolute inset-0 pointer-events-none opacity-20">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
         </div>
 
+        {/* Cabeçalho */}
         <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
           <div className="flex items-center gap-2">
             <div className="h-5 w-5 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
               <Trophy className="h-3 w-3 text-black" />
             </div>
             <div className="flex flex-col -space-y-0.5">
-              <div className="text-[14px] font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</div>
-              <div className="text-[6px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">League 2026</div>
+              <div className="text-[14px] font-black italic uppercase text-white leading-none tracking-tighter">
+                AlphaBet
+              </div>
+              <div className="text-[6px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">
+                League 2026
+              </div>
             </div>
           </div>
           <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
-            <span className="text-[10px] font-black text-accent italic leading-none">{roundName.toUpperCase()}</span>
+            <span className="text-[10px] font-black text-accent italic leading-none">
+              {roundName.toUpperCase()}
+            </span>
           </div>
         </div>
 
+        {/* Corpo */}
         <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-          {/* Header das colunas com grid dinâmico */}
-          <div 
+          <div
             className="gap-1 mb-1 px-1"
             style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
           >
             <div className="text-[7px] font-black uppercase text-white/20 italic">CONFRONTO</div>
-            {sortedUsers.map(u => (
-              <div key={u.id} className="text-center text-[10px] font-black uppercase text-accent tracking-tighter truncate px-1">
+            {sortedUsers.map((u) => (
+              <div
+                key={u.id}
+                className="text-center text-[10px] font-black uppercase text-accent tracking-tighter truncate px-1"
+              >
                 {u.username}
               </div>
             ))}
@@ -113,29 +130,36 @@ function RoundCardView({
               const isInvalid = match?.isValidForPoints === false;
 
               return (
-                <div 
-                  key={idx} 
+                <div
+                  key={idx}
                   className="items-center bg-white/[0.02] py-0.5 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.8)]"
                   style={{ display: "grid", gridTemplateColumns: `${CONFRONTO_WIDTH}px repeat(${sortedUsers.length}, 1fr)` }}
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
-                    <span className="text-[6px] font-black text-white/10 italic tabular-nums">#{idx + 1}</span>
-                    <span className={cn(
-                      "text-[10px] font-black italic uppercase truncate tracking-tighter",
-                      isInvalid ? "text-white/20" : "text-white"
-                    )}>
+                    <span className="text-[6px] font-black text-white/10 italic tabular-nums">
+                      #{idx + 1}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[10px] font-black italic uppercase truncate tracking-tighter",
+                        isInvalid ? "text-white/20" : "text-white"
+                      )}
+                    >
                       {abrevDesc}
                     </span>
                   </div>
 
-                  {sortedUsers.map(u => (
+                  {sortedUsers.map((u) => (
                     <div key={u.id} className="flex justify-center h-full items-center px-0.5">
                       <div className="bg-black/40 w-full py-0.5 rounded border border-white/5 flex items-center justify-center">
-                        <span className={cn(
-                          "text-[12px] font-black leading-none tabular-nums tracking-tighter",
-                          isInvalid ? "text-white/20" : "text-white"
-                        )}>
-                          {predictions[u.id]?.[idx]?.homeScore || "0"}-{predictions[u.id]?.[idx]?.awayScore || "0"}
+                        <span
+                          className={cn(
+                            "text-[12px] font-black leading-none tabular-nums tracking-tighter",
+                            isInvalid ? "text-white/20" : "text-white"
+                          )}
+                        >
+                          {predictions[u.id]?.[idx]?.homeScore || "0"}-
+                          {predictions[u.id]?.[idx]?.awayScore || "0"}
                         </span>
                       </div>
                     </div>
@@ -145,25 +169,16 @@ function RoundCardView({
             })}
           </div>
         </div>
-        
+
+        {/* Rodapé */}
         <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
-          <span className="text-[6px] font-black text-white/10 uppercase tracking-[0.5em]">AlphaBet League • Visão de Dados Técnica</span>
+          <span className="text-[6px] font-black text-white/10 uppercase tracking-[0.5em]">
+            AlphaBet League • Visão de Dados Técnica
+          </span>
         </div>
       </div>
     </div>
   );
-}
-
-interface BettingTableProps {
-  roundName: string;
-  matches: Match[];
-  predictions: PlayerPredictions;
-  results: Prediction[];
-  setResult: (idx: number, type: 'home' | 'away', value: string) => void;
-  placaresOcultos: boolean;
-  currentPlayerId: string;
-  isAdmin: boolean;
-  allUsers: any[];
 }
 
 export function BettingTable({
@@ -175,11 +190,10 @@ export function BettingTable({
   placaresOcultos,
   currentPlayerId,
   isAdmin,
-  allUsers
+  allUsers,
 }: BettingTableProps) {
   const getPoints = (userId: string, idx: number) => {
     if (matches[idx]?.isValidForPoints === false) return null;
-
     const res = results[idx];
     const pred = predictions[userId]?.[idx];
     if (!res?.homeScore || !res?.awayScore || !pred?.homeScore || !pred?.awayScore) return null;
@@ -192,7 +206,7 @@ export function BettingTable({
 
   const getTeamAbrev = (rawName: string) => {
     const cleaned = cleanTeamName(rawName);
-    const team = Object.values(TEAMS).find(t => t.nome === cleaned);
+    const team = Object.values(TEAMS).find((t) => t.nome === cleaned);
     return team ? team.abrev : cleaned.substring(0, 3).toUpperCase();
   };
 
@@ -209,14 +223,15 @@ export function BettingTable({
                 Gerar Card da Rodada
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[90vh] overflow-y-auto p-0 border-none bg-black/95 backdrop-blur-xl shadow-2xl focus:outline-none rounded-[2rem]">
+
+            <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[95vh] overflow-y-auto p-0 border-none bg-black/95 backdrop-blur-xl shadow-2xl focus:outline-none rounded-[2rem]">
               <DialogHeader className="sr-only">
                 <DialogTitle>Card da Rodada</DialogTitle>
                 <DialogDescription>Visualização técnica dos palpites da rodada para compartilhamento.</DialogDescription>
               </DialogHeader>
-              
-              <div className="flex flex-col items-center p-4">
-                <div className="w-full flex justify-between items-center mb-2 px-2">
+
+              <div className="flex flex-col p-4 gap-3">
+                <div className="flex justify-between items-center px-1">
                   <p className="text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                     <Share2 className="h-3 w-3 text-accent" /> AlphaBet League
                   </p>
@@ -225,7 +240,7 @@ export function BettingTable({
                   </DialogClose>
                 </div>
 
-                <RoundCardView 
+                <RoundCardView
                   roundName={roundName}
                   matches={matches}
                   predictions={predictions}
@@ -273,21 +288,9 @@ export function BettingTable({
                   <div className="md:hidden flex items-center gap-1 px-2">
                     {isAdmin ? (
                       <div className="flex items-center gap-0.5">
-                        <Input
-                          type="number"
-                          value={results[idx].homeScore}
-                          onChange={(e) => setResult(idx, 'home', e.target.value)}
-                          className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0"
-                          placeholder="-"
-                        />
+                        <Input type="number" value={results[idx].homeScore} onChange={(e) => setResult(idx, 'home', e.target.value)} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
                         <span className="text-[10px] font-black text-primary/30">x</span>
-                        <Input
-                          type="number"
-                          value={results[idx].awayScore}
-                          onChange={(e) => setResult(idx, 'away', e.target.value)}
-                          className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0"
-                          placeholder="-"
-                        />
+                        <Input type="number" value={results[idx].awayScore} onChange={(e) => setResult(idx, 'away', e.target.value)} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 font-black text-xs text-primary tabular-nums">
@@ -300,31 +303,23 @@ export function BettingTable({
                 </div>
 
                 <div className="md:col-span-6 px-4 py-4 flex items-center justify-around gap-2 md:gap-6 overflow-x-auto no-scrollbar">
-                  <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-around w-full gap-2 md:gap-6">
+                  <div className="flex items-center justify-around gap-4 md:gap-6 min-w-max md:min-w-0 md:w-full">
                     {sortedUsers.map(u => {
                       const isHidden = placaresOcultos && currentPlayerId !== u.id;
                       const points = getPoints(u.id, idx);
                       const isCurrent = currentPlayerId === u.id;
 
                       return (
-                        <div key={u.id} className={cn(
-                          "flex flex-col items-center min-w-[75px] md:min-w-[90px] relative transition-all",
-                          isCurrent && "scale-105 sm:scale-110 z-10"
-                        )}>
+                        <div key={u.id} className={cn("flex flex-col items-center min-w-[75px] md:min-w-[90px] relative transition-all", isCurrent && "scale-105 sm:scale-110 z-10")}>
                           <div className="flex items-center gap-1 mb-1.5 px-1 w-full justify-center">
-                            <span className={cn(
-                              "text-[9px] md:text-[10px] font-black uppercase tracking-tighter truncate text-center w-full",
-                              isCurrent ? "text-primary font-bold" : "text-muted-foreground/50"
-                            )}>
+                            <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/50")}>
                               {u.username}
                             </span>
                           </div>
-
-                          <div className={cn(
-                            "flex items-center justify-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-xl border-2 transition-all duration-300",
+                          <div className={cn("flex items-center justify-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-xl border-2 transition-all duration-300",
                             isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
-                            points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" : 
-                            points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" : 
+                            points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
+                            points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
                             points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
                             "bg-background border-muted/30 shadow-sm"
                           )}>
@@ -342,27 +337,11 @@ export function BettingTable({
                   </div>
                 </div>
 
-                <div className={cn(
-                  "md:col-span-3 px-6 py-4 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex",
-                )}>
+                <div className={cn("md:col-span-3 px-6 py-4 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex")}>
                   <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-2xl border border-transparent hover:border-primary/10 transition-colors">
-                    <Input
-                      type="number"
-                      value={results[idx].homeScore}
-                      onChange={(e) => setResult(idx, 'home', e.target.value)}
-                      className="w-10 h-10 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20"
-                      disabled={!isAdmin}
-                      placeholder="-"
-                    />
+                    <Input type="number" value={results[idx].homeScore} onChange={(e) => setResult(idx, 'home', e.target.value)} className="w-10 h-10 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
                     <Swords className="h-4 w-4 text-primary/20" />
-                    <Input
-                      type="number"
-                      value={results[idx].awayScore}
-                      onChange={(e) => setResult(idx, 'away', e.target.value)}
-                      className="w-10 h-10 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20"
-                      disabled={!isAdmin}
-                      placeholder="-"
-                    />
+                    <Input type="number" value={results[idx].awayScore} onChange={(e) => setResult(idx, 'away', e.target.value)} className="w-10 h-10 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
                   </div>
                 </div>
               </div>
