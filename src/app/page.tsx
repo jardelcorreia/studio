@@ -595,7 +595,12 @@ export default function Home() {
                 <h3 className="font-black italic uppercase text-lg text-primary">Ranking Geral</h3>
                 <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação do Campeonato</p>
               </div>
-              <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} />
+              <ChampionshipRanking 
+                roundWinners={roundWinners} 
+                setRoundWinners={setRoundWinners} 
+                allUsers={allUsers || []} 
+                isAdmin={isAdminUser}
+              />
             </div>
           )}
 
