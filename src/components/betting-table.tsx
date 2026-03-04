@@ -38,14 +38,13 @@ function RoundCardView({
 }) {
   const [cardScale, setCardScale] = useState(1);
   const [isDownloading, setIsDownloading] = useState(false);
-  const captureRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Dimensões rígidas para garantir alinhamento no Canvas
-  // Ajustado COL_WIDTH de 140 para 110 e CONFRONTO_WIDTH para 110
-  const COL_WIDTH = 110;
-  const CONFRONTO_WIDTH = 110; 
+  // Ajuste de larguras para evitar transbordamento
+  const COL_WIDTH = 100;
+  const CONFRONTO_WIDTH = 105;
   const BASE_WIDTH = CONFRONTO_WIDTH + sortedUsers.length * COL_WIDTH;
-  const BASE_HEIGHT = 700;
+  const BASE_HEIGHT = 580;
 
   useEffect(() => {
     const calculateScale = () => {
@@ -62,28 +61,24 @@ function RoundCardView({
   }, [BASE_WIDTH]);
 
   const handleDownload = async () => {
-    if (!captureRef.current) return;
+    if (!cardRef.current) return;
     setIsDownloading(true);
     try {
       const html2canvas = (await import("html2canvas")).default;
 
-      // Captura o card OCULTO em alta definição
-      const cardCanvas = await html2canvas(captureRef.current, {
-        backgroundColor: "#020617",
-        scale: 2, 
+      const cardCanvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
+        scale: 2,
         useCORS: true,
         logging: false,
-        width: BASE_WIDTH,
-        height: BASE_HEIGHT,
       });
 
-      // Canvas quadrado para compartilhamento (1:1)
       const size = Math.max(cardCanvas.width, cardCanvas.height);
       const squareCanvas = document.createElement("canvas");
       squareCanvas.width = size;
       squareCanvas.height = size;
+
       const ctx = squareCanvas.getContext("2d")!;
-      
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, size, size);
 
@@ -105,113 +100,12 @@ function RoundCardView({
   const scaledWidth = BASE_WIDTH * cardScale;
   const scaledHeight = BASE_HEIGHT * cardScale;
 
-  const CardContentInner = () => (
-    <>
-      <div className="absolute inset-0 pointer-events-none opacity-20">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
-      </div>
-
-      <div className="relative z-10 flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 bg-accent rounded-xl flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
-            <Trophy className="h-6 w-6 text-black" />
-          </div>
-          <div className="flex flex-col">
-            <div className="text-[24px] font-black italic uppercase text-white leading-none tracking-tighter">
-              AlphaBet
-            </div>
-            <div className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none mt-1">
-              League 2026
-            </div>
-          </div>
-        </div>
-        <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
-          <span className="text-[14px] font-black text-accent italic leading-none">
-            {roundName.toUpperCase()}
-          </span>
-        </div>
-      </div>
-
-      <div className="relative z-10 flex-1 flex flex-col">
-        <div className="flex items-center mb-3 px-1">
-          <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[10px] font-black uppercase text-white/20 italic">
-            CONFRONTO
-          </div>
-          {sortedUsers.map((u) => (
-            <div
-              key={u.id}
-              style={{ width: COL_WIDTH, flexShrink: 0 }}
-              className="text-center text-[16px] font-black uppercase text-accent tracking-tight truncate px-1"
-            >
-              {u.username}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex-1 flex flex-col gap-1.5">
-          {Array.from({ length: 10 }).map((_, idx) => {
-            const match = matches[idx];
-            const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
-            const awayAbrev = match ? getTeamAbrev(match.awayTeam) : "---";
-            const abrevDesc = `${homeAbrev} x ${awayAbrev}`;
-            const isInvalid = match?.isValidForPoints === false;
-
-            return (
-              <div
-                key={idx}
-                className="flex items-center bg-white/[0.03] py-1 px-2 rounded-xl border border-white/[0.02]"
-                style={{ height: 48 }}
-              >
-                <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="flex items-center gap-2 overflow-hidden">
-                  <span className="text-[9px] font-black text-white/10 italic tabular-nums">
-                    #{idx + 1}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[14px] font-black italic uppercase truncate",
-                      isInvalid ? "text-white/20" : "text-white"
-                    )}
-                  >
-                    {abrevDesc}
-                  </span>
-                </div>
-
-                {sortedUsers.map((u) => (
-                  <div key={u.id} style={{ width: COL_WIDTH, flexShrink: 0 }} className="flex justify-center h-full items-center px-1.5">
-                    <div className="bg-black/60 w-full h-10 rounded-xl border border-white/5 flex items-center justify-center shadow-inner">
-                      <span
-                        className={cn(
-                          "text-[20px] font-black leading-none tabular-nums",
-                          isInvalid ? "text-white/20" : "text-white"
-                        )}
-                      >
-                        {predictions[u.id]?.[idx]?.homeScore || "0"}
-                        <span className="mx-1 opacity-30 text-[14px]">-</span>
-                        {predictions[u.id]?.[idx]?.awayScore || "0"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="relative z-10 flex justify-center items-center mt-6 pt-3 border-t border-white/5">
-        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.5em]">
-          AlphaBet League • Visão de Dados Técnica
-        </span>
-      </div>
-    </>
-  );
-
   return (
     <div className="w-full flex flex-col items-center gap-3">
       <div style={{ width: scaledWidth, height: scaledHeight, overflow: "hidden", flexShrink: 0 }}>
         <div
-          className="bg-[#020617] p-6 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl"
+          ref={cardRef}
+          className="bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl"
           style={{
             width: BASE_WIDTH,
             height: BASE_HEIGHT,
@@ -219,20 +113,103 @@ function RoundCardView({
             transformOrigin: "top left",
           }}
         >
-          <CardContentInner />
-        </div>
-      </div>
+          <div className="absolute inset-0 pointer-events-none opacity-20">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
+          </div>
 
-      <div style={{ position: "fixed", top: -9999, left: -9999, width: BASE_WIDTH, height: BASE_HEIGHT, pointerEvents: "none" }}>
-        <div
-          ref={captureRef}
-          className="bg-[#020617] p-6 flex flex-col relative overflow-hidden border border-white/10"
-          style={{
-            width: BASE_WIDTH,
-            height: BASE_HEIGHT,
-          }}
-        >
-          <CardContentInner />
+          <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-2">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
+                <Trophy className="h-5 w-5 text-black" />
+              </div>
+              <div className="flex flex-col -space-y-1">
+                <div className="text-[20px] font-black italic uppercase text-white leading-none tracking-tighter">
+                  AlphaBet
+                </div>
+                <div className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none mt-1">
+                  League 2026
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
+              <span className="text-[12px] font-black text-accent italic leading-none uppercase">
+                {roundName}
+              </span>
+            </div>
+          </div>
+
+          <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
+            <div className="flex items-center mb-1 px-1">
+              <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[8px] font-black uppercase text-white/20 italic">
+                CONFRONTO
+              </div>
+              {sortedUsers.map((u) => (
+                <div
+                  key={u.id}
+                  style={{ width: COL_WIDTH, flexShrink: 0 }}
+                  className="text-center text-[13px] font-black uppercase text-accent tracking-tighter truncate px-1"
+                >
+                  {u.username}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex-1 flex flex-col justify-between py-1">
+              {Array.from({ length: 10 }).map((_, idx) => {
+                const match = matches[idx];
+                const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
+                const awayAbrev = match ? getTeamAbrev(match.awayTeam) : "---";
+                const abrevDesc = `${homeAbrev} x ${awayAbrev}`;
+                const isInvalid = match?.isValidForPoints === false;
+
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center bg-white/[0.03] py-1 px-2 rounded-xl border border-white/[0.02]"
+                    style={{ height: 44 }}
+                  >
+                    <div style={{ width: CONFRONTO_WIDTH - 8, flexShrink: 0 }} className="flex items-center gap-1.5 overflow-hidden">
+                      <span className="text-[7px] font-black text-white/10 italic tabular-nums">
+                        #{idx + 1}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[12px] font-black italic uppercase truncate tracking-tighter",
+                          isInvalid ? "text-white/20" : "text-white"
+                        )}
+                      >
+                        {abrevDesc}
+                      </span>
+                    </div>
+
+                    {sortedUsers.map((u) => (
+                      <div key={u.id} style={{ width: COL_WIDTH, flexShrink: 0 }} className="flex justify-center h-full items-center px-1">
+                        <div className="bg-black/60 w-full h-8 rounded-xl border border-white/5 flex items-center justify-center shadow-inner">
+                          <span
+                            className={cn(
+                              "text-[18px] font-black leading-none tabular-nums tracking-tighter",
+                              isInvalid ? "text-white/20" : "text-white"
+                            )}
+                          >
+                            {predictions[u.id]?.[idx]?.homeScore || "0"}
+                            <span className="mx-0.5 opacity-30 text-[12px]">-</span>
+                            {predictions[u.id]?.[idx]?.awayScore || "0"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
+            <span className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">
+              AlphaBet League • Visão de Dados Técnica
+            </span>
+          </div>
         </div>
       </div>
 
