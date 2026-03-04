@@ -50,12 +50,12 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                   score.isWinner ? "bg-white/20" : "bg-primary/5"
                 )}>
                   <Avatar className={cn(
-                     "h-11 w-11 md:h-16 md:w-16 rounded-full border-2 border-background shadow-md bg-muted flex items-center justify-center",
+                     "h-12 w-12 md:h-[72px] md:w-[72px] rounded-full border-2 border-background shadow-md bg-muted flex items-center justify-center transition-all",
                      score.isWinner && "border-white/40"
                   )}>
                     <AvatarImage src={score.photoUrl || undefined} className="object-cover" />
                     <AvatarFallback className={cn(
-                      "text-lg md:text-2xl font-black italic w-full h-full flex items-center justify-center",
+                      "text-xl md:text-2xl font-black italic w-full h-full flex items-center justify-center",
                       score.isWinner ? "bg-primary text-white" : "bg-primary/10 text-primary"
                     )}>
                       {score.name ? score.name.substring(0, 2).toUpperCase() : "AL"}
@@ -78,7 +78,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
               <div className="flex-1 w-full min-w-0 space-y-1">
                 <div className="flex flex-row md:flex-col justify-between md:justify-start items-center md:items-center gap-2">
                   <h3 className={cn(
-                    "font-black italic uppercase text-[14px] md:text-sm leading-none truncate pr-1",
+                    "font-black italic uppercase text-[15px] md:text-sm leading-none truncate pr-1",
                     score.isWinner ? "text-white" : "text-foreground"
                   )}>{score.name}</h3>
                   
@@ -94,7 +94,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
 
                 <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-2 md:mt-2">
                    <Badge variant="outline" className={cn(
-                      "rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border-none px-3 h-5",
+                      "rounded-full text-[10px] md:text-[10px] font-black uppercase tracking-widest border-none px-3 h-5",
                       score.isWinner ? "bg-white/10 text-white" : "bg-primary/5 text-muted-foreground"
                    )}>
                      {score.exactScores} Exatos
@@ -103,7 +103,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                    {isScoresHidden && (
                      <div className="flex items-center gap-1.5">
                         <span className={cn(
-                          "text-[12px] md:text-[11px] font-black uppercase italic tracking-tighter whitespace-nowrap",
+                          "text-[11px] md:text-[11px] font-black uppercase italic tracking-tighter whitespace-nowrap",
                           score.betsCompleted 
                             ? (score.isWinner ? "text-white" : "text-secondary") 
                             : (score.isWinner ? "text-white/60" : "text-muted-foreground/60")
