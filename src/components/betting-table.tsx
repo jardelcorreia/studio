@@ -83,14 +83,14 @@ export function BettingTable({
                  </div>
 
                  <div className="aspect-square w-full max-w-[580px] min-w-[300px] bg-[#020617] p-2 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-xl self-center">
-                    <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
+                    <div className="relative z-10 flex justify-between items-center mb-0.5 border-b border-white/10 pb-0.5">
                        <div className="flex items-center gap-1.5">
                           <div className="h-4 w-4 bg-accent rounded-sm flex items-center justify-center -rotate-6">
                             <Trophy className="h-2.5 w-2.5 text-black" />
                           </div>
-                          <div>
-                            <h2 className="text-[10px] font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</h2>
-                            <span className="text-[4px] font-bold text-accent uppercase tracking-[0.3em] opacity-80">League 2026</span>
+                          <div className="flex flex-col -space-y-0.5">
+                            <div className="text-[10px] font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</div>
+                            <div className="text-[4px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">League 2026</div>
                           </div>
                        </div>
                        <div className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
