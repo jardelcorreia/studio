@@ -6,10 +6,10 @@ import { ChampionshipWinner, PlayerOverallStats } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
-import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, Wallet, Star, TrendingUp, TrendingDown, Settings2, CheckCircle2, Save, Loader2, CalendarDays, History, Clock } from "lucide-react";
+import { Trophy, Medal, Star, TrendingUp, TrendingDown, Settings2, CheckCircle2, Save, Loader2, History, Clock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -128,7 +128,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
         </div>
         
         <div className="flex flex-col items-end shrink-0 ml-4">
-          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Premiação</span>
+          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Valor</span>
           <div className="flex items-center gap-1 group-hover:scale-110 transition-transform">
             <span className="text-[10px] font-black text-primary">R$</span>
             <Input 
@@ -190,9 +190,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                 {isSaving ? "Salvando..." : "Aplicar e Salvar Turnos"}
               </Button>
             </div>
-            <p className="mt-4 text-[9px] font-medium text-muted-foreground italic">
-              * Ao clicar em "Aplicar", todos os valores das 38 rodadas serão atualizados e salvos permanentemente no banco de dados.
-            </p>
           </CardContent>
         </Card>
       )}
@@ -333,33 +330,35 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                 </div>
              </CardHeader>
              <CardContent className="p-0">
-                <ScrollArea className="h-[600px] no-scrollbar">
-                   <div className="p-6 space-y-8">
-                      {/* 1º Turno */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
-                          <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase text-primary border-primary/20 bg-primary/5">
-                            1º Turno (R1 a R19)
-                          </Badge>
+                <Accordion type="single" collapsible className="w-full">
+                   {/* 1º Turno */}
+                   <AccordionItem value="turno1" className="border-none">
+                      <AccordionTrigger className="px-6 hover:no-underline hover:bg-primary/5 py-4 transition-colors">
+                        <div className="flex items-center gap-2">
+                           <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase text-primary border-primary/20 bg-primary/5">
+                             1º Turno (R1 a R19)
+                           </Badge>
                         </div>
-                        <div className="space-y-3">
-                          {roundWinners.slice(0, 19).map((rw, idx) => renderRoundItem(rw, idx))}
-                        </div>
-                      </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-6 pb-6 pt-2 space-y-3">
+                        {roundWinners.slice(0, 19).map((rw, idx) => renderRoundItem(rw, idx))}
+                      </AccordionContent>
+                   </AccordionItem>
 
-                      {/* 2º Turno */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
-                          <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase text-primary border-primary/20 bg-primary/5">
-                            2º Turno (R20 a R38)
-                          </Badge>
+                   {/* 2º Turno */}
+                   <AccordionItem value="turno2" className="border-none">
+                      <AccordionTrigger className="px-6 hover:no-underline hover:bg-primary/5 py-4 transition-colors">
+                        <div className="flex items-center gap-2">
+                           <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase text-primary border-primary/20 bg-primary/5">
+                             2º Turno (R20 a R38)
+                           </Badge>
                         </div>
-                        <div className="space-y-3">
-                          {roundWinners.slice(19, 38).map((rw, idx) => renderRoundItem(rw, idx + 19))}
-                        </div>
-                      </div>
-                   </div>
-                </ScrollArea>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-6 pb-6 pt-2 space-y-3">
+                        {roundWinners.slice(19, 38).map((rw, idx) => renderRoundItem(rw, idx + 19))}
+                      </AccordionContent>
+                   </AccordionItem>
+                </Accordion>
                 <div className="p-6 bg-primary/5 border-t border-dashed">
                    <p className="text-[9px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
                       Os vencedores e saldos são atualizados automaticamente ao preencher os resultados oficiais.
