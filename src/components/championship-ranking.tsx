@@ -147,66 +147,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
 
   return (
     <div className="space-y-8">
-      {isAdmin && (
-        <Collapsible
-          open={isAdminSettingsOpen}
-          onOpenChange={setIsAdminSettingsOpen}
-          className="w-full"
-        >
-          <Card className="glass-card border-none rounded-[2rem] overflow-hidden border-l-4 border-l-primary shadow-lg">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="bg-primary/5 pb-2 cursor-pointer hover:bg-primary/10 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Settings2 className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-sm font-black italic uppercase text-primary">Configurações de Valores (Admin)</CardTitle>
-                  </div>
-                  <ChevronDown className={cn("h-4 w-4 text-primary transition-transform duration-300", isAdminSettingsOpen && "rotate-180")} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">1º Turno (R1 a R19)</label>
-                    <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-2xl border border-primary/5">
-                      <span className="text-xs font-black text-primary">R$</span>
-                      <Input 
-                        type="number" 
-                        value={turn1Value} 
-                        onChange={(e) => setTurn1Value(parseFloat(e.target.value) || 0)}
-                        className="border-none bg-transparent font-black text-lg focus-visible:ring-0 h-8"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">2º Turno (R20 a R38)</label>
-                    <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-2xl border border-primary/5">
-                      <span className="text-xs font-black text-primary">R$</span>
-                      <Input 
-                        type="number" 
-                        value={turn2Value} 
-                        onChange={(e) => setTurn2Value(parseFloat(e.target.value) || 0)}
-                        className="border-none bg-transparent font-black text-lg focus-visible:ring-0 h-8"
-                      />
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={applyTurnValues}
-                    disabled={isSaving}
-                    className="rounded-2xl h-12 font-black italic uppercase gap-2 shadow-lg shadow-primary/20"
-                  >
-                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    {isSaving ? "Salvando..." : "Aplicar e Salvar Turnos"}
-                  </Button>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
            {overallStats.map((player, index) => {
@@ -381,6 +321,66 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
           </Card>
         </div>
       </div>
+
+      {isAdmin && (
+        <Collapsible
+          open={isAdminSettingsOpen}
+          onOpenChange={setIsAdminSettingsOpen}
+          className="w-full pt-4"
+        >
+          <Card className="glass-card border-none rounded-[2rem] overflow-hidden border-l-4 border-l-primary shadow-lg">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="bg-primary/5 pb-2 cursor-pointer hover:bg-primary/10 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Settings2 className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-sm font-black italic uppercase text-primary">Configurações de Valores (Admin)</CardTitle>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 text-primary transition-transform duration-300", isAdminSettingsOpen && "rotate-180")} />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">1º Turno (R1 a R19)</label>
+                    <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-2xl border border-primary/5">
+                      <span className="text-xs font-black text-primary">R$</span>
+                      <Input 
+                        type="number" 
+                        value={turn1Value} 
+                        onChange={(e) => setTurn1Value(parseFloat(e.target.value) || 0)}
+                        className="border-none bg-transparent font-black text-lg focus-visible:ring-0 h-8"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">2º Turno (R20 a R38)</label>
+                    <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-2xl border border-primary/5">
+                      <span className="text-xs font-black text-primary">R$</span>
+                      <Input 
+                        type="number" 
+                        value={turn2Value} 
+                        onChange={(e) => setTurn2Value(parseFloat(e.target.value) || 0)}
+                        className="border-none bg-transparent font-black text-lg focus-visible:ring-0 h-8"
+                      />
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={applyTurnValues}
+                    disabled={isSaving}
+                    className="rounded-2xl h-12 font-black italic uppercase gap-2 shadow-lg shadow-primary/20"
+                  >
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                    {isSaving ? "Salvando..." : "Aplicar e Salvar Turnos"}
+                  </Button>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
     </div>
   );
 }
