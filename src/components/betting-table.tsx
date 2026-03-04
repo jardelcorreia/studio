@@ -84,34 +84,34 @@ function RoundCardView({
               <div className="h-8 w-8 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
                 <Trophy className="h-5 w-5 text-black" />
               </div>
-              <div className="flex flex-col gap-0.5 justify-center">
-                <div className="text-[20px] font-black italic uppercase text-white tracking-tighter" style={{ lineHeight: 1 }}>
+              <div className="h-8 flex flex-col justify-center">
+                <div className="text-[20px] font-black italic uppercase text-white tracking-tighter" style={{ lineHeight: '20px' }}>
                   AlphaBet
                 </div>
-                <div className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] opacity-80" style={{ lineHeight: 1 }}>
+                <div className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 mt-1" style={{ lineHeight: '9px' }}>
                   League 2026
                 </div>
               </div>
             </div>
-            <div className="bg-white/5 px-2 py-1.5 rounded border border-white/10 flex items-center justify-center">
-              <span className="text-[12px] font-black text-accent italic uppercase pb-0.5" style={{ lineHeight: 1 }}>
+            <div className="bg-white/5 px-3 h-8 rounded border border-white/10 text-center">
+              <span className="text-[12px] font-black text-accent italic uppercase" style={{ lineHeight: '30px' }}>
                 {roundName}
               </span>
             </div>
           </div>
 
           <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center mb-1 px-2">
-              <div style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[9px] font-black uppercase text-white/20 italic">
-                CONFRONTO
+            <div className="flex items-center mb-1 px-2 h-6">
+              <div style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[9px] font-black uppercase text-white/20 italic h-full">
+                <span style={{ lineHeight: '24px' }} className="block w-full">CONFRONTO</span>
               </div>
               {sortedUsers.map((u) => (
                 <div
                   key={u.id}
                   style={{ width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH, flexShrink: 0 }}
-                  className="text-center text-[12px] font-black uppercase text-accent tracking-tighter truncate px-1"
+                  className="flex justify-center items-center text-center text-[12px] font-black uppercase text-accent px-1 h-full truncate"
                 >
-                  {u.username}
+                  <span style={{ lineHeight: '24px' }} className="block w-full">{u.username}</span>
                 </div>
               ))}
             </div>
@@ -127,19 +127,20 @@ function RoundCardView({
                 return (
                   <div
                     key={idx}
-                    className="flex items-center bg-white/[0.03] py-1 px-2 rounded-xl border border-white/[0.02]"
+                    className="flex items-center bg-white/[0.03] px-2 rounded-xl border border-white/[0.02]"
                     style={{ height: 44 }}
                   >
-                    <div style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} className="flex items-center gap-1.5 overflow-hidden pr-2">
-                      <span className="text-[7px] font-black text-white/10 italic tabular-nums leading-none">
+                    <div style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} className="flex gap-1.5 pr-2 h-full">
+                      <span className="text-[7px] font-black text-white/10 italic tabular-nums" style={{ lineHeight: '42px' }}>
                         #{idx + 1}
                       </span>
-                      <div className="flex-1 overflow-hidden">
+                      <div className="flex-1 overflow-hidden h-full">
                         <span
                           className={cn(
-                            "block text-[13px] font-black italic uppercase truncate tracking-tighter pt-0.5 pb-1",
+                            "block text-[13px] font-black italic uppercase truncate tracking-tighter",
                             isInvalid ? "text-white/20" : "text-white"
                           )}
+                          style={{ lineHeight: '42px' }}
                         >
                           {abrevDesc}
                         </span>
@@ -147,19 +148,17 @@ function RoundCardView({
                     </div>
 
                     {sortedUsers.map((u) => (
-                      <div key={u.id} style={{ width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH, flexShrink: 0 }} className="flex justify-center h-full items-center px-1">
-                        <div className="bg-black/60 w-full h-8 rounded-xl border border-white/5 flex items-center justify-center shadow-inner">
+                      <div key={u.id} style={{ width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH, flexShrink: 0 }} className="px-1 h-8">
+                        <div className="bg-black/60 w-full h-full rounded-xl border border-white/5 text-center overflow-hidden">
                           <div
-                            className={cn(
-                              "flex items-center justify-center w-full gap-1",
-                              isInvalid ? "text-white/20" : "text-white"
-                            )}
+                            className={cn("w-full h-full whitespace-nowrap", isInvalid ? "text-white/20" : "text-white")}
+                            style={{ lineHeight: '30px' }}
                           >
-                            <span className="text-[16px] font-black tabular-nums tracking-tighter pb-0.5">
+                            <span className="text-[16px] font-black tabular-nums tracking-tighter">
                               {predictions[u.id]?.[idx]?.homeScore || "0"}
                             </span>
-                            <span className="text-[12px] font-black opacity-30 pb-0.5">-</span>
-                            <span className="text-[16px] font-black tabular-nums tracking-tighter pb-0.5">
+                            <span className="text-[12px] font-black opacity-30 mx-1">-</span>
+                            <span className="text-[16px] font-black tabular-nums tracking-tighter">
                               {predictions[u.id]?.[idx]?.awayScore || "0"}
                             </span>
                           </div>
@@ -220,7 +219,7 @@ export function BettingTable({
   const sortedUsers = [...allUsers].sort((a, b) => a.id.localeCompare(b.id));
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full max-w-5xl mx-auto space-y-4">
       {isAdmin && (
         <div className="flex justify-end px-2">
           <Dialog>
@@ -281,7 +280,7 @@ export function BettingTable({
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-primary/40 italic tabular-nums">#{idx + 1}</span>
                     <div className="flex flex-col">
-                      <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
+                      <div className="text-[11px] md:text-xs font-black italic uppercase text-white leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
                         {desc || "---"}
                       </div>
                       {isOutOfWindow && (
