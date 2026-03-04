@@ -23,6 +23,142 @@ interface BettingTableProps {
   allUsers: any[];
 }
 
+/**
+ * Componente interno que lida com a escala "congelada" do card.
+ * Ele mede o espaço disponível assim que o diálogo abre.
+ */
+function RoundCardView({ 
+  roundName, 
+  matches, 
+  predictions, 
+  sortedUsers,
+  getTeamAbrev 
+}: { 
+  roundName: string, 
+  matches: Match[], 
+  predictions: PlayerPredictions, 
+  sortedUsers: any[],
+  getTeamAbrev: (name: string) => string 
+}) {
+  const [cardScale, setCardScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        // Pega a largura do container pai (o DialogContent)
+        const parentWidth = containerRef.current.offsetWidth;
+        const targetWidth = 580; // Largura base do design
+        
+        if (parentWidth > 0) {
+          const newScale = Math.min(1, parentWidth / targetWidth);
+          setCardScale(newScale);
+        }
+      }
+    };
+
+    // Executa imediatamente e após um pequeno delay para garantir o render
+    updateScale();
+    const timer = setTimeout(updateScale, 100);
+    window.addEventListener('resize', updateScale);
+    
+    return () => {
+      window.removeEventListener('resize', updateScale);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  return (
+    <div 
+      ref={containerRef} 
+      className="w-full flex justify-center overflow-hidden"
+      style={{ height: 580 * cardScale }}
+    >
+      <div 
+        className="aspect-square bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl shrink-0"
+        style={{ 
+          width: 580,
+          height: 580,
+          transform: `scale(${cardScale})`,
+          transformOrigin: 'top center'
+        }}
+      >
+        {/* Efeitos de Fundo do Card */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
+        </div>
+
+        <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-5 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
+              <Trophy className="h-3 w-3 text-black" />
+            </div>
+            <div className="flex flex-col -space-y-0.5">
+              <div className="text-[14px] font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</div>
+              <div className="text-[6px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">League 2026</div>
+            </div>
+          </div>
+          <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
+            <span className="text-[10px] font-black text-accent italic leading-none">{roundName.toUpperCase()}</span>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
+          <div className="grid grid-cols-5 gap-1 mb-1 px-1">
+            <div className="text-[7px] font-black uppercase text-white/20 italic">CONFRONTO</div>
+            {sortedUsers.map(u => (
+              <div key={u.id} className="text-center text-[10px] font-black uppercase text-accent tracking-tighter truncate px-1">
+                {u.username}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex-1 flex flex-col justify-between">
+            {Array.from({ length: 10 }).map((_, idx) => {
+              const match = matches[idx];
+              const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
+              const awayAbrev = match ? getTeamAbrev(match.awayTeam) : "---";
+              const abrevDesc = `${homeAbrev} x ${awayAbrev}`;
+
+              return (
+                <div key={idx} className="grid grid-cols-5 gap-1 items-center bg-white/[0.02] py-0.5 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.8)]">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <span className="text-[6px] font-black text-white/10 italic tabular-nums">#{idx + 1}</span>
+                    <span className={cn(
+                      "text-[10px] font-black italic uppercase truncate tracking-tighter",
+                      match?.isValidForPoints === false ? "text-white/20" : "text-white"
+                    )}>
+                      {abrevDesc}
+                    </span>
+                  </div>
+
+                  {sortedUsers.map(u => (
+                    <div key={u.id} className="flex justify-center h-full items-center px-0.5">
+                      <div className="bg-black/40 w-full py-0.5 rounded border border-white/5 flex items-center justify-center">
+                        <span className={cn(
+                          "text-[12px] font-black leading-none tabular-nums tracking-tighter",
+                          match?.isValidForPoints === false ? "text-white/20" : "text-white"
+                        )}>
+                          {predictions[u.id]?.[idx]?.homeScore || "0"}-{predictions[u.id]?.[idx]?.awayScore || "0"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
+          <span className="text-[6px] font-black text-white/10 uppercase tracking-[0.5em]">AlphaBet League • Visão de Dados Técnica</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function BettingTable({
   roundName,
   matches,
@@ -34,30 +170,6 @@ export function BettingTable({
   isAdmin,
   allUsers
 }: BettingTableProps) {
-  const [cardScale, setCardScale] = useState(1);
-  const cardContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (cardContainerRef.current) {
-        const parentWidth = cardContainerRef.current.offsetWidth;
-        const targetWidth = 580; // Largura "congelada" do design
-        const newScale = Math.min(1, parentWidth / targetWidth);
-        setCardScale(newScale);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    // Adicionar um pequeno delay para garantir que o DialogContent já tenha sua largura final
-    const timer = setTimeout(handleResize, 50);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timer);
-    };
-  }, []);
-
   const getPoints = (userId: string, idx: number) => {
     if (matches[idx]?.isValidForPoints === false) return null;
 
@@ -97,103 +209,22 @@ export function BettingTable({
               </DialogHeader>
               
               <div className="flex flex-col items-center p-4">
-                 <div className="w-full flex justify-between items-center mb-2 px-2">
-                    <p className="text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                       <Share2 className="h-3 w-3 text-accent" /> AlphaBet League
-                    </p>
-                    <DialogClose className="text-white/40 hover:text-white transition-colors p-1">
-                       <X className="h-5 w-5" />
-                    </DialogClose>
-                 </div>
+                <div className="w-full flex justify-between items-center mb-2 px-2">
+                  <p className="text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                    <Share2 className="h-3 w-3 text-accent" /> AlphaBet League
+                  </p>
+                  <DialogClose className="text-white/40 hover:text-white transition-colors p-1">
+                    <X className="h-5 w-5" />
+                  </DialogClose>
+                </div>
 
-                 {/* Container de Escala */}
-                 <div 
-                   ref={cardContainerRef} 
-                   className="w-full flex justify-center overflow-hidden"
-                   style={{ height: 580 * cardScale }}
-                 >
-                    <div 
-                      className="aspect-square bg-[#020617] p-3 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl shrink-0"
-                      style={{ 
-                        width: 580,
-                        height: 580,
-                        transform: `scale(${cardScale})`,
-                        transformOrigin: 'top center'
-                      }}
-                    >
-                       {/* Efeitos de Fundo do Card */}
-                       <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
-                          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
-                          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
-                       </div>
-
-                       <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
-                          <div className="flex items-center gap-2">
-                             <div className="h-5 w-5 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
-                               <Trophy className="h-3 w-3 text-black" />
-                             </div>
-                             <div className="flex flex-col -space-y-0.5">
-                               <div className="text-[14px] font-black italic uppercase text-white leading-none tracking-tighter">AlphaBet</div>
-                               <div className="text-[6px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none">League 2026</div>
-                             </div>
-                          </div>
-                          <div className="bg-white/5 px-2 py-0.5 rounded border border-white/10">
-                             <span className="text-[10px] font-black text-accent italic leading-none">{roundName.toUpperCase()}</span>
-                          </div>
-                       </div>
-
-                       <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-                          <div className="grid grid-cols-5 gap-1 mb-1 px-1">
-                             <div className="text-[7px] font-black uppercase text-white/20 italic">CONFRONTO</div>
-                             {sortedUsers.map(u => (
-                               <div key={u.id} className="text-center text-[10px] font-black uppercase text-accent tracking-tighter truncate px-1">
-                                  {u.username}
-                               </div>
-                             ))}
-                          </div>
-
-                          <div className="flex-1 flex flex-col justify-between">
-                             {Array.from({ length: 10 }).map((_, idx) => {
-                                const match = matches[idx];
-                                const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
-                                const awayAbrev = match ? getTeamAbrev(match.awayTeam) : "---";
-                                const abrevDesc = `${homeAbrev} x ${awayAbrev}`;
-
-                                return (
-                                  <div key={idx} className="grid grid-cols-5 gap-1 items-center bg-white/[0.02] py-0.5 px-1.5 rounded border border-white/[0.02] h-[calc(100%/10.8)]">
-                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <span className="text-[6px] font-black text-white/10 italic tabular-nums">#{idx + 1}</span>
-                                        <span className={cn(
-                                          "text-[10px] font-black italic uppercase truncate tracking-tighter",
-                                          match?.isValidForPoints === false ? "text-white/20" : "text-white"
-                                        )}>
-                                           {abrevDesc}
-                                        </span>
-                                     </div>
-
-                                     {sortedUsers.map(u => (
-                                        <div key={u.id} className="flex justify-center h-full items-center px-0.5">
-                                           <div className="bg-black/40 w-full py-0.5 rounded border border-white/5 flex items-center justify-center">
-                                              <span className={cn(
-                                                "text-[12px] font-black leading-none tabular-nums tracking-tighter",
-                                                match?.isValidForPoints === false ? "text-white/20" : "text-white"
-                                              )}>
-                                                 {predictions[u.id]?.[idx]?.homeScore || "0"}-{predictions[u.id]?.[idx]?.awayScore || "0"}
-                                              </span>
-                                           </div>
-                                        </div>
-                                     ))}
-                                  </div>
-                               );
-                             })}
-                          </div>
-                       </div>
-                       
-                       <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
-                          <span className="text-[6px] font-black text-white/10 uppercase tracking-[0.5em]">AlphaBet League • Visão de Dados Técnica</span>
-                       </div>
-                    </div>
-                 </div>
+                <RoundCardView 
+                  roundName={roundName}
+                  matches={matches}
+                  predictions={predictions}
+                  sortedUsers={sortedUsers}
+                  getTeamAbrev={getTeamAbrev}
+                />
               </div>
             </DialogContent>
           </Dialog>
