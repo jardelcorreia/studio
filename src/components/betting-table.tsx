@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 /**
  * Componente interno que lida com a escala "congelada" do card.
  * BASE_WIDTH agora é dinâmica — cresce com o número de usuários.
+ * A escala agora é baseada no window.innerWidth para evitar bugs de medição em Dialogs mobile.
  */
 function RoundCardView({ 
   roundName, 
@@ -27,7 +28,6 @@ function RoundCardView({
   getTeamAbrev: (name: string) => string 
 }) {
   const [cardScale, setCardScale] = useState(1);
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Largura base cresce com o nº de usuários (140px por coluna de usuário + 120px para confronto)
   const COL_WIDTH = 140;
@@ -36,25 +36,27 @@ function RoundCardView({
   const BASE_HEIGHT = 580; // altura sempre fixa
 
   useEffect(() => {
-    if (!wrapperRef.current) return;
+    const calculateScale = () => {
+      // No mobile, o Dialog ocupa max-w-[95vw]. No desktop sm:max-w-[700px].
+      // Usamos uma margem de segurança baseada na largura da janela.
+      const padding = window.innerWidth < 640 ? 40 : 100;
+      const availableWidth = Math.min(window.innerWidth - padding, 600); // 600px é o limite interno confortável do dialog
+      
+      setCardScale(Math.min(1, availableWidth / BASE_WIDTH));
+    };
 
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width } = entry.contentRect;
-        if (width > 0) {
-          // Escala baseada na largura disponível vs largura total necessária
-          setCardScale(Math.min(1, width / BASE_WIDTH));
-        }
-      }
-    });
-
-    observer.observe(wrapperRef.current);
-    return () => observer.disconnect();
+    // Pequeno delay para garantir que o Dialog e seu conteúdo foram injetados no DOM
+    const timer = setTimeout(calculateScale, 50);
+    
+    window.addEventListener('resize', calculateScale);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', calculateScale);
+    };
   }, [BASE_WIDTH]);
 
   return (
     <div 
-      ref={wrapperRef} 
       className="w-full flex justify-center overflow-hidden"
       style={{ height: BASE_HEIGHT * cardScale }}
     >
@@ -150,6 +152,18 @@ function RoundCardView({
       </div>
     </div>
   );
+}
+
+interface BettingTableProps {
+  roundName: string;
+  matches: Match[];
+  predictions: PlayerPredictions;
+  results: Prediction[];
+  setResult: (idx: number, type: 'home' | 'away', value: string) => void;
+  placaresOcultos: boolean;
+  currentPlayerId: string;
+  isAdmin: boolean;
+  allUsers: any[];
 }
 
 export function BettingTable({
