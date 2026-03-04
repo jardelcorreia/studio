@@ -153,28 +153,30 @@ export function BettingTable({
         </div>
       )}
 
-      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2 bg-muted/20 rounded-2xl border border-transparent">
-        <div className="col-span-3 text-[10px] font-black uppercase text-muted-foreground">Confronto</div>
-        <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-muted-foreground">Palpites da Galera</div>
-        <div className="col-span-3 text-center text-[10px] font-black uppercase text-muted-foreground">Resultado Oficial</div>
+      {/* Tabela Header Desktop */}
+      <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-3 bg-primary/5 rounded-2xl border border-primary/10 mb-2">
+        <div className="col-span-3 text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Confronto Direto</div>
+        <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Palpites Protocolados</div>
+        <div className="col-span-3 text-center text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Placar Oficial</div>
       </div>
 
-      <div className="grid grid-cols-1 gap-1.5">
+      <div className="grid grid-cols-1 gap-2">
         {matches.map((match, idx) => {
           const isOutOfWindow = match.isValidForPoints === false;
           const desc = `${cleanTeamName(match.homeTeam)} x ${cleanTeamName(match.awayTeam)}`;
 
           return (
             <div key={idx} className={cn(
-              "glass-card border-none rounded-2xl overflow-hidden group transition-all duration-200",
-              isOutOfWindow ? "opacity-60 saturate-50" : "hover:bg-primary/5"
+              "glass-card border-none rounded-2xl overflow-hidden group transition-all duration-300",
+              isOutOfWindow ? "opacity-60 saturate-50" : "hover:bg-primary/[0.02]"
             )}>
-              <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px]">
-                <div className="md:col-span-3 px-4 py-3 flex items-center justify-between md:justify-start gap-3 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
+              <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[70px]">
+                {/* Coluna Confronto */}
+                <div className="md:col-span-3 px-6 py-4 flex items-center justify-between md:justify-start gap-4 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
                   <div className="flex items-center gap-3">
-                    <span className="text-[9px] font-black text-primary/40 italic">#{idx + 1}</span>
+                    <span className="text-[10px] font-black text-primary/40 italic tabular-nums">#{idx + 1}</span>
                     <div className="flex flex-col">
-                      <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate max-w-[140px] sm:max-w-none">
+                      <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
                         {desc || "---"}
                       </div>
                       {isOutOfWindow && (
@@ -185,7 +187,7 @@ export function BettingTable({
                     </div>
                   </div>
 
-                  {/* Placar Oficial no Cabeçalho (Mobile Only) - Texto Minimalista */}
+                  {/* Mobile Results (Minimal) */}
                   <div className="md:hidden flex items-center gap-1 px-2">
                     {isAdmin ? (
                       <div className="flex items-center gap-0.5">
@@ -193,7 +195,7 @@ export function BettingTable({
                           type="number"
                           value={results[idx].homeScore}
                           onChange={(e) => setResult(idx, 'home', e.target.value)}
-                          className="w-5 h-5 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0"
                           placeholder="-"
                         />
                         <span className="text-[10px] font-black text-primary/30">x</span>
@@ -201,7 +203,7 @@ export function BettingTable({
                           type="number"
                           value={results[idx].awayScore}
                           onChange={(e) => setResult(idx, 'away', e.target.value)}
-                          className="w-5 h-5 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0"
                           placeholder="-"
                         />
                       </div>
@@ -215,7 +217,8 @@ export function BettingTable({
                   </div>
                 </div>
 
-                <div className="md:col-span-6 px-2 py-4 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
+                {/* Coluna Palpites */}
+                <div className="md:col-span-6 px-4 py-4 flex items-center justify-around gap-2 md:gap-6 overflow-x-auto no-scrollbar">
                   {sortedUsers.map(u => {
                     const isHidden = placaresOcultos && currentPlayerId !== u.id;
                     const points = getPoints(u.id, idx);
@@ -223,32 +226,31 @@ export function BettingTable({
 
                     return (
                       <div key={u.id} className={cn(
-                        "flex flex-col items-center min-w-[70px] md:min-w-[85px] relative transition-all",
-                        isCurrent && "scale-105"
+                        "flex flex-col items-center min-w-[75px] md:min-w-[90px] relative transition-all",
+                        isCurrent && "scale-110 z-10"
                       )}>
-                        <div className="flex items-center gap-0.5 mb-1.5 px-1 w-full justify-center">
+                        <div className="flex items-center gap-1 mb-2 px-1 w-full justify-center">
                           <span className={cn(
                             "text-[10px] font-black uppercase tracking-tighter truncate text-center w-full",
-                            isCurrent ? "text-primary font-bold" : "text-muted-foreground/60"
+                            isCurrent ? "text-primary font-bold" : "text-muted-foreground/50"
                           )}>
                             {u.username}
                           </span>
-                          {isCurrent && <UserCircle2 className="h-2.5 w-2.5 text-primary shrink-0" />}
                         </div>
 
                         <div className={cn(
-                          "flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border transition-colors",
-                          isOutOfWindow ? "bg-muted/50 border-muted text-muted-foreground" :
-                          points === 3 ? "bg-secondary text-white border-secondary shadow-md" : 
-                          points === 1 ? "bg-accent text-accent-foreground border-accent shadow-sm" : 
-                          points === 0 ? "bg-destructive/10 border-destructive/20 text-destructive" :
-                          "bg-background border-muted shadow-sm"
+                          "flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border-2 transition-all duration-300",
+                          isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
+                          points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" : 
+                          points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" : 
+                          points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
+                          "bg-background border-muted/30 shadow-sm"
                         )}>
-                          <span className="text-[13px] font-black tabular-nums">
+                          <span className="text-[14px] font-black tabular-nums tracking-tighter">
                             {isHidden ? "?" : (predictions[u.id]?.[idx]?.homeScore || "-")}
                           </span>
-                          <span className="text-[9px] font-black opacity-30">x</span>
-                          <span className="text-[13px] font-black tabular-nums">
+                          <span className="text-[9px] font-black opacity-30 italic">x</span>
+                          <span className="text-[14px] font-black tabular-nums tracking-tighter">
                             {isHidden ? "?" : (predictions[u.id]?.[idx]?.awayScore || "-")}
                           </span>
                         </div>
@@ -257,25 +259,25 @@ export function BettingTable({
                   })}
                 </div>
 
-                {/* Coluna de Resultado Oficial (Desktop Only) */}
+                {/* Coluna Resultado Oficial (Refinada - Sem fundo azul estranho) */}
                 <div className={cn(
-                  "md:col-span-3 px-4 py-2 bg-primary/5 items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex",
+                  "md:col-span-3 px-6 py-4 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex",
                 )}>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-2xl border border-transparent hover:border-primary/10 transition-colors">
                     <Input
                       type="number"
                       value={results[idx].homeScore}
                       onChange={(e) => setResult(idx, 'home', e.target.value)}
-                      className="w-8 h-8 text-center rounded-lg p-0 font-black text-xs border-primary/10 bg-white dark:bg-card shadow-inner"
+                      className="w-10 h-10 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20"
                       disabled={!isAdmin}
                       placeholder="-"
                     />
-                    <Swords className="h-3 w-3 text-primary/30" />
+                    <Swords className="h-4 w-4 text-primary/20" />
                     <Input
                       type="number"
                       value={results[idx].awayScore}
                       onChange={(e) => setResult(idx, 'away', e.target.value)}
-                      className="w-8 h-8 text-center rounded-lg p-0 font-black text-xs border-primary/10 bg-white dark:bg-card shadow-inner"
+                      className="w-10 h-10 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20"
                       disabled={!isAdmin}
                       placeholder="-"
                     />
