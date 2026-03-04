@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trophy, Medal, Wallet, Star, TrendingUp, TrendingDown, Settings2, CheckCircle2, Save, Loader2 } from "lucide-react";
+import { Trophy, Medal, Wallet, Star, TrendingUp, TrendingDown, Settings2, CheckCircle2, Save, Loader2, CalendarDays, History, Clock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,54 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
       return b.balance - a.balance;
     });
   }, [roundWinners, allUsers]);
+
+  const renderRoundItem = (rw: ChampionshipWinner, idx: number) => {
+    const hasWinners = rw.winners && rw.winners.trim() !== "";
+    const winnersList = rw.winners ? rw.winners.split(",").map(s => s.trim()) : [];
+
+    return (
+      <div key={idx} className="group relative flex items-center justify-between p-4 rounded-3xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <div className={cn(
+            "h-10 w-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            hasWinners ? "bg-primary text-white shadow-primary/20" : "bg-muted text-muted-foreground"
+          )}>
+            {rw.round}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1">
+              {hasWinners ? <Trophy className="h-2 w-2 text-accent" /> : <Clock className="h-2 w-2" />}
+              {hasWinners ? "Campeão" : "Aguardando Resultados"}
+            </span>
+            <div className="flex flex-wrap gap-1 mt-0.5">
+              {hasWinners ? (
+                winnersList.map((w, i) => (
+                  <span key={i} className="text-[12px] font-black italic uppercase text-primary truncate max-w-[120px]">
+                    {w}{i < winnersList.length - 1 ? "," : ""}
+                  </span>
+                ))
+              ) : (
+                <span className="text-[11px] font-medium italic text-muted-foreground/60">Rodada não finalizada</span>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex flex-col items-end shrink-0 ml-4">
+          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Premiação</span>
+          <div className="flex items-center gap-1 group-hover:scale-110 transition-transform">
+            <span className="text-[10px] font-black text-primary">R$</span>
+            <Input 
+              type="number" value={rw.value} 
+              onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
+              className="w-12 h-6 p-0 text-right bg-transparent border-none font-black text-sm focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              disabled={!isAdmin}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -258,12 +307,12 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
         </div>
 
         <div className="lg:col-span-4">
-          <Card className="glass-card border-none rounded-[2.5rem] overflow-hidden sticky top-24">
+          <Card className="glass-card border-none rounded-[2.5rem] overflow-hidden sticky top-24 shadow-2xl">
              <CardHeader className="bg-primary p-8">
                 <div className="flex items-center justify-between">
                    <div className="flex items-center gap-4">
                       <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center text-white -rotate-6">
-                         <Medal className="h-6 w-6" />
+                         <History className="h-6 w-6" />
                       </div>
                       <div>
                          <CardTitle className="text-white font-black italic uppercase text-lg leading-tight">Histórico</CardTitle>
@@ -284,40 +333,36 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                 </div>
              </CardHeader>
              <CardContent className="p-0">
-                <ScrollArea className="h-[500px]">
-                   <div className="p-6 space-y-3">
-                      {roundWinners.map((rw, idx) => (
-                         <div key={idx} className="group flex items-center justify-between p-4 rounded-3xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
-                            <div className="flex items-center gap-4">
-                               <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform">
-                                  {rw.round}
-                               </div>
-                               <div className="flex flex-col">
-                                  <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Campeão</span>
-                                  <span className="text-[12px] font-black italic uppercase text-primary truncate max-w-[140px]">
-                                     {rw.winners || "Calculando..."}
-                                  </span>
-                               </div>
-                            </div>
-                            <div className="flex flex-col items-end">
-                               <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Valor</span>
-                               <div className="flex items-center gap-1 group-hover:scale-110 transition-transform">
-                                  <span className="text-[10px] font-black text-primary">R$</span>
-                                  <Input 
-                                    type="number" value={rw.value} 
-                                    onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
-                                    className="w-12 h-6 p-0 text-right bg-transparent border-none font-black text-sm focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    disabled={!isAdmin}
-                                  />
-                               </div>
-                            </div>
-                         </div>
-                      ))}
+                <ScrollArea className="h-[600px] no-scrollbar">
+                   <div className="p-6 space-y-8">
+                      {/* 1º Turno */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+                          <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase text-primary border-primary/20 bg-primary/5">
+                            1º Turno (R1 a R19)
+                          </Badge>
+                        </div>
+                        <div className="space-y-3">
+                          {roundWinners.slice(0, 19).map((rw, idx) => renderRoundItem(rw, idx))}
+                        </div>
+                      </div>
+
+                      {/* 2º Turno */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+                          <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase text-primary border-primary/20 bg-primary/5">
+                            2º Turno (R20 a R38)
+                          </Badge>
+                        </div>
+                        <div className="space-y-3">
+                          {roundWinners.slice(19, 38).map((rw, idx) => renderRoundItem(rw, idx + 19))}
+                        </div>
+                      </div>
                    </div>
                 </ScrollArea>
                 <div className="p-6 bg-primary/5 border-t border-dashed">
                    <p className="text-[9px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
-                      Os valores são calculados automaticamente com base no número de participantes.
+                      Os vencedores e saldos são atualizados automaticamente ao preencher os resultados oficiais.
                    </p>
                 </div>
              </CardContent>
