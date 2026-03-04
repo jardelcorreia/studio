@@ -40,9 +40,9 @@ function RoundCardView({
   const [isDownloading, setIsDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Ajuste de larguras para evitar transbordamento
-  const COL_WIDTH = 100;
-  const CONFRONTO_WIDTH = 105;
+  // Ajuste de larguras para tornar o card mais compacto
+  const COL_WIDTH = 80;
+  const CONFRONTO_WIDTH = 95;
   const BASE_WIDTH = CONFRONTO_WIDTH + sortedUsers.length * COL_WIDTH;
   const BASE_HEIGHT = 580;
 
@@ -148,7 +148,7 @@ function RoundCardView({
                 <div
                   key={u.id}
                   style={{ width: COL_WIDTH, flexShrink: 0 }}
-                  className="text-center text-[13px] font-black uppercase text-accent tracking-tighter truncate px-1"
+                  className="text-center text-[12px] font-black uppercase text-accent tracking-tighter truncate px-1"
                 >
                   {u.username}
                 </div>
@@ -175,7 +175,7 @@ function RoundCardView({
                       </span>
                       <span
                         className={cn(
-                          "text-[12px] font-black italic uppercase truncate tracking-tighter",
+                          "text-[11px] font-black italic uppercase truncate tracking-tighter",
                           isInvalid ? "text-white/20" : "text-white"
                         )}
                       >
@@ -188,12 +188,12 @@ function RoundCardView({
                         <div className="bg-black/60 w-full h-8 rounded-xl border border-white/5 flex items-center justify-center shadow-inner">
                           <span
                             className={cn(
-                              "text-[18px] font-black leading-none tabular-nums tracking-tighter",
+                              "text-[16px] font-black leading-none tabular-nums tracking-tighter",
                               isInvalid ? "text-white/20" : "text-white"
                             )}
                           >
                             {predictions[u.id]?.[idx]?.homeScore || "0"}
-                            <span className="mx-0.5 opacity-30 text-[12px]">-</span>
+                            <span className="mx-0 opacity-30 text-[12px]">-</span>
                             {predictions[u.id]?.[idx]?.awayScore || "0"}
                           </span>
                         </div>
