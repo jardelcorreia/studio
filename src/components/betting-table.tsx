@@ -6,7 +6,7 @@ import { TEAMS } from "@/lib/constants";
 import { Prediction, PlayerPredictions, Match } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn, cleanTeamName } from "@/lib/utils";
-import { Trophy, Swords, Share2, Camera, X, AlertCircle, Download, Loader2 } from "lucide-react";
+import { Trophy, Swords, Share2, Camera, X, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
 
@@ -37,10 +37,9 @@ function RoundCardView({
   getTeamAbrev: (name: string) => string;
 }) {
   const [cardScale, setCardScale] = useState(1);
-  const [isDownloading, setIsDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const COL_WIDTH = 75; 
+  const COL_WIDTH = 90; 
   const CONFRONTO_WIDTH = 105; 
   const BASE_WIDTH = CONFRONTO_WIDTH + (sortedUsers.length * COL_WIDTH) + 40;
   const BASE_HEIGHT = 580;
@@ -58,49 +57,6 @@ function RoundCardView({
     window.addEventListener("resize", calculateScale);
     return () => window.removeEventListener("resize", calculateScale);
   }, [BASE_WIDTH]);
-
-  const handleDownload = async () => {
-    if (!cardRef.current) return;
-    setIsDownloading(true);
-    try {
-      await document.fonts.ready;
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      const html2canvas = (await import("html2canvas")).default;
-
-      const cardCanvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        onclone: (_: any, element: HTMLElement) => {
-          element.style.transform = "none";
-        }
-      });
-
-      const size = Math.max(cardCanvas.width, cardCanvas.height);
-      const squareCanvas = document.createElement("canvas");
-      squareCanvas.width = size;
-      squareCanvas.height = size;
-
-      const ctx = squareCanvas.getContext("2d")!;
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0, 0, size, size);
-
-      const offsetX = Math.round((size - cardCanvas.width) / 2);
-      const offsetY = Math.round((size - cardCanvas.height) / 2);
-      ctx.drawImage(cardCanvas, offsetX, offsetY);
-
-      const link = document.createElement("a");
-      link.download = `${roundName.replace(/\s+/g, "-").toLowerCase()}-alphabet.png`;
-      link.href = squareCanvas.toDataURL("image/png");
-      link.click();
-    } catch (e) {
-      console.error("Erro ao gerar imagem:", e);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   const scaledWidth = BASE_WIDTH * cardScale;
   const scaledHeight = BASE_HEIGHT * cardScale;
@@ -146,10 +102,7 @@ function RoundCardView({
 
           <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
             <div className="flex items-center mb-1 px-2">
-              <div 
-                style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} 
-                className="text-[8px] font-black uppercase text-white/20 italic"
-              >
+              <div style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[8px] font-black uppercase text-white/20 italic">
                 CONFRONTO
               </div>
               {sortedUsers.map((u) => (
@@ -177,10 +130,7 @@ function RoundCardView({
                     className="flex items-center bg-white/[0.03] py-1 px-2 rounded-xl border border-white/[0.02]"
                     style={{ height: 44 }}
                   >
-                    <div 
-                      style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} 
-                      className="flex items-center gap-1.5 overflow-hidden pr-2"
-                    >
+                    <div style={{ width: CONFRONTO_WIDTH, minWidth: CONFRONTO_WIDTH, maxWidth: CONFRONTO_WIDTH, flexShrink: 0 }} className="flex items-center gap-1.5 overflow-hidden pr-2">
                       <span className="text-[7px] font-black text-white/10 italic tabular-nums leading-none">
                         #{idx + 1}
                       </span>
@@ -197,11 +147,7 @@ function RoundCardView({
                     </div>
 
                     {sortedUsers.map((u) => (
-                      <div 
-                        key={u.id} 
-                        style={{ width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH, flexShrink: 0 }} 
-                        className="flex justify-center h-full items-center px-1"
-                      >
+                      <div key={u.id} style={{ width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH, flexShrink: 0 }} className="flex justify-center h-full items-center px-1">
                         <div className="bg-black/60 w-full h-8 rounded-xl border border-white/5 flex items-center justify-center shadow-inner">
                           <div
                             className={cn(
@@ -233,18 +179,11 @@ function RoundCardView({
           </div>
         </div>
       </div>
-
-      <Button
-        onClick={handleDownload}
-        disabled={isDownloading}
-        size="sm"
-        className="bg-white/10 hover:bg-white/20 text-white border border-white/10 font-black italic uppercase rounded-full gap-2 transition-all mt-4 px-6"
-      >
-        {isDownloading
-          ? <><Loader2 className="h-4 w-4 animate-spin" /> Gerando...</>
-          : <><Download className="h-4 w-4" /> Baixar Card</>
-        }
-      </Button>
+      <div className="text-center py-4">
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">
+          Card pronto para print! Ajuste o zoom se necessário.
+        </p>
+      </div>
     </div>
   );
 }
@@ -409,7 +348,7 @@ export function BettingTable({
                   <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-2xl border border-transparent hover:border-primary/10 transition-colors">
                     <Input type="number" value={results[idx].homeScore} onChange={(e) => setResult(idx, 'home', e.target.value)} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
                     <Swords className="h-3 w-3 text-primary/20" />
-                    <Input type="number" value={results[idx].awayScore} onChange={(e) => setResult(idx, 'away', e.target.value)} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
+                    <Input type="number" value={results[idx].awayScore} onChange={(e) => setResult(idx, 'away', e.target.value)} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-white/10 bg-white/5 text-white shadow-inner focus:ring-white/20" disabled={!isAdmin} placeholder="-" />
                   </div>
                 </div>
               </div>
