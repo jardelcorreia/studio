@@ -43,17 +43,29 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
   const formatEmail = (name: string) => `${name.toLowerCase().trim().replace(/\s+/g, '')}@alphabet.com`;
 
-  const ensureUserDocument = (uid: string, name: string, email: string) => {
+  /**
+   * Garante a existência do documento do usuário no Firestore.
+   * Não incluímos photoUrl aqui para evitar sobrescrever a foto existente no login.
+   */
+  const ensureUserDocument = (uid: string, name: string, email: string, isInitialCreation: boolean = false) => {
     const isAdmin = email === "jardel@alphabet.com";
     const userRef = doc(db, "users", uid);
     
-    setDocumentNonBlocking(userRef, {
+    const userData: any = {
       id: uid,
-      username: name,
       isAdmin: isAdmin,
-      photoUrl: "",
-      dateCreated: serverTimestamp(),
-    }, { merge: true });
+      dateUpdated: serverTimestamp(),
+    };
+
+    // Só definimos o username e photoUrl se for a criação inicial do usuário
+    // para evitar que logins subsequentes resetem personalizações do perfil.
+    if (isInitialCreation) {
+      userData.username = name;
+      userData.photoUrl = "";
+      userData.dateCreated = serverTimestamp();
+    }
+    
+    setDocumentNonBlocking(userRef, userData, { merge: true });
 
     if (isAdmin) {
       const adminRef = doc(db, "roles_admin", uid);
@@ -76,38 +88,39 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // Garante que o documento existe no Firestore ao logar
-      ensureUserDocument(userCredential.user.uid, playerName, email);
+      // Sincroniza dados básicos sem resetar perfil
+      ensureUserDocument(userCredential.user.uid, playerName, email, false);
 
       if (password === "alphabet123") {
         onPasswordChangeRequired?.();
         setShowPasswordChange(true);
       } else {
         toast({
-          title: `Bem-vindo de volta, ${playerName}!`,
-          description: "Acesso autorizado.",
+          title: `Bem-vindo, ${playerName}!`,
+          description: "Acesso autorizado ao Alpha Protocol.",
         });
       }
     } catch (err: any) {
+      // Se o usuário não existe e usa a senha padrão, criamos a conta
       if ((err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") && password === "alphabet123") {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName: playerName });
           
-          // Cria o documento do novo usuário
-          ensureUserDocument(userCredential.user.uid, playerName, email);
+          // Criação inicial do documento
+          ensureUserDocument(userCredential.user.uid, playerName, email, true);
 
           toast({
             title: "Primeiro Acesso!",
-            description: "Agora, por favor, defina uma senha segura.",
+            description: "Agora defina sua senha secreta para garantir a segurança.",
           });
           onPasswordChangeRequired?.();
           setShowPasswordChange(true);
         } catch (createErr: any) {
-          setError("Erro ao configurar acesso. Verifique se o login com e-mail/senha está ativo no Console.");
+          setError("Erro ao criar perfil. Verifique a conexão.");
         }
       } else {
-        setError("Senha incorreta ou usuário não encontrado.");
+        setError("Senha incorreta ou usuário não autorizado.");
       }
     } finally {
       setLoading(false);
@@ -125,7 +138,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       return;
     }
     if (newPassword === "alphabet123") {
-      setError("Você não pode usar a senha padrão como sua nova senha.");
+      setError("Use uma senha diferente da padrão.");
       return;
     }
 
@@ -136,13 +149,13 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       if (auth.currentUser) {
         await updatePassword(auth.currentUser, newPassword);
         toast({
-          title: "Senha Alterada!",
-          description: "Sua conta está segura e pronta para o jogo.",
+          title: "Senha Blindada!",
+          description: "Sua conta agora está protegida.",
         });
         onPasswordChanged?.();
       }
     } catch (err: any) {
-      setError("Erro ao atualizar senha. Tente deslogar e logar novamente.");
+      setError("Erro ao atualizar. Reconecte e tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -159,7 +172,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
               </div>
             </div>
             <CardTitle className="text-2xl font-black italic uppercase tracking-tighter">Segurança Alpha</CardTitle>
-            <CardDescription>Para sua proteção, escolha uma nova senha pessoal.</CardDescription>
+            <CardDescription>Defina sua nova senha pessoal de acesso.</CardDescription>
           </CardHeader>
           <form onSubmit={handleChangePassword}>
             <CardContent className="space-y-4">
@@ -220,7 +233,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
             </div>
           </div>
           <CardTitle className="text-3xl font-black italic uppercase tracking-tighter">AlphaBet 2026</CardTitle>
-          <CardDescription>Entre com seu nome e senha para palpitar</CardDescription>
+          <CardDescription>Entre com seu codinome e senha</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
@@ -250,7 +263,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
                 onChange={(e) => setPassword(e.target.value)}
               />
               <p className="text-[10px] text-muted-foreground italic">
-                * Primeiro acesso? Use a senha combinada com o admin.
+                * Primeiro acesso? Use a senha do protocolo inicial.
               </p>
             </div>
             {error && (

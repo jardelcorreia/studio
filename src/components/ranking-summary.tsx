@@ -46,12 +46,13 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
               {/* Avatar Section */}
               <div className="relative shrink-0">
                 <Avatar className={cn(
-                   "h-12 w-12 md:h-16 md:w-16 rounded-xl shadow-md bg-muted flex items-center justify-center",
+                   "h-12 w-12 md:h-16 md:w-16 rounded-xl shadow-md bg-muted flex items-center justify-center border-none",
                    score.isWinner ? "ring-2 ring-white/30" : "ring-1 ring-muted"
                 )}>
-                  {score.photoUrl && <AvatarImage src={score.photoUrl} className="object-cover" />}
+                  {/* Priorizamos photoUrl vindo do Firestore via scores props */}
+                  <AvatarImage src={score.photoUrl || undefined} className="object-cover" />
                   <AvatarFallback className={cn(
-                    "text-lg md:text-2xl font-black italic w-full h-full flex items-center justify-center",
+                    "text-lg md:text-2xl font-black italic w-full h-full flex items-center justify-center border-none",
                     score.isWinner ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
                   )}>
                     {score.name ? score.name.substring(0, 2).toUpperCase() : "AL"}
