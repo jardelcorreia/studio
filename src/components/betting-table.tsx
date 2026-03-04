@@ -46,11 +46,7 @@ function RoundCardView({
     const calculateScale = () => {
       if (typeof window === "undefined") return;
       
-      // Margens de segurança (paddings do Dialog e respiro da viewport)
-      const horizontalPadding = 32; 
-      const availableWidth = window.innerWidth - horizontalPadding;
-      
-      // Escala baseada na largura da janela
+      const availableWidth = window.innerWidth - 32; 
       const newScale = Math.min(1, availableWidth / BASE_WIDTH);
       setCardScale(newScale);
     };
@@ -76,13 +72,11 @@ function RoundCardView({
           transformOrigin: "top center",
         }}
       >
-        {/* Efeitos de Fundo */}
         <div className="absolute inset-0 pointer-events-none opacity-20">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[80px] rounded-full" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
         </div>
 
-        {/* Cabeçalho */}
         <div className="relative z-10 flex justify-between items-center mb-1 border-b border-white/10 pb-1">
           <div className="flex items-center gap-2">
             <div className="h-5 w-5 bg-accent rounded-md flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
@@ -104,7 +98,6 @@ function RoundCardView({
           </div>
         </div>
 
-        {/* Corpo */}
         <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
           <div
             className="gap-1 mb-1 px-1"
@@ -170,7 +163,6 @@ function RoundCardView({
           </div>
         </div>
 
-        {/* Rodapé */}
         <div className="relative z-10 flex justify-center items-center mt-2 pt-1 border-t border-white/5">
           <span className="text-[6px] font-black text-white/10 uppercase tracking-[0.5em]">
             AlphaBet League • Visão de Dados Técnica
@@ -269,8 +261,8 @@ export function BettingTable({
               "glass-card border-none rounded-2xl overflow-hidden group transition-all duration-300",
               isOutOfWindow ? "opacity-60 saturate-50" : "hover:bg-primary/[0.02]"
             )}>
-              <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[70px]">
-                <div className="md:col-span-3 px-6 py-4 flex items-center justify-between md:justify-start gap-4 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
+              <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px] md:min-h-[70px]">
+                <div className="md:col-span-3 px-6 py-3 flex items-center justify-between md:justify-start gap-4 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-primary/40 italic tabular-nums">#{idx + 1}</span>
                     <div className="flex flex-col">
@@ -302,32 +294,32 @@ export function BettingTable({
                   </div>
                 </div>
 
-                <div className="md:col-span-6 px-4 py-4 flex items-center justify-around gap-2 md:gap-6 overflow-x-auto no-scrollbar">
-                  <div className="flex items-center justify-around gap-4 md:gap-6 min-w-max md:min-w-0 md:w-full">
+                <div className="md:col-span-6 px-4 py-3 flex items-center justify-around gap-1 md:gap-4 overflow-x-auto no-scrollbar">
+                  <div className="flex items-center justify-around gap-2 md:gap-3 min-w-max md:min-w-0 md:w-full">
                     {sortedUsers.map(u => {
                       const isHidden = placaresOcultos && currentPlayerId !== u.id;
                       const points = getPoints(u.id, idx);
                       const isCurrent = currentPlayerId === u.id;
 
                       return (
-                        <div key={u.id} className={cn("flex flex-col items-center min-w-[75px] md:min-w-[90px] relative transition-all", isCurrent && "scale-105 sm:scale-110 z-10")}>
-                          <div className="flex items-center gap-1 mb-1.5 px-1 w-full justify-center">
-                            <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/50")}>
+                        <div key={u.id} className={cn("flex flex-col items-center min-w-[65px] md:min-w-[80px] relative transition-all", isCurrent && "scale-105 sm:scale-110 z-10")}>
+                          <div className="flex items-center gap-1 mb-1 px-1 w-full justify-center">
+                            <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/50")}>
                               {u.username}
                             </span>
                           </div>
-                          <div className={cn("flex items-center justify-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-xl border-2 transition-all duration-300",
+                          <div className={cn("flex items-center justify-center gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-xl border-2 transition-all duration-300",
                             isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
                             points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
                             points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
                             points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
                             "bg-background border-muted/30 shadow-sm"
                           )}>
-                            <span className="text-[12px] md:text-[14px] font-black tabular-nums tracking-tighter">
+                            <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
                               {isHidden ? "?" : (predictions[u.id]?.[idx]?.homeScore || "-")}
                             </span>
-                            <span className="text-[8px] md:text-[9px] font-black opacity-30 italic">x</span>
-                            <span className="text-[12px] md:text-[14px] font-black tabular-nums tracking-tighter">
+                            <span className="text-[7px] md:text-[8px] font-black opacity-30 italic">x</span>
+                            <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
                               {isHidden ? "?" : (predictions[u.id]?.[idx]?.awayScore || "-")}
                             </span>
                           </div>
@@ -337,11 +329,11 @@ export function BettingTable({
                   </div>
                 </div>
 
-                <div className={cn("md:col-span-3 px-6 py-4 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex")}>
-                  <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-2xl border border-transparent hover:border-primary/10 transition-colors">
-                    <Input type="number" value={results[idx].homeScore} onChange={(e) => setResult(idx, 'home', e.target.value)} className="w-10 h-10 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
-                    <Swords className="h-4 w-4 text-primary/20" />
-                    <Input type="number" value={results[idx].awayScore} onChange={(e) => setResult(idx, 'away', e.target.value)} className="w-10 h-10 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
+                <div className={cn("md:col-span-3 px-6 py-3 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex")}>
+                  <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-2xl border border-transparent hover:border-primary/10 transition-colors">
+                    <Input type="number" value={results[idx].homeScore} onChange={(e) => setResult(idx, 'home', e.target.value)} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
+                    <Swords className="h-3 w-3 text-primary/20" />
+                    <Input type="number" value={results[idx].awayScore} onChange={(e) => setResult(idx, 'away', e.target.value)} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
                   </div>
                 </div>
               </div>
