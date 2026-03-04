@@ -18,7 +18,7 @@ interface ChampionshipRankingProps {
   setRoundWinners: React.Dispatch<React.SetStateAction<ChampionshipWinner[]>>;
   allUsers: any[];
   isAdmin?: boolean;
-  onSave?: () => Promise<void>;
+  onSave?: (data?: ChampionshipWinner[]) => Promise<void>;
   isSaving?: boolean;
 }
 
@@ -31,15 +31,17 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
     setRoundWinners((prev) => prev.map((rw, i) => (i === roundIndex ? { ...rw, value } : rw)));
   };
 
-  const applyTurnValues = () => {
-    setRoundWinners((prev) => prev.map((rw) => ({
+  const applyTurnValues = async () => {
+    const newWinners = roundWinners.map((rw) => ({
       ...rw,
       value: rw.round <= 19 ? turn1Value : turn2Value
-    })));
-    toast({
-      title: "Valores Atualizados na Memória",
-      description: `Aplicado R$ ${turn1Value} para o 1º turno e R$ ${turn2Value} para o 2º turno. Clique em SALVAR para persistir.`
-    });
+    }));
+    
+    setRoundWinners(newWinners);
+    
+    if (onSave) {
+      await onSave(newWinners);
+    }
   };
 
   const overallStats = useMemo(() => {
@@ -103,16 +105,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                 <Settings2 className="h-5 w-5 text-primary" />
                 <CardTitle className="text-sm font-black italic uppercase text-primary">Configurações de Valores (Admin)</CardTitle>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onSave} 
-                disabled={isSaving}
-                className="rounded-xl h-8 border-primary/20 text-primary font-black uppercase text-[10px] gap-2 hover:bg-primary/5"
-              >
-                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                Salvar Configurações
-              </Button>
             </div>
           </CardHeader>
           <CardContent className="p-6">
@@ -143,14 +135,15 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
               </div>
               <Button 
                 onClick={applyTurnValues}
+                disabled={isSaving}
                 className="rounded-2xl h-12 font-black italic uppercase gap-2 shadow-lg shadow-primary/20"
               >
-                <CheckCircle2 className="h-4 w-4" />
-                Aplicar Valores nos Turnos
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {isSaving ? "Salvando..." : "Aplicar e Salvar Turnos"}
               </Button>
             </div>
             <p className="mt-4 text-[9px] font-medium text-muted-foreground italic">
-              * Isso atualizará o valor de todas as rodadas na tela. Não esqueça de clicar em **Salvar Configurações** para gravar no banco de dados.
+              * Ao clicar em "Aplicar", todos os valores das 38 rodadas serão atualizados e salvos permanentemente no banco de dados.
             </p>
           </CardContent>
         </Card>
@@ -282,7 +275,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                      <Button 
                        variant="ghost" 
                        size="icon" 
-                       onClick={onSave} 
+                       onClick={() => onSave?.()} 
                        disabled={isSaving}
                        className="text-white hover:bg-white/10 rounded-xl"
                      >

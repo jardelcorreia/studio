@@ -352,13 +352,13 @@ export default function Home() {
     } finally { setIsSaving(false); }
   };
 
-  const handleSaveSettingsOnly = async () => {
+  const handleSaveSettingsOnly = async (data?: ChampionshipWinner[]) => {
     if (!isAdminUser) return;
     setIsSaving(true);
     try {
       const settingsRef = doc(db, "app_settings", "championship");
       setDocumentNonBlocking(settingsRef, {
-        history: roundWinners,
+        history: data || roundWinners,
         lastUpdated: serverTimestamp(),
       }, { merge: true });
       toast({ title: "Configurações Salvas", description: "Valores das rodadas foram atualizados no banco de dados." });
