@@ -23,7 +23,7 @@ interface RankingSummaryProps {
 }
 
 export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: RankingSummaryProps) {
-  // Já vem ordenado do pai (page.tsx)
+  // Já vem ordenado do pai (page.tsx) com a lógica de winner definida
   const sortedScores = scores;
 
   return (
@@ -67,9 +67,9 @@ export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: Rank
       <div className="flex flex-col md:grid md:grid-cols-4 gap-4">
         {sortedScores.map((score, index) => {
           const progressPercentage = (score.betsCount / 10) * 100;
-          // Só aplica efeitos de vencedor se a rodada estiver finalizada e houver pontos
-          const showWinnerStyles = isRoundFinished && score.isWinner && score.points > 0;
-          const showMedals = isRoundFinished && score.points > 0;
+          // Agora o estilo de vencedor é controlado pela flag isWinner (definida matematicamente no pai)
+          const showWinnerStyles = score.isWinner;
+          const showMedals = score.points > 0 && (isRoundFinished || score.isWinner);
           
           return (
             <Card 
@@ -120,7 +120,7 @@ export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: Rank
                     </div>
                   )}
 
-                  {!isRoundFinished && score.points > 0 && (
+                  {!score.isWinner && score.points > 0 && (
                     <div className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-black border-2 border-background shadow-lg">
                       {index + 1}
                     </div>
