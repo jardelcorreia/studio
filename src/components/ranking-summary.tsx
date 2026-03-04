@@ -19,9 +19,10 @@ import {
 interface RankingSummaryProps {
   scores: PlayerScore[];
   isScoresHidden: boolean;
+  isRoundFinished: boolean;
 }
 
-export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) {
+export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: RankingSummaryProps) {
   // Já vem ordenado do pai (page.tsx)
   const sortedScores = scores;
 
@@ -30,7 +31,9 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Trophy className="h-4 w-4 text-accent" />
-          <span className="text-[10px] font-black uppercase italic text-muted-foreground tracking-widest">Classificação Parcial</span>
+          <span className="text-[10px] font-black uppercase italic text-muted-foreground tracking-widest">
+            {isRoundFinished ? "Classificação Final" : "Classificação em Tempo Real"}
+          </span>
         </div>
         
         <TooltipProvider>
@@ -64,8 +67,9 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
       <div className="flex flex-col md:grid md:grid-cols-4 gap-4">
         {sortedScores.map((score, index) => {
           const progressPercentage = (score.betsCount / 10) * 100;
-          // Só aplica estilos de vencedor se houver pontos
-          const showWinnerStyles = score.isWinner && score.points > 0;
+          // Só aplica efeitos de vencedor se a rodada estiver finalizada e houver pontos
+          const showWinnerStyles = isRoundFinished && score.isWinner && score.points > 0;
+          const showMedals = isRoundFinished && score.points > 0;
           
           return (
             <Card 
@@ -73,7 +77,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
               className={cn(
                 "relative overflow-hidden transition-all duration-500 rounded-3xl group border-none",
                 showWinnerStyles 
-                  ? "bg-gradient-to-br from-primary via-primary/90 to-blue-800 shadow-xl shadow-primary/20" 
+                  ? "bg-gradient-to-br from-primary via-primary/90 to-blue-800 shadow-xl shadow-primary/20 scale-105 z-20" 
                   : "glass-card hover:bg-primary/5"
               )}
             >
@@ -104,7 +108,7 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                     </Avatar>
                   </div>
                   
-                  {score.points > 0 && (
+                  {showMedals && (
                     <div className={cn(
                       "absolute -top-1.5 -right-1.5 h-6 w-6 md:h-8 md:w-8 rounded-full flex items-center justify-center shadow-lg border-2 border-background z-20",
                       index === 0 ? "bg-accent" : index === 1 ? "bg-slate-300" : index === 2 ? "bg-amber-600" : "bg-muted"
@@ -113,6 +117,12 @@ export function RankingSummary({ scores, isScoresHidden }: RankingSummaryProps) 
                        index === 1 ? <Medal className="h-3 w-3 md:h-4 md:w-4 text-slate-600" /> :
                        index === 2 ? <Medal className="h-3 w-3 md:h-4 md:w-4 text-white" /> :
                        <Star className="h-2.5 w-2.5 md:h-3 md:w-3 text-muted-foreground" />}
+                    </div>
+                  )}
+
+                  {!isRoundFinished && score.points > 0 && (
+                    <div className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-black border-2 border-background shadow-lg">
+                      {index + 1}
                     </div>
                   )}
                 </div>

@@ -143,6 +143,11 @@ export default function Home() {
     return placaresOcultos && !isTimePassed;
   }, [placaresOcultos, isTimePassed]);
 
+  const isRoundFinished = useMemo(() => {
+    if (matches.length === 0 || loadingMatches) return false;
+    return matches.every(m => m.status === 'finished' || m.status === 'cancelled' || m.isValidForPoints === false);
+  }, [matches, loadingMatches]);
+
   useEffect(() => {
     async function init() {
       const matchday = await getBrasileiraoCurrentMatchday();
@@ -270,19 +275,25 @@ export default function Home() {
     const finalScores = playerStats.map(p => ({ ...p, isWinner: false }));
     const maxPts = Math.max(...finalScores.map(s => s.points));
     
-    // Só define ganhador se houver pontuação
-    if (maxPts > 0) {
+    // Só define ganhador se houver pontuação E a rodada acabou
+    if (maxPts > 0 && isRoundFinished) {
       const candidates = finalScores.filter(s => s.points === maxPts);
       const maxExs = Math.max(...candidates.map(s => s.exactScores));
       finalScores.forEach(s => { if (s.points === maxPts && s.exactScores === maxExs) s.isWinner = true; });
     }
     
-    // Ordenação: Pontos desc, Exatos desc, Nome asc
+    // Ordenação: 
+    // 1. Se ninguém pontuou, ordem alfabética
+    // 2. Se houver pontuação, Pontos desc, Exatos desc, Nome asc
+    if (maxPts === 0) {
+      return finalScores.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
     return finalScores.sort((a, b) => b.points - a.points || b.exactScores - a.exactScores || a.name.localeCompare(b.name));
-  }, [matchDescriptions, results, predictions, allUsers, matches]);
+  }, [matchDescriptions, results, predictions, allUsers, matches, isRoundFinished]);
 
   useEffect(() => {
-    if (!currentRound || scores.length === 0) return;
+    if (!currentRound || scores.length === 0 || !isRoundFinished) return;
     const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
     const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
     setRoundWinners(prev => {
@@ -294,7 +305,7 @@ export default function Home() {
       };
       return next;
     });
-  }, [scores, currentRound]);
+  }, [scores, currentRound, isRoundFinished]);
 
   const handleTogglePlacaresOcultos = () => {
     if (!isAdminUser || !roundId) return;
@@ -562,7 +573,11 @@ export default function Home() {
                   </div>
                   {(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
                 </div>
-                <RankingSummary scores={scores} isScoresHidden={isEffectivelyHidden} />
+                <RankingSummary 
+                  scores={scores} 
+                  isScoresHidden={isEffectivelyHidden} 
+                  isRoundFinished={isRoundFinished}
+                />
               </section>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
