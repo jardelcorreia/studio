@@ -40,10 +40,9 @@ function RoundCardView({
   const [isDownloading, setIsDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Ajuste de larguras para tornar o card mais compacto
-  const COL_WIDTH = 80;
-  const CONFRONTO_WIDTH = 95;
-  const BASE_WIDTH = CONFRONTO_WIDTH + sortedUsers.length * COL_WIDTH;
+  const COL_WIDTH = 75; 
+  const CONFRONTO_WIDTH = 105; 
+  const BASE_WIDTH = CONFRONTO_WIDTH + (sortedUsers.length * COL_WIDTH) + 40;
   const BASE_HEIGHT = 580;
 
   useEffect(() => {
@@ -140,7 +139,7 @@ function RoundCardView({
           </div>
 
           <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center mb-1 px-1">
+            <div className="flex items-center mb-1 px-2">
               <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[8px] font-black uppercase text-white/20 italic">
                 CONFRONTO
               </div>
@@ -169,7 +168,7 @@ function RoundCardView({
                     className="flex items-center bg-white/[0.03] py-1 px-2 rounded-xl border border-white/[0.02]"
                     style={{ height: 44 }}
                   >
-                    <div style={{ width: CONFRONTO_WIDTH - 8, flexShrink: 0 }} className="flex items-center gap-1.5 overflow-hidden">
+                    <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="flex items-center gap-1.5 overflow-hidden pr-2">
                       <span className="text-[7px] font-black text-white/10 italic tabular-nums">
                         #{idx + 1}
                       </span>
@@ -357,13 +356,13 @@ export function BettingTable({
                       const isCurrent = currentPlayerId === u.id;
 
                       return (
-                        <div key={u.id} className={cn("flex flex-col items-center min-w-[60px] md:min-w-[80px] relative transition-all", isCurrent && "scale-105 z-10")}>
+                        <div key={u.id} className={cn("flex flex-col items-center min-w-[55px] md:min-w-[65px] relative transition-all", isCurrent && "scale-105 z-10")}>
                           <div className="flex items-center gap-1 mb-1 px-1 w-full justify-center">
                             <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/50")}>
                               {u.username}
                             </span>
                           </div>
-                          <div className={cn("flex items-center justify-center gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-xl border-2 transition-all duration-300",
+                          <div className={cn("flex items-center justify-center gap-1 px-1 py-0.5 md:py-1 rounded-xl border-2 transition-all duration-300",
                             isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
                             points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
                             points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
