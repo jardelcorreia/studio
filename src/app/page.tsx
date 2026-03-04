@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -148,6 +147,84 @@ export default function Home() {
     return matches.every(m => m.status === 'finished' || m.status === 'cancelled' || m.isValidForPoints === false);
   }, [matches, loadingMatches]);
 
+  const scores = useMemo((): PlayerScore[] => {
+    if (!allUsers || allUsers.length === 0) return [];
+    const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
+    const totalActiveMatches = activeIndices.length;
+
+    const unfinishedMatchesCount = activeIndices.filter(idx => {
+      const res = results[idx];
+      const isMatchValid = matches[idx]?.isValidForPoints !== false;
+      const isFinished = matches[idx]?.status === 'finished';
+      return isMatchValid && !isFinished && (res.homeScore === "" || res.awayScore === "");
+    }).length;
+
+    const playerStats = allUsers.map(u => {
+      let pts = 0, exs = 0, filledCount = 0;
+      const userPreds = predictions[u.id];
+      if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl };
+      activeIndices.forEach(idx => {
+        const res = results[idx], pred = userPreds[idx];
+        const hasRes = res.homeScore !== "" && res.awayScore !== "";
+        const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
+        const isMatchValid = matches[idx]?.isValidForPoints !== false;
+        if (hasPred) filledCount++;
+        if (hasRes && hasPred && isMatchValid) {
+          const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
+          const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
+          if (ph === rh && pa === ra) { pts += 3; exs += 1; }
+          else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
+        }
+      });
+      return {
+        id: u.id,
+        name: u.username,
+        points: pts,
+        exactScores: exs,
+        betsCompleted: filledCount >= totalActiveMatches && totalActiveMatches > 0,
+        betsCount: filledCount,
+        photoUrl: u.photoUrl
+      };
+    });
+    
+    const hasAnyPoints = playerStats.some(s => s.points > 0);
+    const sorted = hasAnyPoints 
+      ? [...playerStats].sort((a, b) => b.points - a.points || b.exactScores - a.exactScores || a.name.localeCompare(b.name))
+      : [...playerStats].sort((a, b) => a.name.localeCompare(b.name));
+
+    const finalScoresWithWinner = sorted.map(p => ({ ...p, isWinner: false }));
+    const leader = sorted[0];
+    const runnerUp = sorted[1];
+
+    if (hasAnyPoints) {
+      let isDefined = false;
+      if (isRoundFinished) {
+        isDefined = true;
+      } else if (runnerUp) {
+        const maxPossiblePointsForRunnerUp = runnerUp.points + (unfinishedMatchesCount * 3);
+        const maxPossibleExactsForRunnerUp = runnerUp.exactScores + unfinishedMatchesCount;
+
+        if (leader.points > maxPossiblePointsForRunnerUp) {
+          isDefined = true;
+        } else if (leader.points === maxPossiblePointsForRunnerUp && leader.exactScores > maxPossibleExactsForRunnerUp) {
+          isDefined = true;
+        }
+      } else {
+        isDefined = true;
+      }
+
+      if (isDefined) {
+        finalScoresWithWinner.forEach(s => {
+          if (s.points === leader.points && s.exactScores === leader.exactScores) {
+            s.isWinner = true;
+          }
+        });
+      }
+    }
+    
+    return finalScoresWithWinner;
+  }, [matchDescriptions, results, predictions, allUsers, matches, isRoundFinished]);
+
   useEffect(() => {
     async function init() {
       const matchday = await getBrasileiraoCurrentMatchday();
@@ -239,92 +316,6 @@ export default function Home() {
       return next;
     });
   }, [allBets, allUsers]);
-
-  const scores = useMemo((): PlayerScore[] => {
-    if (!allUsers || allUsers.length === 0) return [];
-    const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
-    const totalActiveMatches = activeIndices.length;
-
-    // Calcular quantos jogos válidos ainda não terminaram ou não têm placar oficial
-    const unfinishedMatchesCount = activeIndices.filter(idx => {
-      const res = results[idx];
-      const isMatchValid = matches[idx]?.isValidForPoints !== false;
-      const isFinished = matches[idx]?.status === 'finished';
-      return isMatchValid && !isFinished && (res.homeScore === "" || res.awayScore === "");
-    }).length;
-
-    const playerStats = allUsers.map(u => {
-      let pts = 0, exs = 0, filledCount = 0;
-      const userPreds = predictions[u.id];
-      if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl };
-      activeIndices.forEach(idx => {
-        const res = results[idx], pred = userPreds[idx];
-        const hasRes = res.homeScore !== "" && res.awayScore !== "";
-        const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
-        const isMatchValid = matches[idx]?.isValidForPoints !== false;
-        if (hasPred) filledCount++;
-        if (hasRes && hasPred && isMatchValid) {
-          const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
-          const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
-          if (ph === rh && pa === ra) { pts += 3; exs += 1; }
-          else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
-        }
-      });
-      return {
-        id: u.id,
-        name: u.username,
-        points: pts,
-        exactScores: exs,
-        betsCompleted: filledCount >= totalActiveMatches && totalActiveMatches > 0,
-        betsCount: filledCount,
-        photoUrl: u.photoUrl
-      };
-    });
-    
-    // Ordenação dinâmica: Pontos, Exatos, Nome
-    const sorted = [...playerStats].sort((a, b) => b.points - a.points || b.exactScores - a.exactScores || a.name.localeCompare(b.name));
-    
-    // Se todos estiverem com 0 pontos, força ordenação apenas alfabética
-    const hasAnyPoints = sorted.some(s => s.points > 0);
-    const finalDisplay = hasAnyPoints ? sorted : [...playerStats].sort((a, b) => a.name.localeCompare(b.name));
-
-    const finalScoresWithWinner = finalDisplay.map(p => ({ ...p, isWinner: false }));
-    const leader = sorted[0];
-    const runnerUp = sorted[1];
-
-    if (hasAnyPoints) {
-      // Cálculo de definição matemática
-      let isDefined = false;
-      if (isRoundFinished) {
-        isDefined = true;
-      } else if (runnerUp) {
-        // Máximo de pontos que o segundo colocado pode ganhar nos jogos restantes
-        const maxPossiblePointsForRunnerUp = runnerUp.points + (unfinishedMatchesCount * 3);
-        const maxPossibleExactsForRunnerUp = runnerUp.exactScores + unfinishedMatchesCount;
-
-        // É vencedor se o 2º não conseguir alcançar em pontos, ou se empatar mas não conseguir alcançar em exatos
-        if (leader.points > maxPossiblePointsForRunnerUp) {
-          isDefined = true;
-        } else if (leader.points === maxPossiblePointsForRunnerUp && leader.exactScores > maxPossibleExactsForRunnerUp) {
-          isDefined = true;
-        }
-      } else {
-        // Se houver apenas um jogador com pontos
-        isDefined = true;
-      }
-
-      if (isDefined) {
-        // Identifica quem é o líder atual (ou empatados em 1º)
-        finalScoresWithWinner.forEach(s => {
-          if (s.points === leader.points && s.exactScores === leader.exactScores) {
-            s.isWinner = true;
-          }
-        });
-      }
-    }
-    
-    return finalScoresWithWinner;
-  }, [matchDescriptions, results, predictions, allUsers, matches, isRoundFinished]);
 
   useEffect(() => {
     if (!currentRound || scores.length === 0 || !isRoundFinished) return;
@@ -463,7 +454,7 @@ export default function Home() {
               )}
             >
               <Calendar className="h-3 w-3" />
-              Jogos
+              QUILA/JOGOS
             </button>
             <button
               onClick={() => setActiveTab("palpites")}
@@ -697,7 +688,7 @@ export default function Home() {
             )}
           >
             <Calendar className={cn("h-6 w-6", activeTab === "jogos" && "fill-current")} />
-            <span className="text-[9px] font-black uppercase italic text-center">Jogos</span>
+            <span className="text-[9px] font-black uppercase italic text-center">QUILA/JOGOS</span>
           </button>
 
           <button
