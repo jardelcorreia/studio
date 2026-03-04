@@ -42,9 +42,9 @@ function RoundCardView({
 
   // Dimensões rígidas para garantir alinhamento no Canvas
   const COL_WIDTH = 140;
-  const CONFRONTO_WIDTH = 120;
+  const CONFRONTO_WIDTH = 140; // Aumentado para dar mais ar aos times
   const BASE_WIDTH = CONFRONTO_WIDTH + sortedUsers.length * COL_WIDTH;
-  const BASE_HEIGHT = 620;
+  const BASE_HEIGHT = 700; // Aumentado para fontes maiores
 
   useEffect(() => {
     const calculateScale = () => {
@@ -66,7 +66,7 @@ function RoundCardView({
     try {
       const html2canvas = (await import("html2canvas")).default;
 
-      // Captura o card OCULTO (que não tem escala aplicada e usa larguras rígidas)
+      // Captura o card OCULTO
       const cardCanvas = await html2canvas(captureRef.current, {
         backgroundColor: "#020617",
         scale: 2, // Alta definição
@@ -104,7 +104,6 @@ function RoundCardView({
   const scaledWidth = BASE_WIDTH * cardScale;
   const scaledHeight = BASE_HEIGHT * cardScale;
 
-  // Componente interno para evitar repetição de código entre visualização e captura
   const CardContentInner = () => (
     <>
       <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -112,45 +111,44 @@ function RoundCardView({
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[80px] rounded-full" />
       </div>
 
-      <div className="relative z-10 flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 bg-accent rounded-lg flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
-            <Trophy className="h-5 w-5 text-black" />
+      <div className="relative z-10 flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 bg-accent rounded-xl flex items-center justify-center -rotate-6 shadow-lg shadow-accent/20">
+            <Trophy className="h-6 w-6 text-black" />
           </div>
           <div className="flex flex-col">
-            <div className="text-[20px] font-black italic uppercase text-white leading-none tracking-tighter">
+            <div className="text-[24px] font-black italic uppercase text-white leading-none tracking-tighter">
               AlphaBet
             </div>
-            <div className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none mt-0.5">
+            <div className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] opacity-80 leading-none mt-1">
               League 2026
             </div>
           </div>
         </div>
-        <div className="bg-white/5 px-3 py-1 rounded-md border border-white/10">
-          <span className="text-[12px] font-black text-accent italic leading-none">
+        <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+          <span className="text-[14px] font-black text-accent italic leading-none">
             {roundName.toUpperCase()}
           </span>
         </div>
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col">
-        {/* Header das colunas com largura FIXA e SEM GAPS para evitar desalinhamento no Canvas */}
-        <div className="flex items-center mb-2 px-1">
-          <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[9px] font-black uppercase text-white/20 italic">
+        <div className="flex items-center mb-3 px-1">
+          <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="text-[10px] font-black uppercase text-white/20 italic">
             CONFRONTO
           </div>
           {sortedUsers.map((u) => (
             <div
               key={u.id}
               style={{ width: COL_WIDTH, flexShrink: 0 }}
-              className="text-center text-[13px] font-black uppercase text-accent tracking-tight truncate px-1"
+              className="text-center text-[16px] font-black uppercase text-accent tracking-tight truncate px-1"
             >
               {u.username}
             </div>
           ))}
         </div>
 
-        <div className="flex-1 flex flex-col gap-1">
+        <div className="flex-1 flex flex-col gap-1.5">
           {Array.from({ length: 10 }).map((_, idx) => {
             const match = matches[idx];
             const homeAbrev = match ? getTeamAbrev(match.homeTeam) : "---";
@@ -161,17 +159,16 @@ function RoundCardView({
             return (
               <div
                 key={idx}
-                className="flex items-center bg-white/[0.02] py-1 px-1.5 rounded border border-white/[0.02]"
-                style={{ height: 42 }}
+                className="flex items-center bg-white/[0.03] py-1 px-2 rounded-xl border border-white/[0.02]"
+                style={{ height: 48 }}
               >
-                {/* Coluna Confronto */}
                 <div style={{ width: CONFRONTO_WIDTH, flexShrink: 0 }} className="flex items-center gap-2 overflow-hidden">
-                  <span className="text-[8px] font-black text-white/10 italic tabular-nums">
+                  <span className="text-[9px] font-black text-white/10 italic tabular-nums">
                     #{idx + 1}
                   </span>
                   <span
                     className={cn(
-                      "text-[12px] font-black italic uppercase truncate",
+                      "text-[14px] font-black italic uppercase truncate",
                       isInvalid ? "text-white/20" : "text-white"
                     )}
                   >
@@ -179,18 +176,17 @@ function RoundCardView({
                   </span>
                 </div>
 
-                {/* Colunas dos Jogadores - Mapeadas diretamente para manter alinhamento vertical */}
                 {sortedUsers.map((u) => (
-                  <div key={u.id} style={{ width: COL_WIDTH, flexShrink: 0 }} className="flex justify-center h-full items-center px-1">
-                    <div className="bg-black/40 w-full py-1.5 rounded-lg border border-white/5 flex items-center justify-center">
+                  <div key={u.id} style={{ width: COL_WIDTH, flexShrink: 0 }} className="flex justify-center h-full items-center px-1.5">
+                    <div className="bg-black/60 w-full h-10 rounded-xl border border-white/5 flex items-center justify-center shadow-inner">
                       <span
                         className={cn(
-                          "text-[15px] font-black leading-none tabular-nums",
+                          "text-[20px] font-black leading-none tabular-nums",
                           isInvalid ? "text-white/20" : "text-white"
                         )}
                       >
                         {predictions[u.id]?.[idx]?.homeScore || "0"}
-                        <span className="mx-0.5 opacity-30">-</span>
+                        <span className="mx-1 opacity-30 text-[14px]">-</span>
                         {predictions[u.id]?.[idx]?.awayScore || "0"}
                       </span>
                     </div>
@@ -202,8 +198,8 @@ function RoundCardView({
         </div>
       </div>
 
-      <div className="relative z-10 flex justify-center items-center mt-4 pt-2 border-t border-white/5">
-        <span className="text-[8px] font-black text-white/10 uppercase tracking-[0.5em]">
+      <div className="relative z-10 flex justify-center items-center mt-6 pt-3 border-t border-white/5">
+        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.5em]">
           AlphaBet League • Visão de Dados Técnica
         </span>
       </div>
@@ -212,10 +208,9 @@ function RoundCardView({
 
   return (
     <div className="w-full flex flex-col items-center gap-3">
-      {/* Versão VISÍVEL (Escalada para o Dialog) */}
       <div style={{ width: scaledWidth, height: scaledHeight, overflow: "hidden", flexShrink: 0 }}>
         <div
-          className="bg-[#020617] p-4 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl"
+          className="bg-[#020617] p-6 flex flex-col relative shadow-2xl overflow-hidden border border-white/10 rounded-2xl"
           style={{
             width: BASE_WIDTH,
             height: BASE_HEIGHT,
@@ -227,12 +222,10 @@ function RoundCardView({
         </div>
       </div>
 
-      {/* Versão de CAPTURA (Escondida e Sem Escala) 
-          Renderizada no DOM para o html2canvas ler, mas invisível para o usuário */}
       <div style={{ position: "fixed", top: -9999, left: -9999, width: BASE_WIDTH, height: BASE_HEIGHT, pointerEvents: "none" }}>
         <div
           ref={captureRef}
-          className="bg-[#020617] p-4 flex flex-col relative overflow-hidden border border-white/10"
+          className="bg-[#020617] p-6 flex flex-col relative overflow-hidden border border-white/10"
           style={{
             width: BASE_WIDTH,
             height: BASE_HEIGHT,
@@ -246,7 +239,7 @@ function RoundCardView({
         onClick={handleDownload}
         disabled={isDownloading}
         size="sm"
-        className="bg-white/10 hover:bg-white/20 text-white border border-white/10 font-black italic uppercase rounded-full gap-2 transition-all"
+        className="bg-white/10 hover:bg-white/20 text-white border border-white/10 font-black italic uppercase rounded-full gap-2 transition-all mt-4"
       >
         {isDownloading
           ? <><Loader2 className="h-4 w-4 animate-spin" /> Gerando...</>
