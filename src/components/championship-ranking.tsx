@@ -169,7 +169,7 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                 )}>
                   <CardContent className="p-0">
                      <div className={cn(
-                       "p-4 sm:p-6 flex items-center gap-4 sm:gap-6 relative overflow-hidden",
+                       "p-6 sm:p-8 flex flex-col items-center gap-4 relative overflow-hidden text-center",
                        isFirst ? "bg-accent/10" : "bg-primary/[0.03]"
                      )}>
                         {isFirst && (
@@ -178,16 +178,16 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
 
                         <div className="relative shrink-0">
                            <div className={cn(
-                             "relative h-20 w-20 sm:h-24 sm:w-24 flex items-center justify-center rounded-2xl sm:rounded-3xl shadow-inner transition-all duration-500 group-hover:scale-105",
+                             "relative h-24 w-24 sm:h-32 sm:w-32 flex items-center justify-center rounded-3xl shadow-inner transition-all duration-500 group-hover:scale-105",
                              isFirst ? "sports-gradient shadow-lg" : "bg-primary/5 border border-primary/10"
                            )}>
                               <Avatar className={cn(
-                                 "h-[72px] w-[72px] sm:h-[88px] sm:w-[88px] rounded-full border-2 sm:border-4 border-background shadow-xl bg-muted flex items-center justify-center transition-all",
+                                 "h-[88px] w-[88px] sm:h-[120px] sm:w-[120px] rounded-full border-4 border-background shadow-xl bg-muted flex items-center justify-center transition-all",
                                  isFirst && "border-white/40"
                               )}>
                                 <AvatarImage src={player.photoUrl || undefined} className="object-cover" />
                                 <AvatarFallback className={cn(
-                                  "text-xl sm:text-3xl font-black italic w-full h-full flex items-center justify-center",
+                                  "text-3xl sm:text-5xl font-black italic w-full h-full flex items-center justify-center",
                                   isFirst ? "bg-white text-primary" : "bg-primary/10 text-primary"
                                 )}>
                                   {player.name.substring(0, 2).toUpperCase()}
@@ -197,20 +197,20 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                            
                            {hasActivity && (
                              <div className={cn(
-                               "absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-7 w-7 sm:h-9 sm:w-9 rounded-full flex items-center justify-center shadow-xl border-2 sm:border-3 border-background z-20 transition-transform group-hover:rotate-12",
+                               "absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-8 w-8 sm:h-12 sm:w-12 rounded-full flex items-center justify-center shadow-xl border-4 border-background z-20 transition-transform group-hover:rotate-12",
                                index === 0 ? "bg-accent" : index === 1 ? "bg-slate-300" : index === 2 ? "bg-amber-600" : "bg-muted"
                              )}>
-                                {index === 0 ? <Trophy className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-accent-foreground" /> : 
-                                 index === 1 ? <Medal className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-slate-600" /> :
-                                 <Star className="h-2.5 w-2.5 sm:h-4 sm:w-4 text-white" />}
+                                {index === 0 ? <Trophy className="h-4 w-4 sm:h-7 sm:w-7 text-accent-foreground" /> : 
+                                 index === 1 ? <Medal className="h-4 w-4 sm:h-7 sm:w-7 text-slate-600" /> :
+                                 <Star className="h-3 w-3 sm:h-6 sm:w-6 text-white" />}
                              </div>
                            )}
                         </div>
 
-                        <div className="flex flex-col items-start text-left space-y-0.5 sm:space-y-1 relative z-10 min-w-0">
-                          <h3 className="text-lg sm:text-xl font-black italic uppercase text-primary leading-none tracking-tighter truncate w-full">{player.name}</h3>
+                        <div className="flex flex-col items-center space-y-1 sm:space-y-2 relative z-10 w-full">
+                          <h3 className="text-xl sm:text-2xl font-black italic uppercase text-primary leading-none tracking-tighter truncate w-full">{player.name}</h3>
                           <Badge variant="outline" className={cn(
-                             "rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] px-2 sm:px-3 py-0 sm:py-0.5 border-primary/10 bg-white/50 dark:bg-black/20 whitespace-nowrap",
+                             "rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1 border-primary/10 bg-white/50 dark:bg-black/20 whitespace-nowrap",
                              isFirst ? "text-accent border-accent/20" : "text-muted-foreground"
                           )}>
                              {isFirst ? "Líder Geral" : `Posição ${index + 1}`}
@@ -218,40 +218,40 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                         </div>
                      </div>
 
-                     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                     <div className="p-6 sm:p-8 space-y-6 sm:space-y-8">
+                        <div className="grid grid-cols-3 gap-4">
                           <div className="flex flex-col items-center">
-                             <span className="text-xl sm:text-2xl font-black italic text-primary leading-none">{player.wins}</span>
-                             <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Vitórias</span>
+                             <span className="text-2xl sm:text-3xl font-black italic text-primary leading-none">{player.wins}</span>
+                             <span className="text-[8px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Vitórias</span>
                           </div>
                           <div className="flex flex-col items-center">
-                             <span className="text-base sm:text-lg font-black italic text-foreground leading-none">{player.draws}</span>
-                             <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Empates</span>
+                             <span className="text-xl sm:text-2xl font-black italic text-foreground leading-none">{player.draws}</span>
+                             <span className="text-[8px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Empates</span>
                           </div>
                           <div className="flex flex-col items-center">
-                             <span className="text-base sm:text-lg font-black italic text-foreground leading-none">{player.points}</span>
-                             <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Pontos</span>
+                             <span className="text-xl sm:text-2xl font-black italic text-foreground leading-none">{player.points}</span>
+                             <span className="text-[8px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Pontos</span>
                           </div>
                         </div>
 
                         <div className={cn(
-                          "p-3 sm:p-4 rounded-2xl sm:rounded-2xl border border-dashed flex items-center justify-between transition-colors",
+                          "p-4 sm:p-5 rounded-2xl sm:rounded-[1.5rem] border border-dashed flex items-center justify-between transition-colors",
                           isPositive ? "bg-secondary/5 border-secondary/20" : "bg-destructive/5 border-destructive/20"
                         )}>
-                          <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="flex items-center gap-3">
                              <div className={cn(
-                               "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl flex items-center justify-center shadow-sm",
+                               "h-10 w-10 rounded-xl flex items-center justify-center shadow-sm",
                                isPositive ? "bg-secondary text-white" : "bg-destructive text-white"
                              )}>
-                                {isPositive ? <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" /> : <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5" />}
+                                {isPositive ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                              </div>
-                             <div className="flex flex-col">
-                                <span className="text-[7px] sm:text-[8px] font-black uppercase text-muted-foreground tracking-widest">Saldo</span>
+                             <div className="flex flex-col items-start">
+                                <span className="text-[8px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-widest">Saldo Financeiro</span>
                              </div>
                           </div>
                           <div className="text-right">
                              <span className={cn(
-                               "text-lg sm:text-xl font-black italic leading-none",
+                               "text-xl sm:text-2xl font-black italic leading-none",
                                isPositive ? "text-secondary" : "text-destructive"
                              )}>
                                 R$ {player.balance.toFixed(2)}
