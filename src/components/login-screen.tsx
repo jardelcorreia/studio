@@ -11,9 +11,10 @@ import { Input } from "./ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Label } from "./ui/label";
-import { Shield, Loader2, Trophy, AlertCircle, KeyRound, CheckCircle2 } from "lucide-react";
+import { Shield, Loader2, Trophy, AlertCircle, KeyRound, CheckCircle2, User, Lock, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { cn } from "@/lib/utils";
 
 interface LoginScreenProps {
   onPasswordChangeRequired?: () => void;
@@ -152,56 +153,66 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
   if (showPasswordChange) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-background to-accent/20 p-4">
-        <Card className="w-full max-w-md shadow-2xl border-none">
-          <CardHeader className="space-y-2 text-center">
-            <div className="flex justify-center mb-2">
-              <div className="h-16 w-16 bg-accent rounded-2xl flex items-center justify-center -rotate-3 shadow-lg">
-                <KeyRound className="h-10 w-10 text-white" />
+      <div className="min-h-screen flex items-center justify-center bg-[#020617] p-4 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[100px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 blur-[100px] rounded-full" />
+        
+        <Card className="w-full max-w-md glass-card border-none rounded-[2.5rem] shadow-2xl relative z-10 animate-in fade-in zoom-in duration-500">
+          <CardHeader className="space-y-4 text-center pb-8">
+            <div className="flex justify-center">
+              <div className="h-16 w-16 bg-accent rounded-2xl flex items-center justify-center -rotate-6 shadow-xl border-4 border-white/10">
+                <KeyRound className="h-8 w-8 text-accent-foreground" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-black italic uppercase tracking-tighter">Alterar Senha</CardTitle>
-            <CardDescription>Defina sua nova senha de acesso.</CardDescription>
+            <div>
+              <CardTitle className="text-3xl font-black italic uppercase tracking-tighter text-primary">Segurança</CardTitle>
+              <CardDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1">Atualize sua senha de acesso</CardDescription>
+            </div>
           </CardHeader>
           <form onSubmit={handleChangePassword}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="new-password">Nova Senha</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  placeholder="Mínimo 6 caracteres"
-                  className="h-12"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
+                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Nova Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40" />
+                  <Input
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    className="h-14 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-bold focus:ring-primary/20"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  placeholder="Repita a nova senha"
-                  className="h-12"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
+                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Confirmar Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40" />
+                  <Input
+                    type="password"
+                    placeholder="Repita a nova senha"
+                    className="h-14 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-bold focus:ring-primary/20"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
               {error && (
-                <div className="bg-destructive/10 text-destructive text-xs p-3 rounded-md flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+                <div className="bg-destructive/10 text-destructive text-[10px] font-black uppercase p-4 rounded-2xl flex items-center gap-3 border border-destructive/20 animate-in shake duration-300">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   {error}
                 </div>
               )}
             </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full h-12 text-lg font-bold gap-2 bg-accent hover:bg-accent/90" disabled={loading}>
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+            <CardFooter className="pt-4">
+              <Button type="submit" className="w-full h-16 rounded-[1.5rem] text-lg font-black italic uppercase gap-3 sports-gradient shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-transform" disabled={loading}>
+                {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                   <>
-                    <CheckCircle2 className="h-5 w-5" />
-                    SALVAR E ENTRAR
+                    <CheckCircle2 className="h-6 w-6" />
+                    Finalizar Cadastro
                   </>
                 )}
               </Button>
@@ -213,70 +224,103 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-background to-accent/20 p-4">
-      <Card className="w-full max-w-md shadow-2xl border-none">
-        <CardHeader className="space-y-2 text-center">
-          <div className="flex justify-center mb-2">
-            <div className="h-20 w-20 relative overflow-hidden rounded-2xl shadow-2xl -rotate-6 border-2 border-primary/20 bg-white">
-              <Image 
-                src="/icons/android-chrome-512x512.png" 
-                alt="AlphaBet Logo" 
-                fill 
-                className="object-cover"
-                priority
-              />
+    <div className="min-h-screen flex items-center justify-center bg-[#020617] p-4 relative overflow-hidden">
+      {/* Dynamic Sports Background */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/30 blur-[120px] rounded-full animate-float" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/20 blur-[120px] rounded-full animate-float" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <Card className="w-full max-w-md glass-card border-none rounded-[3rem] shadow-2xl relative z-10 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
+        
+        <CardHeader className="space-y-6 text-center pt-10 pb-8">
+          <div className="flex justify-center">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative h-24 w-24 overflow-hidden rounded-[1.8rem] shadow-2xl -rotate-6 border-4 border-white/20 bg-white flex items-center justify-center p-1 transition-transform group-hover:rotate-0 duration-500">
+                <Image 
+                  src="/icons/android-chrome-512x512.png" 
+                  alt="AlphaBet Logo" 
+                  fill 
+                  className="object-cover p-2"
+                  priority
+                />
+              </div>
             </div>
           </div>
-          <CardTitle className="text-3xl font-black italic uppercase tracking-tighter">AlphaBet 2026</CardTitle>
-          <CardDescription>Entre com seu nome e senha</CardDescription>
+          <div className="space-y-1">
+            <CardTitle className="text-4xl font-black italic uppercase tracking-tighter text-primary leading-none">AlphaBet</CardTitle>
+            <CardDescription className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">League Brasileirão 2026</CardDescription>
+          </div>
         </CardHeader>
+
         <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 px-8">
             <div className="space-y-2">
-              <Label htmlFor="player">Selecione seu Perfil</Label>
-              <Select onValueChange={setPlayerName} value={playerName}>
-                <SelectTrigger id="player" className="h-12">
-                  <SelectValue placeholder="Escolha seu nome" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PLAYERS.map((player) => (
-                    <SelectItem key={player} value={player}>
-                      {player}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 tracking-widest">Identificação</Label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40 z-10" />
+                <Select onValueChange={setPlayerName} value={playerName}>
+                  <SelectTrigger className="h-14 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-black italic uppercase text-xs focus:ring-primary/20">
+                    <SelectValue placeholder="Escolha seu Perfil" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-primary/10">
+                    {PLAYERS.map((player) => (
+                      <SelectItem key={player} value={player} className="font-black italic uppercase text-xs focus:bg-primary/10 py-3">
+                        {player}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                className="h-12"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <p className="text-[10px] text-muted-foreground italic">
-                * Primeiro acesso? Use a senha inicial.
+              <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 tracking-widest">Chave de Acesso</Label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40" />
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  className="h-14 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-black text-sm focus:ring-primary/20"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <p className="text-[9px] text-muted-foreground/60 italic font-medium px-1">
+                * Primeiro acesso use a senha padrão do campeonato.
               </p>
             </div>
+
             {error && (
-              <div className="bg-destructive/10 text-destructive text-xs p-3 rounded-md flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
+              <div className="bg-destructive/10 text-destructive text-[10px] font-black uppercase p-4 rounded-2xl flex items-center gap-3 border border-destructive/20 animate-in shake duration-300">
+                <AlertCircle className="h-4 w-4 shrink-0" />
                 {error}
               </div>
             )}
           </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full h-12 text-lg font-bold gap-2" disabled={loading || !playerName}>
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "ENTRAR"}
+
+          <CardFooter className="px-8 pb-10 pt-4">
+            <Button 
+              type="submit" 
+              className="w-full h-16 rounded-[1.5rem] text-xl font-black italic uppercase gap-3 sports-gradient shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all group" 
+              disabled={loading || !playerName}
+            >
+              {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                <>
+                  Entrar na Arena
+                  <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </Button>
           </CardFooter>
         </form>
       </Card>
-      <div className="fixed bottom-4 text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-50">
-        Brasileirão AlphaBet League • 2026
+
+      <div className="fixed bottom-8 flex flex-col items-center gap-2 opacity-40 hover:opacity-100 transition-opacity">
+        <div className="h-px w-12 bg-primary/30" />
+        <span className="text-[9px] font-black uppercase tracking-[0.6em] text-muted-foreground">Portal Oficial de Palpites</span>
       </div>
     </div>
   );
