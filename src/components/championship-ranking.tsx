@@ -178,16 +178,16 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
 
                         <div className="relative mb-3 sm:mb-6">
                            <div className={cn(
-                             "relative h-16 w-16 sm:h-24 sm:w-24 flex items-center justify-center rounded-2xl sm:rounded-[2.25rem] shadow-inner transition-all duration-500 group-hover:scale-105",
+                             "relative h-20 w-20 sm:h-32 sm:w-32 flex items-center justify-center rounded-2xl sm:rounded-[2.25rem] shadow-inner transition-all duration-500 group-hover:scale-105",
                              isFirst ? "sports-gradient shadow-lg" : "bg-primary/5 border border-primary/10"
                            )}>
                               <Avatar className={cn(
-                                 "h-[56px] w-[56px] sm:h-[82px] sm:w-[82px] rounded-full border-2 sm:border-4 border-background shadow-xl bg-muted flex items-center justify-center transition-all",
+                                 "h-[72px] w-[72px] sm:h-[112px] sm:w-[112px] rounded-full border-2 sm:border-4 border-background shadow-xl bg-muted flex items-center justify-center transition-all",
                                  isFirst && "border-white/40"
                               )}>
                                 <AvatarImage src={player.photoUrl || undefined} className="object-cover" />
                                 <AvatarFallback className={cn(
-                                  "text-xl sm:text-3xl font-black italic w-full h-full flex items-center justify-center",
+                                  "text-xl sm:text-4xl font-black italic w-full h-full flex items-center justify-center",
                                   isFirst ? "bg-white text-primary" : "bg-primary/10 text-primary"
                                 )}>
                                   {player.name.substring(0, 2).toUpperCase()}
@@ -197,12 +197,12 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                            
                            {hasActivity && (
                              <div className={cn(
-                               "absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-6 w-6 sm:h-10 sm:w-10 rounded-full flex items-center justify-center shadow-xl border-2 sm:border-4 border-background z-20 transition-transform group-hover:rotate-12",
+                               "absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-7 w-7 sm:h-12 sm:w-12 rounded-full flex items-center justify-center shadow-xl border-2 sm:border-4 border-background z-20 transition-transform group-hover:rotate-12",
                                index === 0 ? "bg-accent" : index === 1 ? "bg-slate-300" : index === 2 ? "bg-amber-600" : "bg-muted"
                              )}>
-                                {index === 0 ? <Trophy className="h-3 w-3 sm:h-5 sm:w-5 text-accent-foreground" /> : 
-                                 index === 1 ? <Medal className="h-3 w-3 sm:h-5 sm:w-5 text-slate-600" /> :
-                                 <Star className="h-2 w-2 sm:h-4 sm:w-4 text-white" />}
+                                {index === 0 ? <Trophy className="h-3.5 w-3.5 sm:h-6 sm:w-6 text-accent-foreground" /> : 
+                                 index === 1 ? <Medal className="h-3.5 w-3.5 sm:h-6 sm:w-6 text-slate-600" /> :
+                                 <Star className="h-2.5 w-2.5 sm:h-5 sm:w-5 text-white" />}
                              </div>
                            )}
                         </div>
