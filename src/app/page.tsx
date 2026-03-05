@@ -179,7 +179,7 @@ export default function Home() {
       });
       return {
         id: u.id,
-        name: u.username,
+        name: u.username || "Jogador",
         points: pts,
         exactScores: exs,
         betsCompleted: filledCount >= totalActiveMatches && totalActiveMatches > 0,
@@ -190,8 +190,8 @@ export default function Home() {
     
     const hasAnyPoints = playerStats.some(s => s.points > 0);
     const sorted = hasAnyPoints 
-      ? [...playerStats].sort((a, b) => b.points - a.points || b.exactScores - a.exactScores || a.name.localeCompare(b.name))
-      : [...playerStats].sort((a, b) => a.name.localeCompare(b.name));
+      ? [...playerStats].sort((a, b) => b.points - a.points || b.exactScores - a.exactScores || (a.name || "").localeCompare(b.name || ""))
+      : [...playerStats].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
     const finalScoresWithWinner = sorted.map(p => ({ ...p, isWinner: false }));
     const leader = sorted[0];
@@ -437,12 +437,13 @@ export default function Home() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-lg border border-primary/10 -rotate-6">
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-xl border-2 border-primary/20 -rotate-6 bg-white">
               <Image 
                 src="/icons/android-chrome-512x512.png" 
                 alt="AlphaBet Logo" 
                 fill 
                 className="object-cover"
+                priority
               />
             </div>
             <div className="flex flex-col">

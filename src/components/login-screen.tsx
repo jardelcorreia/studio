@@ -217,12 +217,13 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       <Card className="w-full max-w-md shadow-2xl border-none">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-2">
-            <div className="h-20 w-20 relative overflow-hidden rounded-2xl shadow-xl -rotate-6 border border-primary/10">
+            <div className="h-20 w-20 relative overflow-hidden rounded-2xl shadow-2xl -rotate-6 border-2 border-primary/20 bg-white">
               <Image 
                 src="/icons/android-chrome-512x512.png" 
                 alt="AlphaBet Logo" 
                 fill 
                 className="object-cover"
+                priority
               />
             </div>
           </div>
