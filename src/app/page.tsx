@@ -1,6 +1,8 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { PLAYERS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
@@ -318,7 +320,7 @@ export default function Home() {
   }, [allBets, allUsers]);
 
   useEffect(() => {
-    if (!currentRound || scores.length === 0 || !isRoundFinished) return;
+    if (currentRound === null || scores.length === 0 || !isRoundFinished) return;
     const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
     const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
     setRoundWinners(prev => {
@@ -436,8 +438,13 @@ export default function Home() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-10 w-10 sports-gradient rounded-xl flex items-center justify-center shadow-lg transform -rotate-6">
-              <Trophy className="h-6 w-6 text-white" />
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-lg border border-primary/10">
+              <Image 
+                src="/icons/android-chrome-512x512.png" 
+                alt="AlphaBet Logo" 
+                fill 
+                className="object-cover"
+              />
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg font-black italic uppercase tracking-tighter text-primary leading-none">AlphaBet</h1>
