@@ -437,12 +437,12 @@ export default function Home() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-xl border-2 border-primary/20 -rotate-6 bg-gradient-to-br from-white to-blue-50 p-0 flex items-center justify-center">
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-sm border border-black/5 bg-white p-0 flex items-center justify-center -rotate-6">
               <Image 
                 src="/icons/android-chrome-512x512.png" 
                 alt="AlphaBet Logo" 
                 fill 
-                className="object-contain p-[1px]"
+                className="object-contain p-0.5"
                 priority
               />
             </div>

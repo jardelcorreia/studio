@@ -161,12 +161,12 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         <Card className="w-full max-w-md glass-card border-none rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl relative z-10 animate-in fade-in zoom-in duration-500">
           <CardHeader className="space-y-4 text-center pb-6 sm:pb-8 pt-6 sm:pt-8">
             <div className="flex justify-center">
-              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl flex items-center justify-center -rotate-6 shadow-xl border-2 border-primary/20 bg-gradient-to-br from-white to-blue-50 p-0 overflow-hidden relative">
+              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl flex items-center justify-center -rotate-6 shadow-sm border border-black/5 bg-white p-0 overflow-hidden relative">
                 <Image 
                   src="/icons/android-chrome-512x512.png" 
                   alt="AlphaBet Logo" 
                   fill
-                  className="object-contain p-[1px]"
+                  className="object-contain p-0.5"
                 />
               </div>
             </div>
@@ -241,12 +241,12 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
           <div className="flex justify-center">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-[1.5rem] sm:rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-[1.5rem] sm:rounded-[1.8rem] shadow-2xl -rotate-6 border-2 border-primary/20 bg-gradient-to-br from-white to-blue-50 flex items-center justify-center transition-transform group-hover:rotate-0 duration-500 p-0">
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-[1.5rem] sm:rounded-[1.8rem] shadow-sm -rotate-6 border border-black/5 bg-white flex items-center justify-center transition-transform group-hover:rotate-0 duration-500 p-0">
                 <Image 
                   src="/icons/android-chrome-512x512.png" 
                   alt="AlphaBet Logo" 
                   fill 
-                  className="object-contain p-[1px]"
+                  className="object-contain p-0.5"
                   priority
                 />
               </div>
