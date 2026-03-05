@@ -6,6 +6,10 @@ import { FirebaseClientProvider } from "@/firebase";
 export const metadata: Metadata = {
   title: 'AlphaBet League - Brasileirão Betting',
   description: 'Predict results and compete with your friends in the Brasileirão AlphaBet League.',
+  icons: {
+    icon: '/icons/icon512x512.png',
+    apple: '/icons/icon512x512.png',
+  },
 };
 
 export default function RootLayout({
