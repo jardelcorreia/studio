@@ -81,7 +81,7 @@ function RoundCardView({
 
           <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-3">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 relative rounded-md overflow-hidden shadow-lg border-2 border-primary/20 -rotate-6 bg-gradient-to-br from-white to-blue-50 p-0 flex items-center justify-center">
+              <div className="h-8 w-8 relative rounded-md overflow-hidden shadow-lg border border-black/5 -rotate-6 bg-white p-0 flex items-center justify-center">
                 <Image 
                   src="/icons/android-chrome-512x512.png" 
                   alt="AlphaBet Logo" 
@@ -221,7 +221,7 @@ export function BettingTable({
     return team ? team.abrev : cleaned.substring(0, 3).toUpperCase();
   };
 
-  const sortedUsers = [...allUsers].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedUsers = [...allUsers].sort((a, b) => (a.username || "").localeCompare(b.username || ""));
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4">
