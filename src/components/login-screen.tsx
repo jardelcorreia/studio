@@ -239,14 +239,16 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
           <div className="flex justify-center">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-[1.5rem] sm:rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-[1.5rem] sm:rounded-[1.8rem] shadow-md -rotate-6 bg-gradient-to-br from-white to-blue-50 flex items-center justify-center transition-transform group-hover:rotate-0 duration-500 p-5 border border-primary/5">
-                <Image 
-                  src="/icons/android-chrome-512x512.png?v=3" 
-                  alt="AlphaBet Logo" 
-                  fill 
-                  className="object-contain"
-                  priority
-                />
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-[1.5rem] sm:rounded-[1.8rem] shadow-md -rotate-6 bg-gradient-to-br from-white to-blue-50 flex items-center justify-center transition-transform group-hover:rotate-0 duration-500 p-7 border border-primary/5">
+                <div className="relative w-full h-full">
+                  <Image 
+                    src="/icons/android-chrome-512x512.png?v=3" 
+                    alt="AlphaBet Logo" 
+                    fill 
+                    className="object-contain"
+                    priority
+                  />
+                </div>
               </div>
             </div>
           </div>
