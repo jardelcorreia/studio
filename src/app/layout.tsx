@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   title: 'AlphaBet League - Brasileirão 2026',
   description: 'Dê seus palpites e compita com seus amigos na AlphaBet League do Brasileirão.',
   icons: {
-    icon: '/icons/android-chrome-512x512.png?v=2',
-    apple: '/icons/apple-touch-icon.png?v=2',
+    icon: '/icons/android-chrome-512x512.png?v=3',
+    apple: '/icons/apple-touch-icon.png?v=3',
   },
 };
 

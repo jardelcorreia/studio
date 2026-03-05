@@ -363,7 +363,7 @@ export default function Home() {
           dateUpdated: serverTimestamp(),
           dateCreated: roundData?.dateCreated || serverTimestamp(),
         }, { merge: true });
-        const settingsRef = doc(db, "app_settings", "championship");
+        const settingsRef = doc(db, "app_settings", "championship") ;
         setDocumentNonBlocking(settingsRef, {
           history: roundWinners,
           lastUpdated: serverTimestamp(),
@@ -437,9 +437,9 @@ export default function Home() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-sm bg-gradient-to-br from-white to-blue-50 p-1.5 flex items-center justify-center -rotate-6 border border-primary/5">
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-sm bg-gradient-to-br from-white to-blue-50 p-2 flex items-center justify-center -rotate-6 border border-primary/5">
               <Image 
-                src="/icons/android-chrome-512x512.png?v=2" 
+                src="/icons/android-chrome-512x512.png?v=3" 
                 alt="AlphaBet Logo" 
                 fill 
                 className="object-contain"
