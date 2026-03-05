@@ -160,12 +160,12 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         <Card className="w-full max-w-md glass-card border-none rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl relative z-10 animate-in fade-in zoom-in duration-500">
           <CardHeader className="space-y-4 text-center pb-6 sm:pb-8 pt-6 sm:pt-8">
             <div className="flex justify-center">
-              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl flex items-center justify-center -rotate-6 shadow-sm bg-white p-0 overflow-hidden relative border border-black/5">
+              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl flex items-center justify-center -rotate-6 shadow-md bg-white p-0 overflow-hidden relative border border-primary/5">
                 <Image 
                   src="/icons/android-chrome-512x512.png" 
                   alt="AlphaBet Logo" 
                   fill
-                  className="object-contain p-0.5"
+                  className="object-contain"
                 />
               </div>
             </div>
@@ -175,7 +175,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
             </div>
           </CardHeader>
           <form onSubmit={handleChangePassword}>
-            <CardContent className="space-y-4 sm:space-y-5">
+            <CardContent className="space-y-4 sm:space-y-5 px-6 sm:px-8">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Nova Senha</Label>
                 <div className="relative">
@@ -211,7 +211,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
                 </div>
               )}
             </CardContent>
-            <CardFooter className="pt-2 sm:pt-4 pb-6 sm:pb-8">
+            <CardFooter className="pt-2 sm:pt-4 pb-6 sm:pb-8 px-6 sm:px-8">
               <Button type="submit" className="w-full h-14 sm:h-16 rounded-[1.25rem] sm:rounded-[1.5rem] text-base sm:text-lg font-black italic uppercase gap-3 sports-gradient shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-transform" disabled={loading}>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                   <>
@@ -239,12 +239,12 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
           <div className="flex justify-center">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-[1.5rem] sm:rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-[1.5rem] sm:rounded-[1.8rem] shadow-sm -rotate-6 bg-white flex items-center justify-center transition-transform group-hover:rotate-0 duration-500 p-0 border border-black/5">
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-[1.5rem] sm:rounded-[1.8rem] shadow-md -rotate-6 bg-white flex items-center justify-center transition-transform group-hover:rotate-0 duration-500 p-0 border border-primary/5">
                 <Image 
                   src="/icons/android-chrome-512x512.png" 
                   alt="AlphaBet Logo" 
                   fill 
-                  className="object-contain p-0.5"
+                  className="object-contain"
                   priority
                 />
               </div>
