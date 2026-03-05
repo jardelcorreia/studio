@@ -1,5 +1,24 @@
-# Firebase Studio
+# AlphaBet League - Brasileirão 2026
 
-This is a NextJS starter in Firebase Studio.
+Este é o portal oficial da AlphaBet League, uma plataforma de palpites para o Brasileirão focada em competição entre amigos e análise de dados.
 
-To get started, take a look at src/app/page.tsx.
+## 🚀 Como usar o App
+
+1. **QUILA/JOGOS**: Veja as partidas da rodada, horários e preencha seus palpites.
+2. **Palpites**: Compare suas predições com as dos outros jogadores em tempo real.
+3. **Ranking**: Acompanhe a classificação geral do campeonato e o saldo bancário da liga.
+4. **Tabela**: Consulte a classificação oficial da Série A atualizada.
+
+## 🤖 IA e Design
+
+O app utiliza **Genkit** com modelos Gemini para análise de performance e sugestões de apostas.
+
+### 🎨 Gerando uma nova Logo (Prompt p/ Gemini Nano Banana)
+
+Para gerar novos ícones ou logos para o app, utilize o modelo **Gemini 2.5 Flash Image** com o seguinte prompt:
+
+> "Generate a professional sports logo for 'AlphaBet League'. Minimalist vector style featuring a stylized letter 'A' and a soccer ball. Colors: Vibrant Blue (#3b82f6), Pitch Green (#16a34a), and Trophy Gold (#f59e0b). High contrast, flat design, isolated on white background."
+
+---
+
+Desenvolvido com NextJS, ShadCN UI e Firebase Studio.
