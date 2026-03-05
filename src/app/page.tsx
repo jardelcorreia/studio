@@ -437,7 +437,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-xl border-2 border-primary/20 -rotate-6 bg-white">
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-xl border-2 border-white/20 -rotate-6 bg-primary">
               <Image 
                 src="/icons/android-chrome-512x512.png" 
                 alt="AlphaBet Logo" 

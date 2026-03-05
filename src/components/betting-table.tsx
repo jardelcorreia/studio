@@ -81,7 +81,7 @@ function RoundCardView({
 
           <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-3">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 relative rounded-md overflow-hidden shadow-lg border-2 border-white/20 -rotate-6 bg-white">
+              <div className="h-8 w-8 relative rounded-md overflow-hidden shadow-lg border-2 border-white/20 -rotate-6 bg-primary">
                 <Image 
                   src="/icons/android-chrome-512x512.png" 
                   alt="AlphaBet Logo" 
