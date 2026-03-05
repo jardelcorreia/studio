@@ -1,7 +1,7 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, updatePassword } from "firebase/auth";
 import { doc, serverTimestamp } from "firebase/firestore";
@@ -217,8 +217,13 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       <Card className="w-full max-w-md shadow-2xl border-none">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-2">
-            <div className="h-16 w-16 bg-primary rounded-2xl flex items-center justify-center rotate-3 shadow-lg">
-              < Trophy className="h-10 w-10 text-white" />
+            <div className="h-20 w-20 relative overflow-hidden rounded-2xl shadow-xl -rotate-6 border border-primary/10">
+              <Image 
+                src="/icons/android-chrome-512x512.png" 
+                alt="AlphaBet Logo" 
+                fill 
+                className="object-cover"
+              />
             </div>
           </div>
           <CardTitle className="text-3xl font-black italic uppercase tracking-tighter">AlphaBet 2026</CardTitle>
