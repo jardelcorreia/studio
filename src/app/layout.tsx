@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from "@/firebase";
 
 export const metadata: Metadata = {
-  title: 'AlphaBet League - Brasileirão Betting',
-  description: 'Predict results and compete with your friends in the Brasileirão AlphaBet League.',
+  title: 'AlphaBet League - Brasileirão 2026',
+  description: 'Dê seus palpites e compita com seus amigos na AlphaBet League do Brasileirão.',
   icons: {
     icon: '/icons/android-chrome-512x512.png',
     apple: '/icons/android-chrome-512x512.png',
