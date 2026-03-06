@@ -7,7 +7,7 @@ import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
-import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle } from "lucide-react";
+import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle, ShieldCheck, User } from "lucide-react";
 import { cn, cleanTeamName } from "@/lib/utils";
 import { Button } from "./ui/button";
 import {
@@ -156,53 +156,61 @@ export function MatchCalendar({
                    </div>
                 </div>
 
-                <div className="p-8 flex items-center justify-between gap-2">
+                <div className="p-6 md:p-8 flex items-center justify-between gap-2">
                   <div className="flex flex-col items-center gap-2 w-1/3 text-center">
-                    <img src={home.escudo} alt={home.nome} className="w-14 h-14 md:w-16 md:h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+                    <img src={home.escudo} alt={home.nome} className="w-12 h-12 md:w-16 md:h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
                     <div className="flex flex-col items-center">
-                       <span className="text-2xl font-black italic uppercase text-primary leading-none">{home.abrev}</span>
-                       <span className="text-[8px] font-bold text-muted-foreground uppercase leading-tight line-clamp-1">{home.nome}</span>
+                       <span className="text-xl md:text-2xl font-black italic uppercase text-primary leading-none">{home.abrev}</span>
+                       <span className="text-[7px] md:text-[8px] font-bold text-muted-foreground uppercase leading-tight line-clamp-1">{home.nome}</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-center justify-center w-1/3">
-                    {isAdmin ? (
-                      <div className="flex flex-col items-center gap-2">
-                         <div className="text-[8px] font-black uppercase text-primary mb-1">Ajuste de Placar</div>
-                         <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-center justify-center w-1/3 gap-4">
+                    {/* Ajuste de Resultado (Apenas Admin) */}
+                    {isAdmin && (
+                      <div className="flex flex-col items-center gap-1.5 p-2 bg-primary/5 rounded-2xl border border-dashed border-primary/20 w-full">
+                         <div className="flex items-center gap-1 text-[7px] font-black uppercase text-primary">
+                            <ShieldCheck className="h-2 w-2" /> Oficial
+                         </div>
+                         <div className="flex items-center gap-1.5">
                             <Input
                               type="number"
                               value={match.homeScore ?? ""}
                               onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })}
-                              className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
+                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-white"
                               placeholder="-"
                             />
-                            <span className="font-black text-primary/40 italic text-xs">X</span>
+                            <span className="font-black text-primary/30 italic text-[10px]">X</span>
                             <Input
                               type="number"
                               value={match.awayScore ?? ""}
                               onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })}
-                              className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
+                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-white"
                               placeholder="-"
                             />
                          </div>
                       </div>
-                    ) : isFinished ? (
+                    )}
+
+                    {/* Palpite Pessoal (Todos os usuários, incluindo Admin) */}
+                    {isFinished && !isAdmin ? (
                       <div className="flex items-center gap-2 md:gap-4">
                         <span className="text-3xl md:text-4xl font-black italic text-primary">{match.homeScore}</span>
                         <div className="h-6 md:h-8 w-[2px] bg-muted/50 rotate-12" />
                         <span className="text-3xl md:text-4xl font-black italic text-primary">{match.awayScore}</span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-2">
-                         <div className="text-[8px] font-black uppercase text-muted-foreground mb-1">Seu Palpite</div>
-                         <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-center gap-1.5">
+                         <div className="flex items-center gap-1 text-[7px] font-black uppercase text-muted-foreground">
+                            <User className="h-2 w-2" /> Meu Palpite
+                         </div>
+                         <div className="flex items-center gap-1.5">
                             <Input
                               id={`cal-input-${idx}-home`}
                               type="number"
                               value={currentPred.homeScore}
                               onChange={(e) => handlePredictionChange(idx, 'home', e.target.value)}
-                              className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
+                              className="w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
                               disabled={isFinished || isCancelled || isOutOfWindow}
                             />
                             <span className="font-black text-primary/40 italic text-xs">X</span>
@@ -211,7 +219,7 @@ export function MatchCalendar({
                               type="number"
                               value={currentPred.awayScore}
                               onChange={(e) => handlePredictionChange(idx, 'away', e.target.value)}
-                              className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
+                              className="w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
                               disabled={isFinished || isCancelled || isOutOfWindow}
                             />
                          </div>
@@ -220,10 +228,10 @@ export function MatchCalendar({
                   </div>
 
                   <div className="flex flex-col items-center gap-2 w-1/3 text-center">
-                    <img src={away.escudo} alt={away.nome} className="w-14 h-14 md:w-16 md:h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+                    <img src={away.escudo} alt={away.nome} className="w-12 h-12 md:w-16 md:h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
                     <div className="flex flex-col items-center">
-                       <span className="text-2xl font-black italic uppercase text-primary leading-none">{away.abrev}</span>
-                       <span className="text-[8px] font-bold text-muted-foreground uppercase leading-tight line-clamp-1">{away.nome}</span>
+                       <span className="text-xl md:text-2xl font-black italic uppercase text-primary leading-none">{away.abrev}</span>
+                       <span className="text-[7px] md:text-[8px] font-bold text-muted-foreground uppercase leading-tight line-clamp-1">{away.nome}</span>
                     </div>
                   </div>
                 </div>

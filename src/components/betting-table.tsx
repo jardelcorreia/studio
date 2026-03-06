@@ -7,7 +7,7 @@ import { TEAMS } from "@/lib/constants";
 import { Prediction, PlayerPredictions, Match, MatchStatus } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn, cleanTeamName } from "@/lib/utils";
-import { Trophy, Swords, Share2, Camera, X, AlertCircle } from "lucide-react";
+import { Trophy, Swords, Share2, Camera, X, AlertCircle, ShieldCheck, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
 import {
@@ -204,6 +204,7 @@ export function BettingTable({
   roundName,
   matches,
   predictions,
+  setPrediction,
   updateMatchManual,
   results,
   placaresOcultos,
@@ -326,12 +327,16 @@ export function BettingTable({
                     </div>
                   </div>
 
+                  {/* Placar Oficial no Mobile */}
                   <div className="md:hidden flex items-center gap-1 px-2">
                     {isAdmin ? (
-                      <div className="flex items-center gap-0.5">
-                        <Input type="number" value={match.homeScore ?? ""} onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
-                        <span className="text-[10px] font-black text-primary/30">x</span>
-                        <Input type="number" value={match.awayScore ?? ""} onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-[6px] font-black uppercase text-primary opacity-50">Oficial</span>
+                        <div className="flex items-center gap-0.5">
+                          <Input type="number" value={match.homeScore ?? ""} onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
+                          <span className="text-[10px] font-black text-primary/30">x</span>
+                          <Input type="number" value={match.awayScore ?? ""} onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
+                        </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 font-black text-xs text-primary tabular-nums">
@@ -346,9 +351,10 @@ export function BettingTable({
                 <div className="md:col-span-6 px-4 py-3 flex items-center overflow-x-auto no-scrollbar">
                   <div className="flex items-center gap-2 min-w-max md:w-full md:justify-around">
                     {sortedUsers.map(u => {
-                      const isHidden = placaresOcultos && currentPlayerId !== u.id;
-                      const points = getPoints(u.id, idx);
                       const isCurrent = currentPlayerId === u.id;
+                      const isHidden = placaresOcultos && !isCurrent;
+                      const points = getPoints(u.id, idx);
+                      const pred = predictions[u.id]?.[idx] || { homeScore: "", awayScore: "" };
 
                       return (
                         <div key={u.id} className={cn("flex flex-col items-center min-w-[55px] md:min-w-[65px] relative transition-all", isCurrent && "scale-105 z-10")}>
@@ -357,28 +363,53 @@ export function BettingTable({
                               {u.username}
                             </span>
                           </div>
-                          <div className={cn("flex items-center justify-center gap-1 px-1 py-0.5 md:py-1 rounded-xl border-2 transition-all duration-300",
-                            isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
-                            points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
-                            points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
-                            points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
-                            "bg-background border-muted/30 shadow-sm"
-                          )}>
-                            <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
-                              {isHidden ? "?" : (predictions[u.id]?.[idx]?.homeScore || "-")}
-                            </span>
-                            <span className="text-[7px] md:text-[8px] font-black opacity-30 italic">x</span>
-                            <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
-                              {isHidden ? "?" : (predictions[u.id]?.[idx]?.awayScore || "-")}
-                            </span>
-                          </div>
+                          
+                          {/* Campo editável para o Admin se ele for o dono do palpite ou se for seu próprio palpite */}
+                          {isCurrent ? (
+                            <div className="flex items-center justify-center gap-0.5 px-1 py-0.5 rounded-xl border border-primary/20 bg-primary/5">
+                              <Input 
+                                type="number" 
+                                value={pred.homeScore} 
+                                onChange={(e) => setPrediction(u.id, idx, 'home', e.target.value)} 
+                                className="w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0" 
+                                placeholder="-"
+                              />
+                              <span className="text-[8px] font-black opacity-30 italic">x</span>
+                              <Input 
+                                type="number" 
+                                value={pred.awayScore} 
+                                onChange={(e) => setPrediction(u.id, idx, 'away', e.target.value)} 
+                                className="w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0" 
+                                placeholder="-"
+                              />
+                            </div>
+                          ) : (
+                            <div className={cn("flex items-center justify-center gap-1 px-1 py-0.5 md:py-1 rounded-xl border-2 transition-all duration-300",
+                              isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
+                              points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
+                              points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
+                              points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
+                              "bg-background border-muted/30 shadow-sm"
+                            )}>
+                              <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
+                                {isHidden ? "?" : (pred.homeScore || "-")}
+                              </span>
+                              <span className="text-[7px] md:text-[8px] font-black opacity-30 italic">x</span>
+                              <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
+                                {isHidden ? "?" : (pred.awayScore || "-")}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className={cn("md:col-span-3 px-6 py-3 items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex")}>
+                <div className={cn("md:col-span-3 px-6 py-3 items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex flex-col")}>
+                  <div className="flex items-center gap-1 text-[7px] font-black uppercase text-primary opacity-50">
+                    <ShieldCheck className="h-2 w-2" /> Placar Oficial
+                  </div>
                   <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-2xl border border-transparent hover:border-primary/10 transition-colors">
                     <Input type="number" value={match.homeScore ?? ""} onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
                     <Swords className="h-3 w-3 text-primary/20" />
