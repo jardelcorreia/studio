@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -10,13 +9,6 @@ import { cn, cleanTeamName } from "@/lib/utils";
 import { Trophy, Swords, Share2, Camera, X, AlertCircle, ShieldCheck, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface BettingTableProps {
   roundName: string;
@@ -298,26 +290,9 @@ export function BettingTable({
                         {desc || "---"}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        {isAdmin ? (
-                          <Select
-                            value={match.status}
-                            onValueChange={(val: MatchStatus) => updateMatchManual(idx, { status: val })}
-                          >
-                            <SelectTrigger className="h-4 p-0 px-2 rounded-full text-[7px] font-black uppercase border-none bg-primary/5 text-primary focus:ring-0">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-none shadow-xl">
-                              <SelectItem value="upcoming" className="text-[10px] font-black uppercase italic">Agendado</SelectItem>
-                              <SelectItem value="live" className="text-[10px] font-black uppercase italic text-destructive">Ao Vivo</SelectItem>
-                              <SelectItem value="finished" className="text-[10px] font-black uppercase italic text-primary">Finalizado</SelectItem>
-                              <SelectItem value="cancelled" className="text-[10px] font-black uppercase italic text-muted-foreground">Adiado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span className={cn("text-[8px] font-black uppercase", match.status === 'live' ? "text-destructive" : "text-muted-foreground")}>
-                            {match.status === 'finished' ? 'Finalizado' : match.status === 'live' ? 'Ao Vivo' : match.status === 'cancelled' ? 'Adiado' : 'Agendado'}
-                          </span>
-                        )}
+                        <span className={cn("text-[8px] font-black uppercase", match.status === 'live' ? "text-destructive" : "text-muted-foreground")}>
+                          {match.status === 'finished' ? 'Finalizado' : match.status === 'live' ? 'Ao Vivo' : match.status === 'cancelled' ? 'Adiado' : 'Agendado'}
+                        </span>
                         {isOutOfWindow && (
                           <span className="text-[8px] font-black text-destructive uppercase flex items-center gap-1">
                             <AlertCircle className="h-2 w-2" /> Fora da Janela
@@ -329,22 +304,11 @@ export function BettingTable({
 
                   {/* Placar Oficial no Mobile */}
                   <div className="md:hidden flex items-center gap-1 px-2">
-                    {isAdmin ? (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-[6px] font-black uppercase text-primary opacity-50">Oficial</span>
-                        <div className="flex items-center gap-0.5">
-                          <Input type="number" value={match.homeScore ?? ""} onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
-                          <span className="text-[10px] font-black text-primary/30">x</span>
-                          <Input type="number" value={match.awayScore ?? ""} onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 font-black text-xs text-primary tabular-nums">
-                        <span>{results[idx].homeScore !== "" ? results[idx].homeScore : "-"}</span>
-                        <span className="text-primary/30 font-bold">x</span>
-                        <span>{results[idx].awayScore !== "" ? results[idx].awayScore : "-"}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1 font-black text-xs text-primary tabular-nums">
+                      <span>{results[idx].homeScore !== "" ? results[idx].homeScore : "-"}</span>
+                      <span className="text-primary/30 font-bold">x</span>
+                      <span>{results[idx].awayScore !== "" ? results[idx].awayScore : "-"}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -364,7 +328,6 @@ export function BettingTable({
                             </span>
                           </div>
                           
-                          {/* Campo editável para o Admin se ele for o dono do palpite ou se for seu próprio palpite */}
                           {isCurrent ? (
                             <div className="flex items-center justify-center gap-0.5 px-1 py-0.5 rounded-xl border border-primary/20 bg-primary/5">
                               <Input 
@@ -410,10 +373,14 @@ export function BettingTable({
                   <div className="flex items-center gap-1 text-[7px] font-black uppercase text-primary opacity-50">
                     <ShieldCheck className="h-2 w-2" /> Placar Oficial
                   </div>
-                  <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-2xl border border-transparent hover:border-primary/10 transition-colors">
-                    <Input type="number" value={match.homeScore ?? ""} onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
+                  <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-2xl border border-transparent">
+                    <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl font-black text-sm bg-white dark:bg-card border border-primary/10 text-primary">
+                      {match.homeScore ?? "-"}
+                    </div>
                     <Swords className="h-3 w-3 text-primary/20" />
-                    <Input type="number" value={match.awayScore ?? ""} onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
+                    <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl font-black text-sm bg-white dark:bg-card border border-primary/10 text-primary">
+                      {match.awayScore ?? "-"}
+                    </div>
                   </div>
                 </div>
               </div>
