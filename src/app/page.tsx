@@ -691,8 +691,8 @@ export default function Home() {
                         <Bell className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-black italic uppercase text-accent leading-tight">Ative Alertas</h4>
-                        <p className="text-[10px] font-medium text-muted-foreground">Saiba quando sair um gol!</p>
+                        <h4 className="text-sm font-black italic uppercase text-accent leading-tight">Ative Lembretes</h4>
+                        <p className="text-[10px] font-medium text-muted-foreground">Não perca o prazo de palpitar na rodada.</p>
                       </div>
                     </div>
                     <Button onClick={requestPermission} size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl h-10 px-6 font-black italic uppercase gap-2 shadow-lg shadow-accent/20 relative z-10 w-full sm:w-auto">
@@ -709,7 +709,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h4 className="text-[10px] font-black italic uppercase text-secondary">Notificações Ativas</h4>
-                      <p className="text-[9px] font-medium text-muted-foreground">Você receberá atualizações em tempo real.</p>
+                      <p className="text-[9px] font-medium text-muted-foreground">Lembretes de palpites e resultados ativados.</p>
                     </div>
                   </div>
                 )}
