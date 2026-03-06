@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -91,7 +90,6 @@ export default function Home() {
   const [now, setNow] = useState(new Date());
   const [showNotificationSuccess, setShowNotificationSuccess] = useState(false);
 
-  // Referência para capturar o estado da permissão no momento que o componente carrega
   const initialPermissionRef = useRef<string | null>(null);
 
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
@@ -126,7 +124,6 @@ export default function Home() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Inicialização do Modo Escuro (Persistência)
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme) {
@@ -147,7 +144,6 @@ export default function Home() {
   }, [darkMode]);
 
   useEffect(() => {
-    // Captura a permissão real do navegador no primeiro render
     if (typeof window !== "undefined" && "Notification" in window) {
       initialPermissionRef.current = Notification.permission;
     }
@@ -171,7 +167,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Só mostra o banner se a permissão inicial NÃO era 'granted' e agora é 'granted' (ou seja, acabou de ser autorizada)
     if (initialPermissionRef.current !== 'granted' && permission === 'granted' && !isAdminUser) {
       setShowNotificationSuccess(true);
       const timer = setTimeout(() => {
@@ -215,7 +210,7 @@ export default function Home() {
     const playerStats = allUsers.map(u => {
       let pts = 0, exs = 0, filledCount = 0;
       const userPreds = predictions[u.id];
-      if (!userPreds) return { id: u.id, name: u.username || "Jogador", points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl };
+      if (!userPreds) return { id: u.id, name: u.username || "Jogador", points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl, isWinner: false };
       activeIndices.forEach(idx => {
         const res = results[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
@@ -236,7 +231,8 @@ export default function Home() {
         exactScores: exs,
         betsCompleted: filledCount >= totalActiveMatches && totalActiveMatches > 0,
         betsCount: filledCount,
-        photoUrl: u.photoUrl
+        photoUrl: u.photoUrl,
+        isWinner: false
       };
     });
     
@@ -520,7 +516,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-white p-2 flex items-center justify-center -rotate-6">
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-white dark:bg-slate-800 p-2 flex items-center justify-center -rotate-6 transition-colors">
               <Image 
                 src="/icons/android-chrome-512x512.png?v=3" 
                 alt="AlphaBet Logo" 
@@ -804,7 +800,6 @@ export default function Home() {
                 matches={matches}
                 predictions={predictions}
                 setPrediction={updatePrediction}
-                updateMatchManual={updateMatchManual}
                 results={results}
                 placaresOcultos={isEffectivelyHidden}
                 currentPlayerId={user?.uid || ""}

@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { TEAMS } from "@/lib/constants";
-import { Prediction, PlayerPredictions, Match, MatchStatus } from "@/lib/types";
+import { Prediction, PlayerPredictions, Match } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn, cleanTeamName } from "@/lib/utils";
-import { Trophy, Swords, Share2, Camera, X, AlertCircle, ShieldCheck, User } from "lucide-react";
+import { Swords, Share2, Camera, X, AlertCircle, ShieldCheck } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
 
@@ -15,7 +15,6 @@ interface BettingTableProps {
   matches: Match[];
   predictions: PlayerPredictions;
   setPrediction: (userId: string, matchIndex: number, type: 'home' | 'away', value: string) => void;
-  updateMatchManual: (idx: number, updates: Partial<Match>) => void;
   results: Prediction[];
   placaresOcultos: boolean;
   currentPlayerId: string;
@@ -81,7 +80,7 @@ function RoundCardView({
 
           <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-3">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full shadow-xl border border-white/10 -rotate-6 bg-white flex items-center justify-center overflow-hidden">
+              <div className="h-9 w-9 rounded-full shadow-xl border border-white/10 -rotate-6 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden transition-colors">
                 <div className="relative h-6 w-6">
                   <Image 
                     src="/icons/android-chrome-512x512.png?v=3" 
@@ -199,7 +198,6 @@ export function BettingTable({
   matches,
   predictions,
   setPrediction,
-  updateMatchManual,
   results,
   placaresOcultos,
   currentPlayerId,
@@ -304,7 +302,6 @@ export function BettingTable({
                     </div>
                   </div>
 
-                  {/* Placar Oficial no Mobile */}
                   <div className="md:hidden flex items-center gap-1 px-2">
                     <div className="flex items-center gap-1 font-black text-xs text-primary tabular-nums">
                       <span>{results[idx].homeScore !== "" ? results[idx].homeScore : "-"}</span>
@@ -376,11 +373,11 @@ export function BettingTable({
                     <ShieldCheck className="h-2 w-2" /> Placar Oficial
                   </div>
                   <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-2xl border border-transparent">
-                    <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl font-black text-sm bg-white dark:bg-card border border-primary/10 text-primary">
+                    <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl font-black text-sm bg-white dark:bg-slate-900 border border-primary/10 text-primary transition-colors">
                       {match.homeScore ?? "-"}
                     </div>
                     <Swords className="h-3 w-3 text-primary/20" />
-                    <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl font-black text-sm bg-white dark:bg-card border border-primary/10 text-primary">
+                    <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl font-black text-sm bg-white dark:bg-slate-900 border border-primary/10 text-primary transition-colors">
                       {match.awayScore ?? "-"}
                     </div>
                   </div>
