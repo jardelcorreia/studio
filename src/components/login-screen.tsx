@@ -35,6 +35,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
   const [showPasswordChange, setShowPasswordChange] = useState(forcePasswordChange || false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isReady, setIsReady] = useState(false);
 
   // Recupera o último jogador selecionado ao carregar
   useEffect(() => {
@@ -42,6 +43,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
     if (savedPlayer && PLAYERS.includes(savedPlayer)) {
       setPlayerName(savedPlayer);
     }
+    setIsReady(true);
   }, []);
 
   useEffect(() => {
@@ -277,18 +279,23 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
               <Label className="text-[9px] sm:text-[10px] font-black uppercase text-muted-foreground ml-1 tracking-widest">Identificação</Label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40 z-10" />
-                <Select onValueChange={handlePlayerSelect} value={playerName}>
-                  <SelectTrigger className="h-12 sm:h-14 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-black italic uppercase text-xs focus:ring-primary/20">
-                    <SelectValue placeholder="Escolha seu Perfil" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-primary/10">
-                    {PLAYERS.map((player) => (
-                      <SelectItem key={player} value={player} className="font-black italic uppercase text-xs focus:bg-primary/10 py-3">
-                        {player}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isReady && (
+                  <Select key={playerName || "initial"} onValueChange={handlePlayerSelect} defaultValue={playerName}>
+                    <SelectTrigger className="h-12 sm:h-14 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-black italic uppercase text-xs focus:ring-primary/20">
+                      <SelectValue placeholder="Escolha seu Perfil" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-primary/10">
+                      {PLAYERS.map((player) => (
+                        <SelectItem key={player} value={player} className="font-black italic uppercase text-xs focus:bg-primary/10 py-3">
+                          {player}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {!isReady && (
+                  <div className="h-12 sm:h-14 w-full rounded-2xl border border-primary/10 bg-primary/5 animate-pulse" />
+                )}
               </div>
             </div>
 
