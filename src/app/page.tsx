@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -124,6 +125,26 @@ export default function Home() {
   }, [allUsers, user]);
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
+
+  // Inicialização do Modo Escuro (Persistência)
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      setDarkMode(savedTheme === "dark");
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setDarkMode(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     // Captura a permissão real do navegador no primeiro render
@@ -490,11 +511,6 @@ export default function Home() {
       )
     }));
   };
-
-  useEffect(() => {
-    if (darkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [darkMode]);
 
   if (isUserLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   if (!user || mustChangePassword) return <LoginScreen forcePasswordChange={mustChangePassword} onPasswordChangeRequired={() => setMustChangePassword(true)} onPasswordChanged={() => setMustChangePassword(false)} />;
