@@ -88,6 +88,7 @@ export default function Home() {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showAdminBar, setShowAdminBar] = useState(false);
   const [now, setNow] = useState(new Date());
+  const [showNotificationSuccess, setShowNotificationSuccess] = useState(false);
 
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
     Array.from({ length: 38 }, (_, i) => ({
@@ -137,6 +138,16 @@ export default function Home() {
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (permission === 'granted') {
+      setShowNotificationSuccess(true);
+      const timer = setTimeout(() => {
+        setShowNotificationSuccess(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [permission]);
 
   const isTimePassed = useMemo(() => {
     if (!currentRound || currentRound !== realCurrentRound || matches.length === 0 || loadingMatches) return false;
@@ -702,8 +713,8 @@ export default function Home() {
                   </div>
                 )}
                 
-                {permission === 'granted' && (
-                  <div className="glass-card border-none rounded-[2rem] p-6 flex items-center gap-4 overflow-hidden relative group bg-secondary/5">
+                {showNotificationSuccess && (
+                  <div className="glass-card border-none rounded-[2rem] p-6 flex items-center gap-4 overflow-hidden relative group bg-secondary/5 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="h-10 w-10 bg-secondary/10 rounded-xl flex items-center justify-center shrink-0">
                       <CheckCircle2 className="h-5 w-5 text-secondary" />
                     </div>
