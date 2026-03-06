@@ -2,7 +2,9 @@
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 
-admin.initializeApp();
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 /**
  * Notifica os usuários quando os palpites são revelados.
