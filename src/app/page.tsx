@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import { PLAYERS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner, MatchStatus } from "@/lib/types";
@@ -90,6 +90,9 @@ export default function Home() {
   const [now, setNow] = useState(new Date());
   const [showNotificationSuccess, setShowNotificationSuccess] = useState(false);
 
+  // Referência para capturar o estado da permissão no momento que o componente carrega
+  const initialPermissionRef = useRef<string | null>(null);
+
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
     Array.from({ length: 38 }, (_, i) => ({
       round: i + 1,
@@ -123,6 +126,13 @@ export default function Home() {
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
   useEffect(() => {
+    // Captura a permissão real do navegador no primeiro render
+    if (typeof window !== "undefined" && "Notification" in window) {
+      initialPermissionRef.current = Notification.permission;
+    }
+  }, []);
+
+  useEffect(() => {
     if (!showProfileDialog) {
       const cleanupBody = () => {
         document.body.style.pointerEvents = "auto";
@@ -140,14 +150,15 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (permission === 'granted') {
+    // Só mostra o banner se a permissão inicial NÃO era 'granted' e agora é 'granted' (ou seja, acabou de ser autorizada)
+    if (initialPermissionRef.current !== 'granted' && permission === 'granted' && !isAdminUser) {
       setShowNotificationSuccess(true);
       const timer = setTimeout(() => {
         setShowNotificationSuccess(false);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [permission]);
+  }, [permission, isAdminUser]);
 
   const isTimePassed = useMemo(() => {
     if (!currentRound || currentRound !== realCurrentRound || matches.length === 0 || loadingMatches) return false;
