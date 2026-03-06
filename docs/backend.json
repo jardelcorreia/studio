@@ -56,6 +56,19 @@
           "type": "boolean",
           "description": "Indica se os palpites dos outros jogadores estão ocultos."
         },
+        "matches": {
+          "type": "array",
+          "description": "Dados das partidas sobrescritos manualmente pelo administrador.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "number" },
+              "homeScore": { "type": "number" },
+              "awayScore": { "type": "number" },
+              "status": { "type": "string" }
+            }
+          }
+        },
         "dateCreated": {
           "type": "string",
           "format": "date-time"
@@ -146,7 +159,7 @@
           "schema": {
             "$ref": "#/backend/entities/Round"
           },
-          "description": "Metadados da rodada."
+          "description": "Metadados da rodada e dados oficiais das partidas."
         }
       },
       {

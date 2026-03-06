@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Match, Prediction } from "@/lib/types";
+import { Match, Prediction, MatchStatus } from "@/lib/types";
 import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -10,6 +10,13 @@ import { Input } from "./ui/input";
 import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { cn, cleanTeamName } from "@/lib/utils";
 import { Button } from "./ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MatchCalendarProps {
   matches: Match[];
@@ -17,6 +24,8 @@ interface MatchCalendarProps {
   totalRounds: number;
   predictions: Prediction[];
   setPrediction: (matchIndex: number, type: 'home' | 'away', value: string) => void;
+  updateMatchManual: (idx: number, updates: Partial<Match>) => void;
+  isAdmin: boolean;
   onPrev: () => void;
   onNext: () => void;
   onSave: () => void;
@@ -29,6 +38,8 @@ export function MatchCalendar({
   totalRounds, 
   predictions,
   setPrediction,
+  updateMatchManual,
+  isAdmin,
   onPrev, 
   onNext,
   onSave,
@@ -57,7 +68,7 @@ export function MatchCalendar({
     return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
   };
 
-  const handleInputChange = (idx: number, type: 'home' | 'away', value: string) => {
+  const handlePredictionChange = (idx: number, type: 'home' | 'away', value: string) => {
     const cleanValue = value.slice(-1);
     setPrediction(idx, type, cleanValue);
 
@@ -117,14 +128,31 @@ export function MatchCalendar({
                           Fora da Janela
                         </Badge>
                       )}
-                      <Badge className={cn(
-                        "rounded-full px-3 text-[8px] font-black uppercase border-none",
-                        isLive ? "bg-destructive text-white animate-pulse" : 
-                        isFinished ? "bg-primary/20 text-primary" : 
-                        isCancelled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
-                      )}>
-                        {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : isCancelled ? 'Adiado' : 'Agendado'}
-                      </Badge>
+                      {isAdmin ? (
+                        <Select
+                          value={match.status}
+                          onValueChange={(val: MatchStatus) => updateMatchManual(idx, { status: val })}
+                        >
+                          <SelectTrigger className="h-6 rounded-full text-[8px] font-black uppercase border-none bg-primary/10 text-primary px-3 focus:ring-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-none shadow-xl">
+                            <SelectItem value="upcoming" className="text-[10px] font-black uppercase italic">Agendado</SelectItem>
+                            <SelectItem value="live" className="text-[10px] font-black uppercase italic text-destructive">Ao Vivo</SelectItem>
+                            <SelectItem value="finished" className="text-[10px] font-black uppercase italic text-primary">Finalizado</SelectItem>
+                            <SelectItem value="cancelled" className="text-[10px] font-black uppercase italic text-muted-foreground">Adiado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge className={cn(
+                          "rounded-full px-3 text-[8px] font-black uppercase border-none",
+                          isLive ? "bg-destructive text-white animate-pulse" : 
+                          isFinished ? "bg-primary/20 text-primary" : 
+                          isCancelled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
+                        )}>
+                          {isFinished ? 'Finalizado' : isLive ? 'Ao Vivo' : isCancelled ? 'Adiado' : 'Agendado'}
+                        </Badge>
+                      )}
                    </div>
                 </div>
 
@@ -138,7 +166,28 @@ export function MatchCalendar({
                   </div>
 
                   <div className="flex flex-col items-center justify-center w-1/3">
-                    {isFinished ? (
+                    {isAdmin ? (
+                      <div className="flex flex-col items-center gap-2">
+                         <div className="text-[8px] font-black uppercase text-primary mb-1">Ajuste de Placar</div>
+                         <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              value={match.homeScore ?? ""}
+                              onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })}
+                              className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
+                              placeholder="-"
+                            />
+                            <span className="font-black text-primary/40 italic text-xs">X</span>
+                            <Input
+                              type="number"
+                              value={match.awayScore ?? ""}
+                              onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })}
+                              className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
+                              placeholder="-"
+                            />
+                         </div>
+                      </div>
+                    ) : isFinished ? (
                       <div className="flex items-center gap-2 md:gap-4">
                         <span className="text-3xl md:text-4xl font-black italic text-primary">{match.homeScore}</span>
                         <div className="h-6 md:h-8 w-[2px] bg-muted/50 rotate-12" />
@@ -152,7 +201,7 @@ export function MatchCalendar({
                               id={`cal-input-${idx}-home`}
                               type="number"
                               value={currentPred.homeScore}
-                              onChange={(e) => handleInputChange(idx, 'home', e.target.value)}
+                              onChange={(e) => handlePredictionChange(idx, 'home', e.target.value)}
                               className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
                               disabled={isFinished || isCancelled || isOutOfWindow}
                             />
@@ -161,7 +210,7 @@ export function MatchCalendar({
                               id={`cal-input-${idx}-away`}
                               type="number"
                               value={currentPred.awayScore}
-                              onChange={(e) => handleInputChange(idx, 'away', e.target.value)}
+                              onChange={(e) => handlePredictionChange(idx, 'away', e.target.value)}
                               className="w-10 h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
                               disabled={isFinished || isCancelled || isOutOfWindow}
                             />
@@ -209,7 +258,7 @@ export function MatchCalendar({
           className="h-16 px-12 rounded-3xl gap-4 font-black italic uppercase text-xl sports-gradient shadow-2xl shadow-primary/40 hover:scale-[1.05] transition-transform active:scale-95"
         >
           {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : <Sparkles className="h-6 w-6 fill-current" />}
-          {isSaving ? "Sincronizando..." : "CONFIRMAR PALPITES"}
+          {isSaving ? "Sincronizando..." : "CONFIRMAR DADOS"}
         </Button>
       </div>
     </div>

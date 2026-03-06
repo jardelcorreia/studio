@@ -1,22 +1,30 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { TEAMS } from "@/lib/constants";
-import { Prediction, PlayerPredictions, Match } from "@/lib/types";
+import { Prediction, PlayerPredictions, Match, MatchStatus } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn, cleanTeamName } from "@/lib/utils";
 import { Trophy, Swords, Share2, Camera, X, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "./ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface BettingTableProps {
   roundName: string;
   matches: Match[];
   predictions: PlayerPredictions;
   setPrediction: (userId: string, matchIndex: number, type: 'home' | 'away', value: string) => void;
+  updateMatchManual: (idx: number, updates: Partial<Match>) => void;
   results: Prediction[];
-  setResult: (matchIndex: number, type: 'home' | 'away', value: string) => void;
   placaresOcultos: boolean;
   currentPlayerId: string;
   isAdmin?: boolean;
@@ -196,8 +204,8 @@ export function BettingTable({
   roundName,
   matches,
   predictions,
+  updateMatchManual,
   results,
-  setResult,
   placaresOcultos,
   currentPlayerId,
   isAdmin,
@@ -288,20 +296,42 @@ export function BettingTable({
                       <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
                         {desc || "---"}
                       </div>
-                      {isOutOfWindow && (
-                        <span className="text-[8px] font-black text-destructive uppercase flex items-center gap-1 mt-0.5">
-                          <AlertCircle className="h-2 w-2" /> Fora da Janela
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {isAdmin ? (
+                          <Select
+                            value={match.status}
+                            onValueChange={(val: MatchStatus) => updateMatchManual(idx, { status: val })}
+                          >
+                            <SelectTrigger className="h-4 p-0 px-2 rounded-full text-[7px] font-black uppercase border-none bg-primary/5 text-primary focus:ring-0">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-none shadow-xl">
+                              <SelectItem value="upcoming" className="text-[10px] font-black uppercase italic">Agendado</SelectItem>
+                              <SelectItem value="live" className="text-[10px] font-black uppercase italic text-destructive">Ao Vivo</SelectItem>
+                              <SelectItem value="finished" className="text-[10px] font-black uppercase italic text-primary">Finalizado</SelectItem>
+                              <SelectItem value="cancelled" className="text-[10px] font-black uppercase italic text-muted-foreground">Adiado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className={cn("text-[8px] font-black uppercase", match.status === 'live' ? "text-destructive" : "text-muted-foreground")}>
+                            {match.status === 'finished' ? 'Finalizado' : match.status === 'live' ? 'Ao Vivo' : match.status === 'cancelled' ? 'Adiado' : 'Agendado'}
+                          </span>
+                        )}
+                        {isOutOfWindow && (
+                          <span className="text-[8px] font-black text-destructive uppercase flex items-center gap-1">
+                            <AlertCircle className="h-2 w-2" /> Fora da Janela
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   <div className="md:hidden flex items-center gap-1 px-2">
                     {isAdmin ? (
                       <div className="flex items-center gap-0.5">
-                        <Input type="number" value={results[idx].homeScore} onChange={(e) => setResult(idx, 'home', e.target.value)} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
+                        <Input type="number" value={match.homeScore ?? ""} onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
                         <span className="text-[10px] font-black text-primary/30">x</span>
-                        <Input type="number" value={results[idx].awayScore} onChange={(e) => setResult(idx, 'away', e.target.value)} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
+                        <Input type="number" value={match.awayScore ?? ""} onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })} className="w-6 h-6 text-center p-0 font-black text-xs border-none bg-transparent text-primary shadow-none focus-visible:ring-0" placeholder="-" />
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 font-black text-xs text-primary tabular-nums">
@@ -348,11 +378,11 @@ export function BettingTable({
                   </div>
                 </div>
 
-                <div className={cn("md:col-span-3 px-6 py-3 flex items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex")}>
+                <div className={cn("md:col-span-3 px-6 py-3 items-center justify-center md:border-l border-dashed border-primary/10 gap-3 hidden md:flex")}>
                   <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-2xl border border-transparent hover:border-primary/10 transition-colors">
-                    <Input type="number" value={results[idx].homeScore} onChange={(e) => setResult(idx, 'home', e.target.value)} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
+                    <Input type="number" value={match.homeScore ?? ""} onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
                     <Swords className="h-3 w-3 text-primary/20" />
-                    <Input type="number" value={results[idx].awayScore} onChange={(e) => setResult(idx, 'away', e.target.value)} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-white/10 bg-white/5 text-white shadow-inner focus:ring-white/20" disabled={!isAdmin} placeholder="-" />
+                    <Input type="number" value={match.awayScore ?? ""} onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })} className="w-8 h-8 md:w-9 md:h-9 text-center rounded-xl p-0 font-black text-sm border-primary/10 bg-white dark:bg-card shadow-inner focus:ring-primary/20" disabled={!isAdmin} placeholder="-" />
                   </div>
                 </div>
               </div>

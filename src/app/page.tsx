@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { PLAYERS } from "@/lib/constants";
-import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner } from "@/lib/types";
+import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner, MatchStatus } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
 import { BettingTable } from "@/components/betting-table";
 import { MatchCalendar } from "@/components/match-calendar";
@@ -270,10 +271,28 @@ export default function Home() {
     async function loadMatches() {
       setLoadingMatches(true);
       const rawData = await getBrasileiraoMatches(currentRound!);
-      const data = determineMatchValidity(rawData);
+      let data = determineMatchValidity(rawData);
+
+      // Aplica sobrescritas do Firestore se existirem
+      if (roundData?.matches && Array.isArray(roundData.matches)) {
+        data = data.map(m => {
+          const override = roundData.matches.find((o: any) => o.id === m.id);
+          if (override) {
+            return {
+              ...m,
+              homeScore: override.homeScore !== undefined ? override.homeScore : m.homeScore,
+              awayScore: override.awayScore !== undefined ? override.awayScore : m.awayScore,
+              status: override.status || m.status,
+            };
+          }
+          return m;
+        });
+      }
+
       setMatches(data);
       const leagueTable = await getLeagueStandings();
       setStandings(leagueTable);
+      
       if (data.length > 0) {
         const newDescriptions = Array(10).fill("");
         const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
@@ -296,7 +315,7 @@ export default function Home() {
       setLoadingMatches(false);
     }
     loadMatches();
-  }, [currentRound]);
+  }, [currentRound, roundData?.matches]);
 
   useEffect(() => {
     if (!allBets || !allUsers) return;
@@ -355,20 +374,32 @@ export default function Home() {
     try {
       if (isAdminUser) {
         const roundRef = doc(db, "rounds", roundId);
+        
+        // Extrai apenas os dados essenciais das partidas para sobrescrita manual
+        const matchOverrides = matches.map(m => ({
+          id: m.id,
+          homeScore: m.homeScore,
+          awayScore: m.awayScore,
+          status: m.status
+        }));
+
         setDocumentNonBlocking(roundRef, {
           id: roundId,
           roundNumber: currentRound,
           name: roundName,
           isScoresHidden: placaresOcultos,
+          matches: matchOverrides,
           dateUpdated: serverTimestamp(),
           dateCreated: roundData?.dateCreated || serverTimestamp(),
         }, { merge: true });
+        
         const settingsRef = doc(db, "app_settings", "championship") ;
         setDocumentNonBlocking(settingsRef, {
           history: roundWinners,
           lastUpdated: serverTimestamp(),
         }, { merge: true });
       }
+      
       const myPreds = predictions[user.uid];
       if (myPreds) {
         const currentUsername = currentUserFirestore?.username || user.displayName || "Jogador";
@@ -392,6 +423,19 @@ export default function Home() {
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Falha na sincronização." });
     } finally { setIsSaving(false); }
+  };
+
+  const updateMatchManual = (idx: number, updates: Partial<Match>) => {
+    if (!isAdminUser) return;
+    setMatches(prev => prev.map((m, i) => i === idx ? { ...m, ...updates } : m));
+    
+    if (updates.homeScore !== undefined || updates.awayScore !== undefined) {
+      setResults(prev => prev.map((r, i) => i === idx ? {
+        ...r,
+        homeScore: updates.homeScore !== undefined ? updates.homeScore.toString() : r.homeScore,
+        awayScore: updates.awayScore !== undefined ? updates.awayScore.toString() : r.awayScore,
+      } : r));
+    }
   };
 
   const handleSaveSettingsOnly = async (data?: ChampionshipWinner[]) => {
@@ -418,10 +462,6 @@ export default function Home() {
         i === idx ? { ...p, [type === 'home' ? 'homeScore' : 'awayScore']: value } : p
       )
     }));
-  };
-
-  const updateResult = (idx: number, type: 'home' | 'away', value: string) => {
-    setResults(prev => prev.map((r, i) => i === idx ? { ...r, [type === 'home' ? 'homeScore' : 'awayScore']: value } : r));
   };
 
   useEffect(() => {
@@ -621,9 +661,10 @@ export default function Home() {
                       totalRounds={38}
                       predictions={predictions[user?.uid || ""] || Array(10).fill({ homeScore: "", awayScore: "" })}
                       setPrediction={(idx, type, value) => updatePrediction(user?.uid || "", idx, type, value)}
+                      updateMatchManual={updateMatchManual}
+                      isAdmin={isAdminUser}
                       onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
                       onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
-                      onPrevNext={() => {}}
                       onSave={handleSaveAll}
                       isSaving={isSaving}
                     />
@@ -647,8 +688,8 @@ export default function Home() {
                 matches={matches}
                 predictions={predictions}
                 setPrediction={updatePrediction}
+                updateMatchManual={updateMatchManual}
                 results={results}
-                setResult={updateResult}
                 placaresOcultos={isEffectivelyHidden}
                 currentPlayerId={user?.uid || ""}
                 isAdmin={isAdminUser}
