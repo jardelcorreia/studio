@@ -3,7 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.onMatchScoreUpdate = exports.onRevealScores = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
-admin.initializeApp();
+if (admin.apps.length === 0) {
+    admin.initializeApp();
+}
 /**
  * Notifica os usuários quando os palpites são revelados.
  * Ocorre quando isScoresHidden muda de true para false no documento da rodada.
