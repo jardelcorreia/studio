@@ -8,7 +8,7 @@ import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 // IMPORTANTE: Substitua por sua VAPID KEY gerada no console do Firebase
-const VAPID_KEY = 'YOUR_VAPID_KEY_HERE';
+const VAPID_KEY = 'BDJfhs7Q5xip0lcpZNOZp5APUhbIWpzwEuG9Vck9TI6wXmDrNedtdWy6Ky1ULQ58014V-uAZpHdoa1x6_iTGpo4';
 
 export function useFcm() {
   const { messaging, user, firestore } = useFirebase();
