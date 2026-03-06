@@ -6,6 +6,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 /**
  * Notifica os usuários quando os palpites são revelados.
+ * Ocorre quando isScoresHidden muda de true para false no documento da rodada.
  */
 exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
     const before = event.data?.before.data();
@@ -41,7 +42,8 @@ exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", 
     }
 });
 /**
- * Notifica o usuário se ele acertou um placar em cheio (3 pontos).
+ * Notifica um usuário específico se ele acertou um placar em cheio (3 pontos).
+ * Disparado quando o Admin atualiza o status de uma partida para 'finished'.
  */
 exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
     const after = event.data?.after.data();
@@ -49,18 +51,19 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
         return;
     const roundId = event.params.roundId;
     const matches = after.matches;
-    // Busca todos os palpites desta rodada
+    // Busca todos os palpites desta rodada para verificar acertos
     const betsSnapshot = await admin.firestore().collection(`rounds/${roundId}/bets`).get();
     for (const betDoc of betsSnapshot.docs) {
         const bet = betDoc.data();
         const userId = bet.userId;
-        // Procura a partida correspondente para ver se foi finalizada e se houve acerto exato
+        // Procura a partida correspondente no array de partidas da rodada
         const match = matches.find((m) => m.id === bet.matchId);
+        // Se a partida foi finalizada agora e o palpite foi um acerto exato
         if (match && match.status === 'finished') {
             const isExact = bet.homeScorePrediction === match.homeScore &&
                 bet.awayScorePrediction === match.awayScore;
             if (isExact) {
-                // Busca o usuário para pegar os tokens FCM
+                // Busca o documento do usuário para obter seus tokens FCM
                 const userDoc = await admin.firestore().collection("users").doc(userId).get();
                 const userData = userDoc.data();
                 if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
@@ -73,6 +76,7 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
                     };
                     try {
                         await admin.messaging().sendEachForMulticast(message);
+                        console.log(`Notificação de acerto exato enviada para o usuário ${userId}.`);
                     }
                     catch (error) {
                         console.error(`Erro ao notificar acerto exato para ${userId}:`, error);
