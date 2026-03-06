@@ -177,7 +177,7 @@ export function MatchCalendar({
                               type="number"
                               value={match.homeScore ?? ""}
                               onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })}
-                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-white"
+                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-background"
                               placeholder="-"
                             />
                             <span className="font-black text-primary/30 italic text-[10px]">X</span>
@@ -185,7 +185,7 @@ export function MatchCalendar({
                               type="number"
                               value={match.awayScore ?? ""}
                               onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })}
-                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-white"
+                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-background"
                               placeholder="-"
                             />
                          </div>
