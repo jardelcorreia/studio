@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onMatchScoreUpdate = exports.onRevealScores = void 0;
+exports.notifyRoundStart = exports.onMatchScoreUpdate = exports.onRevealScores = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
+const scheduler_1 = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 if (admin.apps.length === 0) {
     admin.initializeApp();
@@ -84,6 +85,56 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
                         console.error(`Erro ao notificar acerto exato para ${userId}:`, error);
                     }
                 }
+            }
+        }
+    }
+});
+/**
+ * Função Agendada (Cron Job): Lembrete de Palpites Pendentes.
+ * Executa a cada hora para verificar se alguém esqueceu de "quilar" (palpitar).
+ */
+exports.notifyRoundStart = (0, scheduler_1.onSchedule)("every 60 minutes", async (event) => {
+    // 1. Descobrir qual a rodada atual (baseado no que o Admin configurou por último)
+    const roundsSnapshot = await admin.firestore()
+        .collection("rounds")
+        .orderBy("roundNumber", "desc")
+        .limit(1)
+        .get();
+    if (roundsSnapshot.empty)
+        return;
+    const currentRound = roundsSnapshot.docs[0];
+    const roundData = currentRound.data();
+    const roundId = currentRound.id;
+    // Se a rodada já teve os palpites revelados, não precisa de lembrete
+    if (roundData.isScoresHidden === false)
+        return;
+    // 2. Buscar todos os usuários
+    const usersSnapshot = await admin.firestore().collection("users").get();
+    for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        const userId = userDoc.id;
+        if (!userData.fcmTokens || userData.fcmTokens.length === 0)
+            continue;
+        // 3. Verificar se o usuário já fez os 10 palpites
+        const userBetsSnapshot = await admin.firestore()
+            .collection(`rounds/${roundId}/bets`)
+            .where("userId", "==", userId)
+            .get();
+        // Se faltar qualquer palpite (menos de 10)
+        if (userBetsSnapshot.size < 10) {
+            const message = {
+                notification: {
+                    title: "⚠️ PALPITES PENDENTES!",
+                    body: `Ei ${userData.username || 'campeão'}, você ainda não completou seus 10 palpites para a ${roundData.name}. Corre que o tempo está acabando!`,
+                },
+                tokens: userData.fcmTokens,
+            };
+            try {
+                await admin.messaging().sendEachForMulticast(message);
+                console.log(`Lembrete enviado para ${userId} (Palpites: ${userBetsSnapshot.size}/10)`);
+            }
+            catch (error) {
+                console.error(`Erro ao enviar lembrete para ${userId}:`, error);
             }
         }
     }

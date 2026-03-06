@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -30,7 +29,9 @@ import {
   UserCircle,
   Eye,
   EyeOff,
-  Medal
+  Medal,
+  Download,
+  Smartphone
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,6 +55,7 @@ import { signOut } from "firebase/auth";
 import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, cleanTeamName, determineMatchValidity } from "@/lib/utils";
+import { usePWAInstall } from "@/hooks/use-pwa-install";
 
 type TabType = "jogos" | "palpites" | "ranking" | "tabela";
 
@@ -62,6 +64,7 @@ export default function Home() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
+  const { isInstallable, handleInstall } = usePWAInstall();
 
   const [activeTab, setActiveTab] = useState<TabType>("jogos");
   const [darkMode, setDarkMode] = useState(false);
@@ -273,7 +276,6 @@ export default function Home() {
       const rawData = await getBrasileiraoMatches(currentRound!);
       let data = determineMatchValidity(rawData);
 
-      // Aplica sobrescritas do Firestore se existirem
       if (roundData?.matches && Array.isArray(roundData.matches)) {
         data = data.map(m => {
           const override = roundData.matches.find((o: any) => o.id === m.id);
@@ -374,8 +376,6 @@ export default function Home() {
     try {
       if (isAdminUser) {
         const roundRef = doc(db, "rounds", roundId);
-        
-        // Extrai apenas os dados essenciais das partidas para sobrescrita manual
         const matchOverrides = matches.map(m => ({
           id: m.id,
           homeScore: m.homeScore,
@@ -536,6 +536,17 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-3">
+             {isInstallable && (
+               <Button
+                 variant="outline"
+                 size="sm"
+                 onClick={handleInstall}
+                 className="hidden lg:flex rounded-xl h-8 text-[9px] font-black uppercase italic gap-2 border-primary/20 text-primary hover:bg-primary hover:text-white"
+               >
+                 <Download className="h-3 w-3" />
+                 Instalar App
+               </Button>
+             )}
              {isAdminUser && (
                <button
                  onClick={() => setShowAdminBar(!showAdminBar)}
@@ -576,6 +587,12 @@ export default function Home() {
                     <UserCircle className="h-4 w-4 text-primary" />
                     Editar Perfil
                   </DropdownMenuItem>
+                  {isInstallable && (
+                    <DropdownMenuItem onClick={handleInstall} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10 md:hidden">
+                      <Smartphone className="h-4 w-4 text-primary" />
+                      Instalar no Celular
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => setDarkMode(!darkMode)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
                     {darkMode ? <Sun className="h-4 w-4 text-accent" /> : <Moon className="h-4 w-4 text-primary" />}
                     Tema {darkMode ? 'Claro' : 'Escuro'}
@@ -637,6 +654,27 @@ export default function Home() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {activeTab === "jogos" && (
             <div className="space-y-8">
+              {isInstallable && (
+                <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Smartphone className="h-24 w-24 text-primary" />
+                  </div>
+                  <div className="flex items-center gap-4 relative z-10 text-center md:text-left">
+                    <div className="h-16 w-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shrink-0">
+                      <Image src="/icons/android-chrome-512x512.png?v=3" alt="PWA" width={40} height={40} className="rounded-lg shadow-sm" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-black italic uppercase text-primary">Instale a AlphaBet League</h4>
+                      <p className="text-xs font-medium text-muted-foreground">Adicione à sua tela inicial para acesso rápido e notificações em tempo real.</p>
+                    </div>
+                  </div>
+                  <Button onClick={handleInstall} className="rounded-2xl h-12 px-8 font-black italic uppercase gap-2 shadow-xl shadow-primary/20 shrink-0 relative z-10 w-full md:w-auto">
+                    <Download className="h-5 w-5" />
+                    Adicionar à Tela Inicial
+                  </Button>
+                </div>
+              )}
+
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
