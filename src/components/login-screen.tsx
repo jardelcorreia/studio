@@ -36,11 +36,24 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Recupera o último jogador selecionado ao carregar
+  useEffect(() => {
+    const savedPlayer = localStorage.getItem("alphabet_last_player");
+    if (savedPlayer && PLAYERS.includes(savedPlayer)) {
+      setPlayerName(savedPlayer);
+    }
+  }, []);
+
   useEffect(() => {
     if (forcePasswordChange) {
       setShowPasswordChange(true);
     }
   }, [forcePasswordChange]);
+
+  const handlePlayerSelect = (val: string) => {
+    setPlayerName(val);
+    localStorage.setItem("alphabet_last_player", val);
+  };
 
   const formatEmail = (name: string) => `${name.toLowerCase().trim().replace(/\s+/g, '')}@alphabet.com`;
 
@@ -264,7 +277,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
               <Label className="text-[9px] sm:text-[10px] font-black uppercase text-muted-foreground ml-1 tracking-widest">Identificação</Label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40 z-10" />
-                <Select onValueChange={setPlayerName} value={playerName}>
+                <Select onValueChange={handlePlayerSelect} value={playerName}>
                   <SelectTrigger className="h-12 sm:h-14 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-black italic uppercase text-xs focus:ring-primary/20">
                     <SelectValue placeholder="Escolha seu Perfil" />
                   </SelectTrigger>
