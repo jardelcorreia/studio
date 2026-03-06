@@ -23,6 +23,11 @@
           "type": "string",
           "description": "URL da foto de perfil armazenada no Firebase Storage."
         },
+        "fcmTokens": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tokens de dispositivos para Push Notifications."
+        },
         "dateCreated": {
           "type": "string",
           "format": "date-time"

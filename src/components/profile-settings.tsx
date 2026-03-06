@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useFirebase } from "@/firebase";
 import { updateProfile } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
@@ -11,8 +11,10 @@ import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Label } from "./ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Camera, Loader2, Save, User as UserIcon, Check, Trash2, Crop as CropIcon, ZoomIn, ZoomOut, AlertTriangle, X } from "lucide-react";
+import { Camera, Loader2, Save, User as UserIcon, Check, Trash2, Crop as CropIcon, ZoomIn, ZoomOut, AlertTriangle, X, Bell, BellOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useFcm } from "@/hooks/use-fcm";
+import { Switch } from "./ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +32,7 @@ import { cn } from "@/lib/utils";
 export function ProfileSettings() {
   const { user, storage, firestore, refreshUser } = useFirebase();
   const { toast } = useToast();
+  const { permission, requestPermission, disableNotifications, isSupported } = useFcm();
   
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [loading, setLoading] = useState(false);
@@ -60,12 +63,9 @@ export function ProfileSettings() {
     const image = await createImage(imageSrc);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-
     if (!ctx) return null;
-
     canvas.width = pixelCrop.width;
     canvas.height = pixelCrop.height;
-
     ctx.drawImage(
       image,
       pixelCrop.x,
@@ -77,7 +77,6 @@ export function ProfileSettings() {
       pixelCrop.width,
       pixelCrop.height
     );
-
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         resolve(blob);
@@ -114,25 +113,19 @@ export function ProfileSettings() {
 
   const handleUploadCroppedImage = async () => {
     if (!imageToCrop || !croppedAreaPixels || !user) return;
-
     setUploading(true);
     const tempImageToCrop = imageToCrop;
     setImageToCrop(null); 
-    
     try {
       const croppedBlob = await getCroppedImg(tempImageToCrop, croppedAreaPixels);
       if (!croppedBlob) throw new Error("Erro ao processar imagem");
-
       const storageRef = ref(storage, `avatars/${user.uid}`);
       const snapshot = await uploadBytes(storageRef, croppedBlob);
       const url = await getDownloadURL(snapshot.ref);
-      
       await updateProfile(user, { photoURL: url });
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { photoUrl: url });
-      
       await refreshUser();
-      
       toast({ title: "Foto Atualizada!", description: "Sua foto de perfil foi salva." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível salvar a imagem." });
@@ -146,23 +139,26 @@ export function ProfileSettings() {
     if (!user) return;
     setUploading(true);
     setShowDeleteConfirm(false);
-    
     try {
       const storageRef = ref(storage, `avatars/${user.uid}`);
-      try {
-        await deleteObject(storageRef);
-      } catch (e) {}
-
+      try { await deleteObject(storageRef); } catch (e) {}
       await updateProfile(user, { photoURL: "" });
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { photoUrl: "" });
-      
       await refreshUser();
       toast({ title: "Foto Removida", description: "Seu avatar voltou ao padrão." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Não foi possível remover a foto." });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const toggleNotifications = (checked: boolean) => {
+    if (checked) {
+      requestPermission();
+    } else {
+      disableNotifications();
     }
   };
 
@@ -181,7 +177,6 @@ export function ProfileSettings() {
             <X className="h-5 w-5" />
           </Button>
         </div>
-
         <div className="relative h-[350px] md:h-[400px] w-full bg-black">
           <Cropper
             image={imageToCrop}
@@ -193,7 +188,6 @@ export function ProfileSettings() {
             onZoomChange={setZoom}
           />
         </div>
-
         <div className="p-6 space-y-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between text-[10px] font-black uppercase text-muted-foreground tracking-widest">
@@ -213,7 +207,6 @@ export function ProfileSettings() {
               <ZoomIn className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
-
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setImageToCrop(null)} className="flex-1 rounded-2xl font-bold uppercase text-xs h-12">
               Cancelar
@@ -240,7 +233,6 @@ export function ProfileSettings() {
                     {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : "AL"}
                   </AvatarFallback>
                 </Avatar>
-                
                 <div className="absolute -right-2 -bottom-2 flex flex-col gap-2">
                   <button 
                     onClick={() => fileInputRef.current?.click()}
@@ -250,7 +242,6 @@ export function ProfileSettings() {
                   >
                     {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
                   </button>
-                  
                   {user?.photoURL && (
                     <button 
                       onClick={() => setShowDeleteConfirm(true)}
@@ -262,14 +253,7 @@ export function ProfileSettings() {
                     </button>
                   )}
                 </div>
-
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  accept="image/*" 
-                  className="hidden" 
-                />
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
               </div>
            </div>
         </div>
@@ -279,7 +263,7 @@ export function ProfileSettings() {
           <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Personalize sua identidade na AlphaBet League</CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6 pt-4">
+        <CardContent className="space-y-8 pt-4">
           <div className="space-y-2">
             <Label htmlFor="display-name" className="text-[10px] font-black uppercase text-muted-foreground ml-1">Nome de Exibição</Label>
             <div className="flex gap-2">
@@ -303,12 +287,45 @@ export function ProfileSettings() {
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-secondary/5 border border-secondary/10 flex items-start gap-4">
-             <div className="h-8 w-8 rounded-lg bg-secondary/20 flex items-center justify-center text-secondary shrink-0">
+          <div className="space-y-4">
+            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Notificações Inteligentes</Label>
+            <div className={cn(
+              "p-4 rounded-3xl border transition-all",
+              permission === 'granted' ? "bg-secondary/5 border-secondary/20" : "bg-muted/30 border-primary/5"
+            )}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "h-10 w-10 rounded-xl flex items-center justify-center shadow-sm",
+                    permission === 'granted' ? "bg-secondary text-white" : "bg-primary/10 text-primary"
+                  )}>
+                    {permission === 'granted' ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
+                  </div>
+                  <div>
+                    <p className="text-xs font-black uppercase italic leading-tight">Alertas da Liga</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Placares, rankings e lembretes push.</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={permission === 'granted'} 
+                  onCheckedChange={toggleNotifications}
+                  disabled={!isSupported}
+                />
+              </div>
+              {!isSupported && (
+                <p className="mt-3 text-[9px] font-bold text-destructive uppercase tracking-tighter flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Este navegador não suporta notificações push.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-4">
+             <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
                 <Check className="h-4 w-4" />
              </div>
              <div>
-                <p className="text-xs font-bold text-secondary uppercase italic">Sincronização em tempo real</p>
+                <p className="text-xs font-bold text-primary uppercase italic">Sincronização em tempo real</p>
                 <p className="text-[10px] text-muted-foreground">Suas alterações serão refletidas em todos os rankings da liga.</p>
              </div>
           </div>
