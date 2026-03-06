@@ -689,10 +689,10 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 py-3 md:py-6 space-y-6 md:space-y-8">
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {activeTab === "jogos" && (
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {isInstallable && (
                   <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
