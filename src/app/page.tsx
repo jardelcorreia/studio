@@ -31,7 +31,10 @@ import {
   EyeOff,
   Medal,
   Download,
-  Smartphone
+  Smartphone,
+  Bell,
+  BellRing,
+  CheckCircle2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -56,6 +59,7 @@ import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, cleanTeamName, determineMatchValidity } from "@/lib/utils";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
+import { useFcm } from "@/hooks/use-fcm";
 
 type TabType = "jogos" | "palpites" | "ranking" | "tabela";
 
@@ -65,6 +69,7 @@ export default function Home() {
   const auth = useAuth();
   const db = useFirestore();
   const { isInstallable, handleInstall } = usePWAInstall();
+  const { permission, requestPermission, isSupported: isFcmSupported } = useFcm();
 
   const [activeTab, setActiveTab] = useState<TabType>("jogos");
   const [darkMode, setDarkMode] = useState(false);
@@ -654,26 +659,61 @@ export default function Home() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {activeTab === "jogos" && (
             <div className="space-y-8">
-              {isInstallable && (
-                <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Smartphone className="h-24 w-24 text-primary" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isInstallable && (
+                  <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <Smartphone className="h-16 w-16 text-primary" />
+                    </div>
+                    <div className="flex items-center gap-4 relative z-10 text-center sm:text-left">
+                      <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                        <Smartphone className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black italic uppercase text-primary leading-tight">Instale o App</h4>
+                        <p className="text-[10px] font-medium text-muted-foreground">Acesso rápido na tela inicial.</p>
+                      </div>
+                    </div>
+                    <Button onClick={handleInstall} size="sm" className="rounded-xl h-10 px-6 font-black italic uppercase gap-2 shadow-lg shadow-primary/20 relative z-10 w-full sm:w-auto">
+                      <Download className="h-4 w-4" />
+                      Instalar
+                    </Button>
                   </div>
-                  <div className="flex items-center gap-4 relative z-10 text-center md:text-left">
-                    <div className="h-16 w-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shrink-0">
-                      <Image src="/icons/android-chrome-512x512.png?v=3" alt="PWA" width={40} height={40} className="rounded-lg shadow-sm" />
+                )}
+
+                {isFcmSupported && permission === 'default' && (
+                  <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <BellRing className="h-16 w-16 text-accent" />
+                    </div>
+                    <div className="flex items-center gap-4 relative z-10 text-center sm:text-left">
+                      <div className="h-12 w-12 bg-accent/10 rounded-xl flex items-center justify-center shrink-0">
+                        <Bell className="h-6 w-6 text-accent" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black italic uppercase text-accent leading-tight">Ative Alertas</h4>
+                        <p className="text-[10px] font-medium text-muted-foreground">Saiba quando sair um gol!</p>
+                      </div>
+                    </div>
+                    <Button onClick={requestPermission} size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl h-10 px-6 font-black italic uppercase gap-2 shadow-lg shadow-accent/20 relative z-10 w-full sm:w-auto">
+                      <BellRing className="h-4 w-4" />
+                      Ativar
+                    </Button>
+                  </div>
+                )}
+                
+                {permission === 'granted' && (
+                  <div className="glass-card border-none rounded-[2rem] p-6 flex items-center gap-4 overflow-hidden relative group bg-secondary/5">
+                    <div className="h-10 w-10 bg-secondary/10 rounded-xl flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
-                      <h4 className="text-lg font-black italic uppercase text-primary">Instale a AlphaBet League</h4>
-                      <p className="text-xs font-medium text-muted-foreground">Adicione à sua tela inicial para acesso rápido e notificações em tempo real.</p>
+                      <h4 className="text-[10px] font-black italic uppercase text-secondary">Notificações Ativas</h4>
+                      <p className="text-[9px] font-medium text-muted-foreground">Você receberá atualizações em tempo real.</p>
                     </div>
                   </div>
-                  <Button onClick={handleInstall} className="rounded-2xl h-12 px-8 font-black italic uppercase gap-2 shadow-xl shadow-primary/20 shrink-0 relative z-10 w-full md:w-auto">
-                    <Download className="h-5 w-5" />
-                    Adicionar à Tela Inicial
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
 
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
