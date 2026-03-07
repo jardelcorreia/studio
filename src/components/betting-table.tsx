@@ -80,7 +80,7 @@ function RoundCardView({
 
           <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-3">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full shadow-xl border border-white/10 -rotate-6 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden transition-colors">
+              <div className="h-9 w-9 rounded-full shadow-xl border border-white/10 -rotate-6 bg-slate-800 flex items-center justify-center overflow-hidden transition-colors">
                 <div className="relative h-6 w-6">
                   <Image 
                     src="/icons/android-chrome-512x512.png?v=3" 
@@ -161,11 +161,11 @@ function RoundCardView({
                             style={{ lineHeight: '30px' }}
                           >
                             <span className="text-[16px] font-black tabular-nums tracking-tighter">
-                              {predictions[u.id]?.[idx]?.homeScore || "0"}
+                              {predictions[u.id]?.[idx]?.homeScore || ""}
                             </span>
                             <span className="text-[12px] font-black opacity-30 mx-1">-</span>
                             <span className="text-[16px] font-black tabular-nums tracking-tighter">
-                              {predictions[u.id]?.[idx]?.awayScore || "0"}
+                              {predictions[u.id]?.[idx]?.awayScore || ""}
                             </span>
                           </div>
                         </div>
