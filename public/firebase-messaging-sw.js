@@ -1,9 +1,8 @@
 
-// Scripts necessários para o Firebase Messaging em segundo plano
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-// IMPORTANTE: Insira sua configuração aqui. Você pode obter isso no config.ts do projeto.
+// Configuração idêntica à do app para o Service Worker
 firebase.initializeApp({
   apiKey: "AIzaSyA6noJTkCcRypfeqi91qa6a2hDEcQ606N0",
   authDomain: "studio-7344387368-26e1e.firebaseapp.com",
@@ -15,15 +14,25 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Listener para notificações em segundo plano
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Mensagem recebida em segundo plano:', payload);
-  
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/icons/android-chrome-192x192.png'
-  };
+// Lida com o clique na notificação
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  const urlToOpen = event.notification.data?.link || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      // Se já houver uma aba aberta, foca nela e navega
+      for (let i = 0; i < clientList.length; i++) {
+        let client = clientList[i];
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus().then(c => c.navigate(urlToOpen));
+        }
+      }
+      // Se não houver, abre uma nova
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
 });

@@ -1,7 +1,9 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { PLAYERS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner, MatchStatus } from "@/lib/types";
 import { RankingSummary } from "@/components/ranking-summary";
@@ -63,8 +65,9 @@ import { useFcm } from "@/hooks/use-fcm";
 
 type TabType = "jogos" | "palpites" | "ranking" | "tabela";
 
-export default function Home() {
+function HomeContent() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
@@ -123,6 +126,14 @@ export default function Home() {
   }, [allUsers, user]);
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
+
+  // Lida com redirecionamento de abas via URL (útil para notificações)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ["jogos", "palpites", "ranking", "tabela"].includes(tabParam)) {
+      setActiveTab(tabParam as TabType);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -474,7 +485,6 @@ export default function Home() {
     
     setMatches(prev => prev.map((m, i) => i === idx ? { ...m, ...updates } : m));
     
-    // Sincroniza com o estado 'results' usado para o cálculo de pontos do RankingSummary
     if ('homeScore' in updates || 'awayScore' in updates) {
       setResults(prev => prev.map((r, i) => i === idx ? {
         ...r,
@@ -522,14 +532,16 @@ export default function Home() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-white dark:bg-slate-800 p-2 flex items-center justify-center -rotate-6 transition-colors">
-              <Image 
-                src="/icons/android-chrome-512x512.png?v=3" 
-                alt="AlphaBet Logo" 
-                fill 
-                className="object-contain"
-                priority
-              />
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-slate-800 dark:bg-slate-800 p-2 flex items-center justify-center -rotate-6 transition-colors">
+              <div className="relative h-6 w-6">
+                <Image 
+                  src="/icons/android-chrome-512x512.png?v=3" 
+                  alt="AlphaBet Logo" 
+                  fill 
+                  className="object-contain"
+                  priority
+                />
+              </div>
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg font-black italic uppercase tracking-tighter text-primary leading-none">AlphaBet</h1>
@@ -695,10 +707,10 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <main className="max-w-7xl mx-auto px-4 py-3 md:py-6 space-y-6 md:space-y-8">
+      <main className="max-w-7xl mx-auto px-4 py-2 md:py-6 space-y-4 md:space-y-8">
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {activeTab === "jogos" && (
-            <div className="space-y-6 md:space-y-8">
+            <div className="space-y-4 md:space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {isInstallable && (
                   <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
@@ -892,5 +904,13 @@ export default function Home() {
         </div>
       </nav>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <HomeContent />
+    </React.Suspense>
   );
 }
