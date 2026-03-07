@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -176,16 +175,22 @@ export function MatchCalendar({
                             <Input
                               type="number"
                               value={match.homeScore ?? ""}
-                              onChange={(e) => updateMatchManual(idx, { homeScore: parseInt(e.target.value) || 0 })}
-                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-background"
+                              onChange={(e) => {
+                                const val = e.target.value === "" ? undefined : parseInt(e.target.value);
+                                updateMatchManual(idx, { homeScore: val });
+                              }}
+                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-background dark:bg-slate-900 focus-visible:ring-primary/20"
                               placeholder="-"
                             />
                             <span className="font-black text-primary/30 italic text-[10px]">X</span>
                             <Input
                               type="number"
                               value={match.awayScore ?? ""}
-                              onChange={(e) => updateMatchManual(idx, { awayScore: parseInt(e.target.value) || 0 })}
-                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-background"
+                              onChange={(e) => {
+                                const val = e.target.value === "" ? undefined : parseInt(e.target.value);
+                                updateMatchManual(idx, { awayScore: val });
+                              }}
+                              className="w-8 h-8 text-center rounded-lg p-0 font-black text-sm border-primary/20 bg-background dark:bg-slate-900 focus-visible:ring-primary/20"
                               placeholder="-"
                             />
                          </div>
@@ -243,7 +248,7 @@ export function MatchCalendar({
                    <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3 text-primary/40" />
                       <span className="text-[10px] font-black italic text-primary/60">
-                        {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isCancelled ? "PARTIDA ADIADA" : "AGUARDANDO PALPITE"}
+                        {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isLive ? "AO VIVO" : isCancelled ? "PARTIDA ADIADA" : "AGUARDANDO PALPITE"}
                       </span>
                    </div>
                    {isOutOfWindow && (

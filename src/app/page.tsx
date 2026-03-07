@@ -471,13 +471,19 @@ export default function Home() {
 
   const updateMatchManual = (idx: number, updates: Partial<Match>) => {
     if (!isAdminUser) return;
+    
     setMatches(prev => prev.map((m, i) => i === idx ? { ...m, ...updates } : m));
     
-    if (updates.homeScore !== undefined || updates.awayScore !== undefined) {
+    // Sincroniza com o estado 'results' usado para o cálculo de pontos do RankingSummary
+    if ('homeScore' in updates || 'awayScore' in updates) {
       setResults(prev => prev.map((r, i) => i === idx ? {
         ...r,
-        homeScore: updates.homeScore !== undefined ? updates.homeScore.toString() : r.homeScore,
-        awayScore: updates.awayScore !== undefined ? updates.awayScore.toString() : r.awayScore,
+        homeScore: 'homeScore' in updates 
+          ? (updates.homeScore === undefined || Number.isNaN(updates.homeScore) ? "" : updates.homeScore.toString()) 
+          : r.homeScore,
+        awayScore: 'awayScore' in updates 
+          ? (updates.awayScore === undefined || Number.isNaN(updates.awayScore) ? "" : updates.awayScore.toString()) 
+          : r.awayScore,
       } : r));
     }
   };
