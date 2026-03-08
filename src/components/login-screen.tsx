@@ -176,7 +176,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         <Card className="w-full max-w-md glass-card border-none rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl relative z-10 animate-in fade-in zoom-in duration-500">
           <CardHeader className="space-y-4 text-center pb-6 sm:pb-8 pt-6 sm:pt-8">
             <div className="flex justify-center">
-              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl flex items-center justify-center -rotate-6 shadow-md bg-white dark:bg-slate-900 p-4 overflow-hidden relative border border-primary/5 transition-colors">
+              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full flex items-center justify-center -rotate-6 shadow-md bg-white dark:bg-slate-900 p-4 overflow-hidden relative border border-primary/5 transition-colors">
                 <Image 
                   src="/icons/android-chrome-512x512.png?v=3" 
                   alt="AlphaBet Logo" 
@@ -255,8 +255,8 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         <CardHeader className="space-y-4 sm:space-y-6 text-center pt-8 sm:pt-10 pb-4 sm:pb-8">
           <div className="flex justify-center">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-[1.5rem] sm:rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-[1.5rem] sm:rounded-[1.8rem] shadow-md -rotate-6 bg-white dark:bg-slate-900 flex items-center justify-center transition-all group-hover:rotate-0 duration-500 p-4 border border-primary/5">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-full shadow-md -rotate-6 bg-white dark:bg-slate-900 flex items-center justify-center transition-all group-hover:rotate-0 duration-500 p-4 border border-primary/5">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <Image 
                     src="/icons/android-chrome-512x512.png?v=3" 
