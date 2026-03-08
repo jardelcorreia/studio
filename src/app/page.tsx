@@ -532,7 +532,7 @@ function HomeContent() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-slate-800 dark:bg-slate-800 p-2 flex items-center justify-center -rotate-6 transition-colors">
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-transparent dark:bg-slate-800 p-2 flex items-center justify-center -rotate-6 transition-colors">
               <div className="relative h-6 w-6">
                 <Image 
                   src="/icons/android-chrome-512x512.png?v=3" 
@@ -707,7 +707,7 @@ function HomeContent() {
         </DialogContent>
       </Dialog>
 
-      <main className="max-w-7xl mx-auto px-4 py-2 md:py-6 space-y-4 md:space-y-8">
+      <main className="max-w-7xl mx-auto px-4 pt-1 pb-24 md:pb-8 space-y-3 md:space-y-6">
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {activeTab === "jogos" && (
             <div className="space-y-4 md:space-y-8">
@@ -821,7 +821,7 @@ function HomeContent() {
                 results={results}
                 placaresOcultos={isEffectivelyHidden}
                 currentPlayerId={user?.uid || ""}
-                isAdmin={isAdminUser}
+                isAdmin={false}
                 allUsers={allUsers || []}
               />
             </div>
