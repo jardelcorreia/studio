@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -80,12 +81,13 @@ function RoundCardView({
 
           <div className="relative z-10 flex justify-between items-center mb-2 border-b border-white/10 pb-3">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full shadow-xl border border-white/10 -rotate-6 bg-slate-800 flex items-center justify-center overflow-hidden transition-colors">
-                <div className="relative h-6 w-6">
+              <div className="h-9 w-9 rounded-full shadow-xl border border-white/10 -rotate-6 bg-slate-900 flex items-center justify-center overflow-hidden transition-colors">
+                <div className="relative h-6 w-6 flex items-center justify-center">
                   <Image 
                     src="/icons/android-chrome-512x512.png?v=3" 
                     alt="AlphaBet Logo" 
-                    fill 
+                    width={24}
+                    height={24}
                     className="object-contain"
                   />
                 </div>

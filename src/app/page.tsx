@@ -532,7 +532,7 @@ function HomeContent() {
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-transparent dark:bg-slate-800 p-2 flex items-center justify-center -rotate-6 transition-colors">
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-transparent dark:bg-slate-900 p-2 flex items-center justify-center -rotate-6 transition-colors">
               <div className="relative h-6 w-6">
                 <Image 
                   src="/icons/android-chrome-512x512.png?v=3" 
