@@ -7,16 +7,16 @@ const admin = require("firebase-admin");
 if (admin.apps.length === 0) {
     admin.initializeApp();
 }
+// URL base do App (substituir pela URL real de produção se necessário)
+const APP_URL = "https://alphabet-league.web.app";
 /**
  * Notifica os usuários quando os palpites são revelados.
- * Ocorre quando isScoresHidden muda de true para false no documento da rodada.
  */
 exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
     const before = event.data?.before.data();
     const after = event.data?.after.data();
     if (!before || !after)
         return;
-    // Verifica se isScoresHidden mudou de true para false
     if (before.isScoresHidden === true && after.isScoresHidden === false) {
         const usersSnapshot = await admin.firestore().collection("users").get();
         const tokens = [];
@@ -34,10 +34,17 @@ exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", 
                 body: `A rodada começou! Veja agora o que seus amigos jogaram na ${after.name}.`,
             },
             tokens: tokens,
+            webpush: {
+                fcmOptions: {
+                    link: `${APP_URL}/?tab=palpites`,
+                },
+            },
+            data: {
+                link: `${APP_URL}/?tab=palpites`,
+            }
         };
         try {
-            const response = await admin.messaging().sendEachForMulticast(message);
-            console.log(`${response.successCount} notificações enviadas para revelação de placar.`);
+            await admin.messaging().sendEachForMulticast(message);
         }
         catch (error) {
             console.error("Erro ao enviar notificações de revelação:", error);
@@ -45,8 +52,7 @@ exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", 
     }
 });
 /**
- * Notifica um usuário específico se ele acertou um placar em cheio (3 pontos).
- * Disparado quando o Admin atualiza o status de uma partida para 'finished'.
+ * Notifica um usuário específico se ele acertou um placar em cheio.
  */
 exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
     const after = event.data?.after.data();
@@ -54,19 +60,15 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
         return;
     const roundId = event.params.roundId;
     const matches = after.matches;
-    // Busca todos os palpites desta rodada para verificar acertos
     const betsSnapshot = await admin.firestore().collection(`rounds/${roundId}/bets`).get();
     for (const betDoc of betsSnapshot.docs) {
         const bet = betDoc.data();
         const userId = bet.userId;
-        // Procura a partida correspondente no array de partidas da rodada
         const match = matches.find((m) => m.id === bet.matchId);
-        // Se a partida foi finalizada agora e o palpite foi um acerto exato
         if (match && match.status === 'finished') {
             const isExact = bet.homeScorePrediction === match.homeScore &&
                 bet.awayScorePrediction === match.awayScore;
             if (isExact) {
-                // Busca o documento do usuário para obter seus tokens FCM
                 const userDoc = await admin.firestore().collection("users").doc(userId).get();
                 const userData = userDoc.data();
                 if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
@@ -76,10 +78,17 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
                             body: `Você cravou o placar de um jogo na ${after.name}! +3 pontos garantidos.`,
                         },
                         tokens: userData.fcmTokens,
+                        webpush: {
+                            fcmOptions: {
+                                link: `${APP_URL}/?tab=jogos`,
+                            },
+                        },
+                        data: {
+                            link: `${APP_URL}/?tab=jogos`,
+                        }
                     };
                     try {
                         await admin.messaging().sendEachForMulticast(message);
-                        console.log(`Notificação de acerto exato enviada para o usuário ${userId}.`);
                     }
                     catch (error) {
                         console.error(`Erro ao notificar acerto exato para ${userId}:`, error);
@@ -90,11 +99,10 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
     }
 });
 /**
- * Função Agendada (Cron Job): Lembrete de Palpites Pendentes.
- * Executa a cada hora para verificar se alguém esqueceu de "quilar" (palpitar).
+ * Lembrete de Palpites Pendentes.
+ * Roda a cada 60 minutos, mas só notifica nas 24h que antecedem o primeiro jogo.
  */
 exports.notifyRoundStart = (0, scheduler_1.onSchedule)("every 60 minutes", async (event) => {
-    // 1. Descobrir qual a rodada atual (baseado no que o Admin configurou por último)
     const roundsSnapshot = await admin.firestore()
         .collection("rounds")
         .orderBy("roundNumber", "desc")
@@ -105,33 +113,53 @@ exports.notifyRoundStart = (0, scheduler_1.onSchedule)("every 60 minutes", async
     const currentRound = roundsSnapshot.docs[0];
     const roundData = currentRound.data();
     const roundId = currentRound.id;
-    // Se a rodada já teve os palpites revelados, não precisa de lembrete
+    // Se a rodada já começou (palpites revelados), não precisa de lembrete
     if (roundData.isScoresHidden === false)
         return;
-    // 2. Buscar todos os usuários
+    // Lógica Inteligente de Tempo:
+    // Só envia lembrete se estivermos nas 24h antes do primeiro jogo da rodada
+    const matches = roundData.matches || [];
+    if (matches.length > 0) {
+        const firstMatchTime = matches.reduce((earliest, m) => {
+            const d = new Date(m.utcDate).getTime();
+            return (d > 0 && d < earliest) ? d : earliest;
+        }, Infinity);
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        // Se ainda falta mais de 24h para o primeiro jogo, ou o jogo já começou, encerra silenciosamente
+        if (now < (firstMatchTime - twentyFourHours) || now >= firstMatchTime) {
+            return;
+        }
+    }
     const usersSnapshot = await admin.firestore().collection("users").get();
     for (const userDoc of usersSnapshot.docs) {
         const userData = userDoc.data();
         const userId = userDoc.id;
         if (!userData.fcmTokens || userData.fcmTokens.length === 0)
             continue;
-        // 3. Verificar se o usuário já fez os 10 palpites
         const userBetsSnapshot = await admin.firestore()
             .collection(`rounds/${roundId}/bets`)
             .where("userId", "==", userId)
             .get();
-        // Se faltar qualquer palpite (menos de 10)
+        // Se faltar algum dos 10 palpites
         if (userBetsSnapshot.size < 10) {
             const message = {
                 notification: {
                     title: "⚠️ PALPITES PENDENTES!",
-                    body: `Ei ${userData.username || 'campeão'}, você ainda não completou seus 10 palpites para a ${roundData.name}. Corre que o tempo está acabando!`,
+                    body: `Ei ${userData.username || 'campeão'}, você ainda não completou seus 10 palpites para a ${roundData.name}. Corre que o primeiro jogo já vai começar!`,
                 },
                 tokens: userData.fcmTokens,
+                webpush: {
+                    fcmOptions: {
+                        link: `${APP_URL}/?tab=jogos`,
+                    },
+                },
+                data: {
+                    link: `${APP_URL}/?tab=jogos`,
+                }
             };
             try {
                 await admin.messaging().sendEachForMulticast(message);
-                console.log(`Lembrete enviado para ${userId} (Palpites: ${userBetsSnapshot.size}/10)`);
             }
             catch (error) {
                 console.error(`Erro ao enviar lembrete para ${userId}:`, error);

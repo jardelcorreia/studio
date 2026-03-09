@@ -19,9 +19,13 @@ O app utiliza **Firebase Cloud Messaging (FCM)** e **Cloud Functions** para auto
 - **⚠️ Lembrete de Quila**: Job agendado que avisa quem ainda não completou os 10 palpites. **Nota: Os alertas começam apenas 24 horas antes do primeiro jogo da rodada.**
 - **🔗 Deep Linking**: Cliques nas notificações abrem o app diretamente na aba correspondente.
 
-## 🤖 IA e Design
+## 🤖 Tecnologias e Design
 
-O app utiliza **Genkit** com modelos Gemini para análise de performance e sugestões de apostas.
+- **Framework**: NextJS 15 (App Router)
+- **UI/UX**: ShadCN UI + Tailwind CSS
+- **Ícones**: Lucide React
+- **Backend**: Firebase (Auth, Firestore, Storage, Functions, Messaging)
+- **IA**: Genkit com modelos Gemini para análise de performance e sugestões de apostas.
 
 ---
 
