@@ -29,6 +29,15 @@ export function cleanTeamName(name: string): string {
 }
 
 /**
+ * Retorna a abreviação de 3 letras de um time.
+ */
+export function getTeamAbrev(name: string): string {
+  const cleaned = cleanTeamName(name);
+  const team = Object.values(TEAMS).find((t) => t.nome === cleaned);
+  return team ? team.abrev : cleaned.substring(0, 3).toUpperCase();
+}
+
+/**
  * Implementa a Regra da Janela de Validade (3 dias antes/depois da data principal).
  */
 export function determineMatchValidity(matches: Match[]): Match[] {

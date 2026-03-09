@@ -10,9 +10,7 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Match, MatchStatus, ChampionshipWinner } from "@/lib/types";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday } from "@/lib/football-api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -28,17 +26,15 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
-  AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Swords,
   CheckCircle2,
   Settings2,
   DollarSign,
   LayoutGrid
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cleanTeamName, cn } from "@/lib/utils";
+import { getTeamAbrev, cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminPage() {
@@ -210,188 +206,178 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background pb-12">
       <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Link href="/">
-              <Button variant="ghost" size="icon" className="rounded-xl">
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8">
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <h1 className="text-sm font-black italic uppercase text-primary">Gestão AlphaBet</h1>
+              <Shield className="h-4 w-4 text-primary" />
+              <h1 className="text-[10px] font-black italic uppercase text-primary tracking-widest">Painel ADM</h1>
             </div>
           </div>
           <Button 
             onClick={handleSaveRound} 
             disabled={saving || loading}
             size="sm"
-            className="rounded-xl h-9 px-6 font-black italic uppercase gap-2 shadow-lg shadow-primary/20"
+            className="rounded-lg h-8 px-4 font-black italic uppercase gap-2 shadow-lg shadow-primary/20 text-[9px]"
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
             Salvar
           </Button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 py-4 space-y-4">
         <Tabs defaultValue="rodada" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/50 rounded-2xl p-1 mb-6">
-            <TabsTrigger value="rodada" className="rounded-xl font-black italic uppercase text-[9px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <LayoutGrid className="h-3.5 w-3.5" />
+          <TabsList className="grid w-full grid-cols-2 h-10 bg-muted/50 rounded-xl p-1 mb-4">
+            <TabsTrigger value="rodada" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
+              <LayoutGrid className="h-3 w-3" />
               Jogos
             </TabsTrigger>
-            <TabsTrigger value="financeiro" className="rounded-xl font-black italic uppercase text-[9px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <DollarSign className="h-3.5 w-3.5" />
+            <TabsTrigger value="financeiro" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
+              <DollarSign className="h-3 w-3" />
               Liga
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="rodada" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <section className="flex items-center justify-between bg-primary/5 p-4 rounded-2xl border border-primary/10">
-              <div className="flex items-center gap-3">
+          <TabsContent value="rodada" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <section className="flex items-center justify-between bg-primary/5 p-3 rounded-xl border border-primary/10">
+              <div className="flex items-center gap-2">
                 <Button 
                   variant="outline" 
                   size="icon" 
                   onClick={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
-                  className="h-8 w-8 rounded-lg border-primary/20"
+                  className="h-7 w-7 rounded-lg border-primary/10"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <div className="text-center min-w-[80px]">
-                  <h2 className="text-lg font-black italic uppercase text-primary leading-tight">R#{currentRound}</h2>
+                <div className="text-center min-w-[50px]">
+                  <h2 className="text-sm font-black italic uppercase text-primary leading-tight">#{currentRound}</h2>
                 </div>
                 <Button 
                   variant="outline" 
                   size="icon" 
                   onClick={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
-                  className="h-8 w-8 rounded-lg border-primary/20"
+                  className="h-7 w-7 rounded-lg border-primary/10"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
 
-              <div className="flex items-center gap-2">
-                 <Button
-                   variant={placaresOcultos ? "destructive" : "secondary"}
-                   onClick={toggleVisibility}
-                   size="sm"
-                   className="rounded-xl h-8 px-4 gap-2 font-black italic uppercase text-[9px] shadow-sm"
-                 >
-                   {placaresOcultos ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                   {placaresOcultos ? "Ocultos" : "Visíveis"}
-                 </Button>
-              </div>
+              <Button
+                variant={placaresOcultos ? "destructive" : "secondary"}
+                onClick={toggleVisibility}
+                size="sm"
+                className="rounded-lg h-7 px-3 gap-2 font-black italic uppercase text-[8px] shadow-sm"
+              >
+                {placaresOcultos ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                {placaresOcultos ? "Ocultos" : "Visíveis"}
+              </Button>
             </section>
 
-            <section className="space-y-2">
-              <div className="grid grid-cols-1 gap-2">
-                {matches.map((match, idx) => (
-                  <Card key={match.id} className="glass-card border-none rounded-xl overflow-hidden group">
-                    <CardContent className="p-3 flex items-center justify-between gap-4">
-                      {/* Times e Placar */}
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex flex-col items-end text-right flex-1 min-w-0">
-                          <span className="text-[10px] font-black italic uppercase text-primary truncate leading-none">
-                            {cleanTeamName(match.homeTeam)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/30 rounded-lg border border-primary/5 shrink-0">
-                          <input
-                            type="number"
-                            value={match.homeScore ?? ""}
-                            onChange={(e) => updateMatch(idx, { homeScore: e.target.value === "" ? undefined : parseInt(e.target.value) })}
-                            className="w-7 h-7 text-center rounded-md font-black text-sm bg-background border border-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                            placeholder="-"
-                          />
-                          <span className="font-black text-primary/20 italic text-[10px]">X</span>
-                          <input
-                            type="number"
-                            value={match.awayScore ?? ""}
-                            onChange={(e) => updateMatch(idx, { awayScore: e.target.value === "" ? undefined : parseInt(e.target.value) })}
-                            className="w-7 h-7 text-center rounded-md font-black text-sm bg-background border border-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                            placeholder="-"
-                          />
-                        </div>
-
-                        <div className="flex flex-col items-start text-left flex-1 min-w-0">
-                          <span className="text-[10px] font-black italic uppercase text-primary truncate leading-none">
-                            {cleanTeamName(match.awayTeam)}
-                          </span>
-                        </div>
+            <section className="space-y-1">
+              {matches.map((match, idx) => (
+                <Card key={match.id} className="glass-card border-none rounded-xl overflow-hidden group">
+                  <CardContent className="p-2 flex items-center justify-between gap-3">
+                    {/* Times Abrev e Placar Compacto */}
+                    <div className="flex items-center gap-2 flex-1 justify-center">
+                      <span className="text-[11px] font-black italic uppercase text-primary w-8 text-right">
+                        {getTeamAbrev(match.homeTeam)}
+                      </span>
+                      
+                      <div className="flex items-center gap-1 px-2 py-1 bg-muted/20 rounded-lg border border-primary/5">
+                        <input
+                          type="number"
+                          value={match.homeScore ?? ""}
+                          onChange={(e) => updateMatch(idx, { homeScore: e.target.value === "" ? undefined : parseInt(e.target.value) })}
+                          className="w-6 h-6 text-center rounded font-black text-xs bg-background border border-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                          placeholder="-"
+                        />
+                        <span className="font-black text-primary/20 italic text-[9px]">X</span>
+                        <input
+                          type="number"
+                          value={match.awayScore ?? ""}
+                          onChange={(e) => updateMatch(idx, { awayScore: e.target.value === "" ? undefined : parseInt(e.target.value) })}
+                          className="w-6 h-6 text-center rounded font-black text-xs bg-background border border-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                          placeholder="-"
+                        />
                       </div>
 
-                      {/* Status */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Select
-                          value={match.status}
-                          onValueChange={(val: MatchStatus) => updateMatch(idx, { status: val })}
-                        >
-                          <SelectTrigger className="h-8 w-24 rounded-lg font-black italic uppercase text-[8px] border-primary/10 bg-background">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl">
-                            <SelectItem value="upcoming" className="text-[9px] font-black italic uppercase">Agendado</SelectItem>
-                            <SelectItem value="live" className="text-[9px] font-black italic uppercase text-destructive">Ao Vivo</SelectItem>
-                            <SelectItem value="finished" className="text-[9px] font-black italic uppercase text-secondary">Fim</SelectItem>
-                            <SelectItem value="cancelled" className="text-[9px] font-black italic uppercase text-muted-foreground">Adiado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        
-                        {match.status === 'finished' && (
-                          <CheckCircle2 className="h-4 w-4 text-secondary shrink-0" />
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <span className="text-[11px] font-black italic uppercase text-primary w-8 text-left">
+                        {getTeamAbrev(match.awayTeam)}
+                      </span>
+                    </div>
+
+                    {/* Status Reduzido */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Select
+                        value={match.status}
+                        onValueChange={(val: MatchStatus) => updateMatch(idx, { status: val })}
+                      >
+                        <SelectTrigger className="h-7 w-20 rounded-lg font-black italic uppercase text-[7px] border-primary/5 bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="upcoming" className="text-[8px] font-black italic uppercase">Agendado</SelectItem>
+                          <SelectItem value="live" className="text-[8px] font-black italic uppercase text-destructive">Ao Vivo</SelectItem>
+                          <SelectItem value="finished" className="text-[8px] font-black italic uppercase text-secondary">Fim</SelectItem>
+                          <SelectItem value="cancelled" className="text-[8px] font-black italic uppercase text-muted-foreground">Adiado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {match.status === 'finished' && (
+                        <CheckCircle2 className="h-3 w-3 text-secondary shrink-0" />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </section>
           </TabsContent>
 
-          <TabsContent value="financeiro" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <TabsContent value="financeiro" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Card className="glass-card border-none rounded-2xl overflow-hidden">
-              <CardHeader className="bg-primary/5 p-4 flex flex-row items-center justify-between space-y-0">
+              <CardHeader className="bg-primary/5 p-3 flex flex-row items-center justify-between space-y-0">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                    <Settings2 className="h-4 w-4" />
-                  </div>
-                  <CardTitle className="text-sm font-black italic uppercase text-primary">Valores da Liga</CardTitle>
+                  <Settings2 className="h-3.5 w-3.5 text-primary" />
+                  <CardTitle className="text-[9px] font-black italic uppercase text-primary">Configurações Liga</CardTitle>
                 </div>
                 <Button 
                   onClick={handleSaveLeagueSettings} 
                   disabled={saving}
                   size="sm"
-                  className="rounded-lg h-8 px-4 font-black italic uppercase gap-2 text-[9px]"
+                  className="rounded-lg h-7 px-3 font-black italic uppercase gap-2 text-[8px]"
                 >
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
                   Salvar
                 </Button>
               </CardHeader>
-              <CardContent className="p-4 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">1º Turno (R1-19)</label>
-                    <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-xl border border-primary/10">
-                      <span className="text-xs font-black text-primary">R$</span>
+              <CardContent className="p-4 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Turno 1</label>
+                    <div className="flex items-center gap-1.5 bg-muted/20 p-2 rounded-xl border border-primary/5">
+                      <span className="text-[10px] font-black text-primary/40">R$</span>
                       <input 
                         type="number" 
                         value={turn1Value} 
                         onChange={(e) => setTurn1Value(parseFloat(e.target.value) || 0)}
-                        className="border-none bg-transparent font-black text-lg focus:outline-none w-full"
+                        className="border-none bg-transparent font-black text-base focus:outline-none w-full"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">2º Turno (R20-38)</label>
-                    <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-xl border border-primary/10">
-                      <span className="text-xs font-black text-primary">R$</span>
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Turno 2</label>
+                    <div className="flex items-center gap-1.5 bg-muted/20 p-2 rounded-xl border border-primary/5">
+                      <span className="text-[10px] font-black text-primary/40">R$</span>
                       <input 
                         type="number" 
                         value={turn2Value} 
                         onChange={(e) => setTurn2Value(parseFloat(e.target.value) || 0)}
-                        className="border-none bg-transparent font-black text-lg focus:outline-none w-full"
+                        className="border-none bg-transparent font-black text-base focus:outline-none w-full"
                       />
                     </div>
                   </div>
@@ -400,25 +386,24 @@ export default function AdminPage() {
                 <Button 
                   onClick={applyTurnValues}
                   variant="outline"
-                  className="w-full rounded-xl h-10 font-black italic uppercase gap-2 text-[9px] border-primary/20 text-primary hover:bg-primary/5"
+                  className="w-full rounded-xl h-8 font-black italic uppercase gap-2 text-[8px] border-primary/10 text-primary hover:bg-primary/5"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Atualizar Todas as 38 Rodadas
+                  <RefreshCw className="h-3 w-3" />
+                  Atualizar 38 Rodadas
                 </Button>
 
-                <div className="pt-4 border-t border-primary/5">
-                  <h4 className="text-[9px] font-black uppercase text-muted-foreground mb-3 tracking-widest">Individual</h4>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                <div className="pt-3 border-t border-primary/5">
+                  <div className="grid grid-cols-5 sm:grid-cols-8 gap-1.5">
                     {roundWinners.map((rw, idx) => (
-                      <div key={idx} className="bg-muted/30 p-2 rounded-lg border border-primary/5 flex flex-col items-center gap-0.5">
-                        <span className="text-[7px] font-black uppercase text-muted-foreground/60">R{rw.round}</span>
+                      <div key={idx} className="bg-muted/30 p-1.5 rounded-lg border border-primary/5 flex flex-col items-center gap-0.5">
+                        <span className="text-[6px] font-black uppercase text-muted-foreground/40">R{rw.round}</span>
                         <div className="flex items-center gap-0.5">
-                          <span className="text-[7px] font-bold text-primary">R$</span>
+                          <span className="text-[6px] font-bold text-primary/40">R$</span>
                           <input 
                             type="number" 
                             value={rw.value} 
                             onChange={(e) => updateRoundWinnerValue(idx, parseFloat(e.target.value) || 0)}
-                            className="w-8 bg-transparent text-center font-black text-[10px] focus:outline-none"
+                            className="w-6 bg-transparent text-center font-black text-[9px] focus:outline-none"
                           />
                         </div>
                       </div>
