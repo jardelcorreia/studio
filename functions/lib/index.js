@@ -1,4 +1,3 @@
-
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.notifyRoundStart = exports.onMatchScoreUpdate = exports.onRevealScores = void 0;
@@ -32,7 +31,7 @@ exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", 
     if (!before || !after)
         return;
     if (before.isScoresHidden === true && after.isScoresHidden === false) {
-        // Respeita o horário de silêncio
+        // Respeita o horário de silêncio para revelação de placares
         if (isQuietHours()) {
             console.log("onRevealScores: Notificação cancelada (horário de silêncio).");
             return;
@@ -72,7 +71,7 @@ exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", 
 });
 /**
  * Notifica um usuário específico se ele acertou um placar em cheio.
- * NOTA: Esta notificação IGNORA o horário de silêncio.
+ * NOTA: Esta notificação IGNORA o horário de silêncio pois jogos podem acabar tarde.
  */
 exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
     const after = event.data?.after.data();
@@ -123,7 +122,7 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
  * Roda a cada 60 minutos, mas só notifica nas 24h que antecedem o primeiro jogo.
  */
 exports.notifyRoundStart = (0, scheduler_1.onSchedule)("every 60 minutes", async (event) => {
-    // Respeita o horário de silêncio
+    // Respeita o horário de silêncio para lembretes de quila
     if (isQuietHours()) {
         console.log("notifyRoundStart: Job cancelado (horário de silêncio).");
         return;
@@ -192,3 +191,4 @@ exports.notifyRoundStart = (0, scheduler_1.onSchedule)("every 60 minutes", async
         }
     }
 });
+//# sourceMappingURL=index.js.map

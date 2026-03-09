@@ -16,6 +16,7 @@ import { Shield, Loader2, Trophy, AlertCircle, KeyRound, CheckCircle2, User, Loc
 import { useToast } from "@/hooks/use-toast";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn } from "@/lib/utils";
+import placeholderData from "@/app/lib/placeholder-images.json";
 
 interface LoginScreenProps {
   onPasswordChangeRequired?: () => void;
@@ -38,7 +39,8 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isReady, setIsReady] = useState(false);
 
-  // Recupera o último jogador selecionado ao carregar
+  const stadiumImage = placeholderData.placeholderImages.find(img => img.id === "soccer-stadium");
+
   useEffect(() => {
     const savedPlayer = localStorage.getItem("alphabet_last_player");
     if (savedPlayer && PLAYERS.includes(savedPlayer)) {
@@ -167,11 +169,28 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
     }
   };
 
+  const BackgroundImage = () => (
+    <div className="absolute inset-0 z-0">
+      {stadiumImage && (
+        <>
+          <Image
+            src={stadiumImage.imageUrl}
+            alt={stadiumImage.description}
+            fill
+            className="object-cover"
+            priority
+            data-ai-hint={stadiumImage.imageHint}
+          />
+          <div className="absolute inset-0 bg-[#020617]/80 backdrop-blur-[2px]" />
+        </>
+      )}
+    </div>
+  );
+
   if (showPasswordChange) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#020617] p-4 relative overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[100px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 blur-[100px] rounded-full" />
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#020617]">
+        <BackgroundImage />
         
         <Card className="w-full max-w-md glass-card border-none rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl relative z-10 animate-in fade-in zoom-in duration-500">
           <CardHeader className="space-y-4 text-center pb-6 sm:pb-8 pt-6 sm:pt-8">
@@ -245,11 +264,8 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#020617] p-4 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/30 blur-[120px] rounded-full animate-float" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/20 blur-[120px] rounded-full animate-float" style={{ animationDelay: '1s' }} />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#020617]">
+      <BackgroundImage />
 
       <Card className="w-full max-w-md glass-card border-none rounded-[2rem] sm:rounded-[3rem] shadow-2xl relative z-10 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
         <CardHeader className="space-y-4 sm:space-y-6 text-center pt-8 sm:pt-10 pb-4 sm:pb-8">
