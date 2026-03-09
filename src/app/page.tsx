@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PLAYERS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner, MatchStatus } from "@/lib/types";
@@ -36,7 +37,8 @@ import {
   Smartphone,
   Bell,
   BellRing,
-  CheckCircle2
+  CheckCircle2,
+  Settings
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -89,7 +91,6 @@ function HomeContent() {
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [showAdminBar, setShowAdminBar] = useState(false);
   const [now, setNow] = useState(new Date());
   const [showNotificationSuccess, setShowNotificationSuccess] = useState(false);
 
@@ -127,7 +128,6 @@ function HomeContent() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Lida com redirecionamento de abas via URL (útil para notificações)
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam && ["jogos", "palpites", "ranking", "tabela"].includes(tabParam)) {
@@ -310,21 +310,6 @@ function HomeContent() {
   }, [roundData, currentRound]);
 
   useEffect(() => {
-    if (!isAdminUser || !placaresOcultos || !isTimePassed || !roundId || loadingMatches) return;
-    const roundRef = doc(db, "rounds", roundId);
-    setDocumentNonBlocking(roundRef, {
-      id: roundId,
-      isScoresHidden: false,
-      dateUpdated: serverTimestamp(),
-    }, { merge: true });
-    setPlacaresOcultos(false);
-    toast({
-      title: "Resultados Liberados",
-      description: "O horário dos jogos chegou! Palpites revelados automaticamente."
-    });
-  }, [isAdminUser, placaresOcultos, isTimePassed, roundId, db, toast, loadingMatches]);
-
-  useEffect(() => {
     if (currentRound === null) return;
     async function loadMatches() {
       setLoadingMatches(true);
@@ -409,53 +394,10 @@ function HomeContent() {
     });
   }, [scores, currentRound, isRoundFinished]);
 
-  const handleTogglePlacaresOcultos = () => {
-    if (!isAdminUser || !roundId) return;
-    const newValue = !placaresOcultos;
-    setPlacaresOcultos(newValue);
-    const roundRef = doc(db, "rounds", roundId);
-    setDocumentNonBlocking(roundRef, {
-      id: roundId,
-      isScoresHidden: newValue,
-      dateUpdated: serverTimestamp(),
-    }, { merge: true });
-    toast({
-      title: newValue ? "Palpites Ocultos" : "Palpites Liberados",
-      description: newValue ? "Os jogadores não verão os palpites dos outros." : "Todos os palpites estão visíveis!"
-    });
-  };
-
   const handleSaveAll = async () => {
     if (!currentRound || !user || !roundId) return;
     setIsSaving(true);
     try {
-      if (isAdminUser) {
-        const roundRef = doc(db, "rounds", roundId);
-        const matchOverrides = matches.map(m => ({
-          id: m.id,
-          homeScore: m.homeScore,
-          awayScore: m.awayScore,
-          status: m.status,
-          utcDate: m.utcDate // Persiste a data para funções de segundo plano
-        }));
-
-        setDocumentNonBlocking(roundRef, {
-          id: roundId,
-          roundNumber: currentRound,
-          name: roundName,
-          isScoresHidden: placaresOcultos,
-          matches: matchOverrides,
-          dateUpdated: serverTimestamp(),
-          dateCreated: roundData?.dateCreated || serverTimestamp(),
-        }, { merge: true });
-        
-        const settingsRef = doc(db, "app_settings", "championship") ;
-        setDocumentNonBlocking(settingsRef, {
-          history: roundWinners,
-          lastUpdated: serverTimestamp(),
-        }, { merge: true });
-      }
-      
       const myPreds = predictions[user.uid];
       if (myPreds) {
         const currentUsername = currentUserFirestore?.username || user.displayName || "Jogador";
@@ -481,42 +423,10 @@ function HomeContent() {
     } finally { setIsSaving(false); }
   };
 
-  const updateMatchManual = (idx: number, updates: Partial<Match>) => {
-    if (!isAdminUser) return;
-    
-    setMatches(prev => prev.map((m, i) => i === idx ? { ...m, ...updates } : m));
-    
-    if ('homeScore' in updates || 'awayScore' in updates) {
-      setResults(prev => prev.map((r, i) => i === idx ? {
-        ...r,
-        homeScore: 'homeScore' in updates 
-          ? (updates.homeScore === undefined || Number.isNaN(updates.homeScore) ? "" : updates.homeScore.toString()) 
-          : r.homeScore,
-        awayScore: 'awayScore' in updates 
-          ? (updates.awayScore === undefined || Number.isNaN(updates.awayScore) ? "" : updates.awayScore.toString()) 
-          : r.awayScore,
-      } : r));
-    }
-  };
-
-  const handleSaveSettingsOnly = async (data?: ChampionshipWinner[]) => {
-    if (!isAdminUser) return;
-    setIsSaving(true);
-    try {
-      const settingsRef = doc(db, "app_settings", "championship");
-      setDocumentNonBlocking(settingsRef, {
-        history: data || roundWinners,
-        lastUpdated: serverTimestamp(),
-      }, { merge: true });
-      toast({ title: "Configurações Salvas", description: "Valores das rodadas foram atualizados no banco de dados." });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Erro", description: "Falha ao salvar configurações." });
-    } finally { setIsSaving(false); }
-  };
-
   const handleLogout = () => { setMustChangePassword(false); signOut(auth); };
 
   const updatePrediction = (userId: string, idx: number, type: 'home' | 'away', value: string) => {
+    if (userId !== user?.uid) return;
     setPredictions(prev => ({
       ...prev,
       [userId]: (prev[userId] || Array(10).fill({ homeScore: "", awayScore: "" })).map((p, i) =>
@@ -594,6 +504,18 @@ function HomeContent() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-3">
+             {isAdminUser && (
+               <Link href="/admin">
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   className="rounded-xl h-8 text-[9px] font-black uppercase italic gap-2 border-primary/20 text-primary hover:bg-primary hover:text-white"
+                 >
+                   <Shield className="h-3 w-3" />
+                   Painel ADM
+                 </Button>
+               </Link>
+             )}
              {isInstallable && (
                <Button
                  variant="outline"
@@ -604,17 +526,6 @@ function HomeContent() {
                  <Download className="h-3 w-3" />
                  Instalar App
                </Button>
-             )}
-             {isAdminUser && (
-               <button
-                 onClick={() => setShowAdminBar(!showAdminBar)}
-                 className={cn(
-                   "p-2 rounded-xl transition-all",
-                   showAdminBar ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                 )}
-               >
-                 <Shield className="h-5 w-5" />
-               </button>
              )}
              <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black italic hidden sm:inline-flex">#{currentRound}</Badge>
              <DropdownMenu modal={false}>
@@ -645,6 +556,14 @@ function HomeContent() {
                     <UserCircle className="h-4 w-4 text-primary" />
                     Editar Perfil
                   </DropdownMenuItem>
+                  {isAdminUser && (
+                    <Link href="/admin">
+                      <DropdownMenuItem className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">
+                        <Settings className="h-4 w-4 text-primary" />
+                        Área Administrativa
+                      </DropdownMenuItem>
+                    </Link>
+                  )}
                   {isInstallable && (
                     <DropdownMenuItem onClick={handleInstall} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10 md:hidden">
                       <Smartphone className="h-4 w-4 text-primary" />
@@ -664,36 +583,6 @@ function HomeContent() {
              </DropdownMenu>
           </div>
         </div>
-
-        {isAdminUser && showAdminBar && (
-          <div className="border-t border-primary/5 bg-primary/[0.03] animate-in slide-in-from-top duration-300 overflow-hidden shadow-inner">
-             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-               <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-primary" />
-                  <h3 className="text-[10px] font-black italic uppercase text-primary">Controle Administrativo</h3>
-               </div>
-               <div className="flex items-center gap-2">
-                  <Badge className={cn(
-                    "rounded-full px-3 py-1 text-[8px] font-black uppercase border-none",
-                    isEffectivelyHidden ? "bg-destructive/10 text-destructive" : "bg-secondary/10 text-secondary"
-                  )}>
-                     {isEffectivelyHidden ? "Visibilidade: Privada" : "Visibilidade: Pública"}
-                  </Badge>
-                  <Button
-                    size="sm"
-                    onClick={handleTogglePlacaresOcultos}
-                    className={cn(
-                      "rounded-xl text-[8px] font-black uppercase h-7 px-4 gap-2 border-none transition-all",
-                      placaresOcultos ? "bg-secondary text-white shadow-lg shadow-secondary/20" : "bg-destructive text-white shadow-lg shadow-destructive/20"
-                    )}
-                  >
-                    {placaresOcultos ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                    {placaresOcultos ? "Tornar Público" : "Ocultar Palpites"}
-                  </Button>
-               </div>
-             </div>
-          </div>
-        )}
       </header>
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
@@ -792,8 +681,8 @@ function HomeContent() {
                       totalRounds={38}
                       predictions={predictions[user?.uid || ""] || Array(10).fill({ homeScore: "", awayScore: "" })}
                       setPrediction={(idx, type, value) => updatePrediction(user?.uid || "", idx, type, value)}
-                      updateMatchManual={updateMatchManual}
-                      isAdmin={isAdminUser}
+                      updateMatchManual={() => {}}
+                      isAdmin={false}
                       onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))}
                       onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
                       onSave={handleSaveAll}
@@ -838,9 +727,9 @@ function HomeContent() {
                 roundWinners={roundWinners} 
                 setRoundWinners={setRoundWinners} 
                 allUsers={allUsers || []} 
-                isAdmin={isAdminUser}
-                onSave={handleSaveSettingsOnly}
-                isSaving={isSaving}
+                isAdmin={false}
+                onSave={async () => {}}
+                isSaving={false}
               />
             </div>
           )}
