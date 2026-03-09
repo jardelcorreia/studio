@@ -72,16 +72,12 @@ exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", 
 });
 /**
  * Notifica um usuário específico se ele acertou um placar em cheio.
+ * NOTA: Esta notificação IGNORA o horário de silêncio.
  */
 exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
     const after = event.data?.after.data();
     if (!after || !after.matches)
         return;
-    // Respeita o horário de silêncio
-    if (isQuietHours()) {
-        console.log("onMatchScoreUpdate: Notificação cancelada (horário de silêncio).");
-        return;
-    }
     const roundId = event.params.roundId;
     const matches = after.matches;
     const betsSnapshot = await admin.firestore().collection(`rounds/${roundId}/bets`).get();
