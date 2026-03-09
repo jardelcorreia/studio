@@ -1,18 +1,14 @@
 
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { ChampionshipWinner, PlayerOverallStats } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
-import { Trophy, Medal, Star, TrendingUp, TrendingDown, Settings2, CheckCircle2, Save, Loader2, History, Clock, ChevronDown, Crown } from "lucide-react";
+import { Trophy, Medal, Star, TrendingUp, TrendingDown, History, Clock, ChevronDown, Crown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Button } from "./ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 
 interface ChampionshipRankingProps {
   roundWinners: ChampionshipWinner[];
@@ -23,29 +19,7 @@ interface ChampionshipRankingProps {
   isSaving?: boolean;
 }
 
-export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, isAdmin, onSave, isSaving }: ChampionshipRankingProps) {
-  const { toast } = useToast();
-  const [turn1Value, setTurn1Value] = useState(6);
-  const [turn2Value, setTurn2Value] = useState(6);
-  const [isAdminSettingsOpen, setIsAdminSettingsOpen] = useState(false);
-
-  const updateValue = (roundIndex: number, value: number) => {
-    setRoundWinners((prev) => prev.map((rw, i) => (i === roundIndex ? { ...rw, value } : rw)));
-  };
-
-  const applyTurnValues = async () => {
-    const newWinners = roundWinners.map((rw) => ({
-      ...rw,
-      value: rw.round <= 19 ? turn1Value : turn2Value
-    }));
-    
-    setRoundWinners(newWinners);
-    
-    if (onSave) {
-      await onSave(newWinners);
-    }
-  };
-
+export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRankingProps) {
   const overallStats = useMemo(() => {
     if (!allUsers || allUsers.length === 0) return [];
 
@@ -136,15 +110,9 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
         </div>
         
         <div className="flex flex-col items-end shrink-0 ml-3">
-          <span className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest">Valor</span>
+          <span className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest">Aposta</span>
           <div className="flex items-center gap-1">
-            <span className="text-[9px] font-black text-primary/60">R$</span>
-            <Input 
-              type="number" value={rw.value} 
-              onChange={(e) => updateValue(idx, parseFloat(e.target.value) || 0)}
-              className="w-10 h-5 p-0 text-right bg-transparent border-none font-black text-xs focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              disabled={!isAdmin}
-            />
+            <span className="text-[10px] font-black text-primary/60 italic">R$ {rw.value.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -272,18 +240,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
                          <p className="text-muted-foreground text-[8px] font-bold uppercase tracking-widest">Registro de Rodadas</p>
                       </div>
                    </div>
-                   {isAdmin && (
-                     <Button 
-                       variant="ghost" 
-                       size="sm" 
-                       onClick={() => onSave?.()} 
-                       disabled={isSaving}
-                       className="rounded-lg h-7 px-2 text-[9px] font-black uppercase italic gap-1.5 text-primary hover:bg-primary/10"
-                     >
-                       {isSaving ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Save className="h-2.5 w-2.5" />}
-                       Salvar
-                     </Button>
-                   )}
                 </div>
              </CardHeader>
              <CardContent className="p-0">
@@ -323,66 +279,6 @@ export function ChampionshipRanking({ roundWinners, setRoundWinners, allUsers, i
           </Card>
         </div>
       </div>
-
-      {isAdmin && (
-        <Collapsible
-          open={isAdminSettingsOpen}
-          onOpenChange={setIsAdminSettingsOpen}
-          className="w-full pt-4"
-        >
-          <Card className="glass-card border-none rounded-[1.5rem] overflow-hidden border-l-4 border-l-primary shadow-lg">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="bg-primary/5 pb-2 cursor-pointer hover:bg-primary/10 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Settings2 className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-sm font-black italic uppercase text-primary">Ajuste de Valores</CardTitle>
-                  </div>
-                  <ChevronDown className={cn("h-4 w-4 text-primary transition-transform duration-300", isAdminSettingsOpen && "rotate-180")} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">1º Turno (R1 a R19)</label>
-                    <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-2xl border border-primary/5">
-                      <span className="text-xs font-black text-primary">R$</span>
-                      <input 
-                        type="number" 
-                        value={turn1Value} 
-                        onChange={(e) => setTurn1Value(parseFloat(e.target.value) || 0)}
-                        className="border-none bg-transparent font-black text-lg focus:outline-none w-full h-8"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">2º Turno (R20 a R38)</label>
-                    <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-2xl border border-primary/5">
-                      <span className="text-xs font-black text-primary">R$</span>
-                      <input 
-                        type="number" 
-                        value={turn2Value} 
-                        onChange={(e) => setTurn2Value(parseFloat(e.target.value) || 0)}
-                        className="border-none bg-transparent font-black text-lg focus:outline-none w-full h-8"
-                      />
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={applyTurnValues}
-                    disabled={isSaving}
-                    className="rounded-2xl h-12 font-black italic uppercase gap-2 shadow-lg shadow-primary/20"
-                  >
-                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    {isSaving ? "Salvando..." : "Aplicar Turnos"}
-                  </Button>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
     </div>
   );
 }
