@@ -111,6 +111,7 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
 
 /**
  * Lembrete de Palpites Pendentes.
+ * Roda a cada 60 minutos, mas só notifica nas 24h que antecedem o primeiro jogo.
  */
 export const notifyRoundStart = onSchedule("every 60 minutes", async (event) => {
   const roundsSnapshot = await admin.firestore()
@@ -125,7 +126,26 @@ export const notifyRoundStart = onSchedule("every 60 minutes", async (event) => 
   const roundData = currentRound.data();
   const roundId = currentRound.id;
 
+  // Se a rodada já começou (palpites revelados), não precisa de lembrete
   if (roundData.isScoresHidden === false) return;
+
+  // Lógica Inteligente de Tempo:
+  // Só envia lembrete se estivermos nas 24h antes do primeiro jogo da rodada
+  const matches = roundData.matches || [];
+  if (matches.length > 0) {
+    const firstMatchTime = matches.reduce((earliest: number, m: any) => {
+      const d = new Date(m.utcDate).getTime();
+      return (d > 0 && d < earliest) ? d : earliest;
+    }, Infinity);
+
+    const now = Date.now();
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+
+    // Se ainda falta mais de 24h para o primeiro jogo, ou o jogo já começou, encerra silenciosamente
+    if (now < (firstMatchTime - twentyFourHours) || now >= firstMatchTime) {
+      return;
+    }
+  }
 
   const usersSnapshot = await admin.firestore().collection("users").get();
   
@@ -140,11 +160,12 @@ export const notifyRoundStart = onSchedule("every 60 minutes", async (event) => 
       .where("userId", "==", userId)
       .get();
 
+    // Se faltar algum dos 10 palpites
     if (userBetsSnapshot.size < 10) {
       const message = {
         notification: {
           title: "⚠️ PALPITES PENDENTES!",
-          body: `Ei ${userData.username || 'campeão'}, você ainda não completou seus 10 palpites para a ${roundData.name}.`,
+          body: `Ei ${userData.username || 'campeão'}, você ainda não completou seus 10 palpites para a ${roundData.name}. Corre que o primeiro jogo já vai começar!`,
         },
         tokens: userData.fcmTokens,
         webpush: {

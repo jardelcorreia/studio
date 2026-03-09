@@ -435,7 +435,8 @@ function HomeContent() {
           id: m.id,
           homeScore: m.homeScore,
           awayScore: m.awayScore,
-          status: m.status
+          status: m.status,
+          utcDate: m.utcDate // Persiste a data para funções de segundo plano
         }));
 
         setDocumentNonBlocking(roundRef, {
