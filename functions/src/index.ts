@@ -11,6 +11,20 @@ if (admin.apps.length === 0) {
 const APP_URL = "https://alphabet-league.web.app";
 
 /**
+ * Verifica se estamos no horário de silêncio (22h às 08h BRT).
+ */
+function isQuietHours(): boolean {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: 'numeric',
+    hour12: false,
+  });
+  const hour = parseInt(formatter.format(now));
+  return hour >= 22 || hour < 8;
+}
+
+/**
  * Notifica os usuários quando os palpites são revelados.
  */
 export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event) => {
@@ -20,6 +34,12 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
   if (!before || !after) return;
 
   if (before.isScoresHidden === true && after.isScoresHidden === false) {
+    // Respeita o horário de silêncio
+    if (isQuietHours()) {
+      console.log("onRevealScores: Notificação cancelada (horário de silêncio).");
+      return;
+    }
+
     const usersSnapshot = await admin.firestore().collection("users").get();
     const tokens: string[] = [];
 
@@ -62,6 +82,12 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
 export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (event) => {
   const after = event.data?.after.data();
   if (!after || !after.matches) return;
+
+  // Respeita o horário de silêncio
+  if (isQuietHours()) {
+    console.log("onMatchScoreUpdate: Notificação cancelada (horário de silêncio).");
+    return;
+  }
 
   const roundId = event.params.roundId;
   const matches = after.matches;
@@ -114,6 +140,12 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
  * Roda a cada 60 minutos, mas só notifica nas 24h que antecedem o primeiro jogo.
  */
 export const notifyRoundStart = onSchedule("every 60 minutes", async (event) => {
+  // Respeita o horário de silêncio
+  if (isQuietHours()) {
+    console.log("notifyRoundStart: Job cancelado (horário de silêncio).");
+    return;
+  }
+
   const roundsSnapshot = await admin.firestore()
     .collection("rounds")
     .orderBy("roundNumber", "desc")

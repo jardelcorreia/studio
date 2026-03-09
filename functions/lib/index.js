@@ -1,3 +1,4 @@
+
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.notifyRoundStart = exports.onMatchScoreUpdate = exports.onRevealScores = void 0;
@@ -10,6 +11,19 @@ if (admin.apps.length === 0) {
 // URL base do App (substituir pela URL real de produção se necessário)
 const APP_URL = "https://alphabet-league.web.app";
 /**
+ * Verifica se estamos no horário de silêncio (22h às 08h BRT).
+ */
+function isQuietHours() {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        hour: 'numeric',
+        hour12: false,
+    });
+    const hour = parseInt(formatter.format(now));
+    return hour >= 22 || hour < 8;
+}
+/**
  * Notifica os usuários quando os palpites são revelados.
  */
 exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
@@ -18,6 +32,11 @@ exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", 
     if (!before || !after)
         return;
     if (before.isScoresHidden === true && after.isScoresHidden === false) {
+        // Respeita o horário de silêncio
+        if (isQuietHours()) {
+            console.log("onRevealScores: Notificação cancelada (horário de silêncio).");
+            return;
+        }
         const usersSnapshot = await admin.firestore().collection("users").get();
         const tokens = [];
         usersSnapshot.forEach((doc) => {
@@ -58,6 +77,11 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
     const after = event.data?.after.data();
     if (!after || !after.matches)
         return;
+    // Respeita o horário de silêncio
+    if (isQuietHours()) {
+        console.log("onMatchScoreUpdate: Notificação cancelada (horário de silêncio).");
+        return;
+    }
     const roundId = event.params.roundId;
     const matches = after.matches;
     const betsSnapshot = await admin.firestore().collection(`rounds/${roundId}/bets`).get();
@@ -103,6 +127,11 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
  * Roda a cada 60 minutos, mas só notifica nas 24h que antecedem o primeiro jogo.
  */
 exports.notifyRoundStart = (0, scheduler_1.onSchedule)("every 60 minutes", async (event) => {
+    // Respeita o horário de silêncio
+    if (isQuietHours()) {
+        console.log("notifyRoundStart: Job cancelado (horário de silêncio).");
+        return;
+    }
     const roundsSnapshot = await admin.firestore()
         .collection("rounds")
         .orderBy("roundNumber", "desc")
@@ -167,4 +196,3 @@ exports.notifyRoundStart = (0, scheduler_1.onSchedule)("every 60 minutes", async
         }
     }
 });
-//# sourceMappingURL=index.js.map
