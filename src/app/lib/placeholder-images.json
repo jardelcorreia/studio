@@ -3,20 +3,20 @@
   "placeholderImages": [
     {
       "id": "soccer-stadium",
-      "description": "Aerial view of a packed football stadium at night",
-      "imageUrl": "https://picsum.photos/seed/soccer-stadium-arena-2026/1200/800",
+      "description": "Visão aérea de um estádio de futebol lotado à noite com refletores acesos",
+      "imageUrl": "https://picsum.photos/seed/stadium-soccer-field-2026/1200/800",
       "imageHint": "soccer stadium"
     },
     {
       "id": "football-action",
-      "description": "Action shot of a football match",
-      "imageUrl": "https://picsum.photos/seed/football-match-action-2026/800/600",
+      "description": "Lance de ação em uma partida de futebol profissional",
+      "imageUrl": "https://picsum.photos/seed/football-match-action-pro/800/600",
       "imageHint": "football match"
     },
     {
       "id": "team-celebration",
-      "description": "Football team celebrating a goal",
-      "imageUrl": "https://picsum.photos/seed/soccer-goal-celebration-2026/800/600",
+      "description": "Jogadores comemorando um gol decisivo no campo",
+      "imageUrl": "https://picsum.photos/seed/soccer-team-victory-celebration/800/600",
       "imageHint": "football celebration"
     }
   ]
