@@ -37,13 +37,16 @@ service cloud.firestore {
         );
         
         // Permite atualizar se o usuário for o dono da aposta ou admin
-        // Validamos tanto o dado existente quanto o novo para evitar troca de dono
         allow update: if request.auth != null && (
           isAdmin() || 
           (resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid)
         );
         
-        allow delete: if isAdmin();
+        // Permite deletar se o usuário for o dono da aposta ou admin
+        allow delete: if request.auth != null && (
+          isAdmin() || 
+          resource.data.userId == request.auth.uid
+        );
       }
     }
 
