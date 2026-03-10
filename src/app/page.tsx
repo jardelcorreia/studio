@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PLAYERS } from "@/lib/constants";
 import { Match, PlayerPredictions, Prediction, PlayerScore, StandingEntry, ChampionshipWinner, MatchStatus } from "@/lib/types";
@@ -38,7 +37,8 @@ import {
   Bell,
   BellRing,
   CheckCircle2,
-  Settings
+  Settings,
+  Camera
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -711,7 +711,7 @@ function HomeContent() {
                 results={results}
                 placaresOcultos={isEffectivelyHidden}
                 currentPlayerId={user?.uid || ""}
-                isAdmin={false}
+                isAdmin={isAdminUser}
                 allUsers={allUsers || []}
               />
             </div>
