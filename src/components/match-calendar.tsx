@@ -110,11 +110,12 @@ export function MatchCalendar({
           const isCancelled = match.status === 'cancelled';
           const currentPred = predictions[idx] || { homeScore: "", awayScore: "" };
           const isOutOfWindow = match.isValidForPoints === false;
+          const isEffectivelyInvalid = isOutOfWindow || isCancelled;
 
           return (
             <Card key={match.id} className={cn(
               "glass-card border-none rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500 group relative",
-              isOutOfWindow && "border-2 border-destructive/20 opacity-90"
+              isEffectivelyInvalid && "border-2 border-destructive/20 opacity-90"
             )}>
               <CardContent className="p-0">
                 <div className="px-6 py-3 bg-muted/30 flex justify-between items-center border-b border-white/10">
@@ -123,9 +124,9 @@ export function MatchCalendar({
                       <span className="text-[9px] font-black uppercase text-muted-foreground">{formatDate(match.utcDate)}</span>
                    </div>
                    <div className="flex items-center gap-2">
-                      {isOutOfWindow && (
+                      {isEffectivelyInvalid && (
                         <Badge variant="destructive" className="rounded-full px-3 text-[8px] font-black uppercase border-none animate-pulse">
-                          Fora da Janela
+                          {isCancelled ? 'Jogo Adiado' : 'Fora da Janela'}
                         </Badge>
                       )}
                       {isAdmin ? (
@@ -244,7 +245,7 @@ export function MatchCalendar({
 
                 <div className={cn(
                   "px-6 py-4 flex flex-col items-center gap-1",
-                  isOutOfWindow ? "bg-destructive/5" : "bg-primary/5"
+                  isEffectivelyInvalid ? "bg-destructive/5" : "bg-primary/5"
                 )}>
                    <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3 text-primary/40" />
@@ -252,9 +253,10 @@ export function MatchCalendar({
                         {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isLive ? "AO VIVO" : isCancelled ? "PARTIDA ADIADA" : "AGUARDANDO PALPITE"}
                       </span>
                    </div>
-                   {isOutOfWindow && (
+                   {isEffectivelyInvalid && (
                      <div className="flex items-center gap-1 text-destructive font-black text-[9px] uppercase tracking-wider text-center px-4">
-                        <AlertTriangle className="h-3 w-3" /> Jogo indisponível para pontuação
+                        <AlertTriangle className="h-3 w-3" /> 
+                        {isCancelled ? 'Pontuação suspensa para este jogo' : 'Jogo indisponível para pontuação'}
                      </div>
                    )}
                 </div>

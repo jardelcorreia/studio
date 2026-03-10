@@ -207,10 +207,10 @@ function HomeContent() {
     return matches.every(m => m.status === 'finished' || m.status === 'cancelled' || m.isValidForPoints === false);
   }, [matches, loadingMatches]);
 
-  // Contagem de jogos válidos na rodada atual
+  // Contagem de jogos válidos na rodada atual (desconsidera fora da janela e cancelados)
   const totalValidMatchesCount = useMemo(() => {
     if (matches.length === 0) return 10;
-    return matches.slice(0, 10).filter(m => m.isValidForPoints !== false).length;
+    return matches.slice(0, 10).filter(m => m.isValidForPoints !== false && m.status !== 'cancelled').length;
   }, [matches]);
 
   const scores = useMemo((): PlayerScore[] => {
@@ -220,8 +220,9 @@ function HomeContent() {
     // Contagem de jogos válidos em que o placar oficial ainda não está definido
     const unfinishedMatchesCount = activeIndices.filter(idx => {
       const res = results[idx];
-      const isMatchValid = matches[idx]?.isValidForPoints !== false;
-      const isFinished = matches[idx]?.status === 'finished';
+      const match = matches[idx];
+      const isMatchValid = match?.isValidForPoints !== false && match?.status !== 'cancelled';
+      const isFinished = match?.status === 'finished';
       return isMatchValid && !isFinished && (res.homeScore === "" || res.awayScore === "");
     }).length;
 
@@ -234,7 +235,8 @@ function HomeContent() {
         const res = results[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
         const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
-        const isMatchValid = matches[idx]?.isValidForPoints !== false;
+        const match = matches[idx];
+        const isMatchValid = match?.isValidForPoints !== false && match?.status !== 'cancelled';
         
         // Só conta como preenchido se o jogo for válido para pontuação
         if (isMatchValid && hasPred) {
