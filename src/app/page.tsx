@@ -61,7 +61,7 @@ import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday, getLeagueStanding
 import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { doc, collection, serverTimestamp } from "firebase/firestore";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, cleanTeamName, determineMatchValidity } from "@/lib/utils";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
 import { useFcm } from "@/hooks/use-fcm";
@@ -404,18 +404,23 @@ function HomeContent() {
         const currentUsername = currentUserFirestore?.username || user.displayName || "Jogador";
 
         myPreds.forEach((pred, idx) => {
-          if (pred.homeScore === "" || pred.awayScore === "") return;
           const betId = `${user.uid}_${idx}`;
           const betRef = doc(db, "rounds", roundId, "bets", betId);
-          setDocumentNonBlocking(betRef, {
-            id: betId,
-            userId: user.uid,
-            username: currentUsername,
-            matchId: matches[idx]?.id || idx,
-            homeScorePrediction: parseInt(pred.homeScore),
-            awayScorePrediction: parseInt(pred.awayScore),
-            dateSubmitted: serverTimestamp(),
-          }, { merge: true });
+          
+          if (pred.homeScore === "" || pred.awayScore === "") {
+            // Se o palpite estiver vazio, deletamos o documento para "apagar" o palpite no banco
+            deleteDocumentNonBlocking(betRef);
+          } else {
+            setDocumentNonBlocking(betRef, {
+              id: betId,
+              userId: user.uid,
+              username: currentUsername,
+              matchId: matches[idx]?.id || idx,
+              homeScorePrediction: parseInt(pred.homeScore),
+              awayScorePrediction: parseInt(pred.awayScore),
+              dateSubmitted: serverTimestamp(),
+            }, { merge: true });
+          }
         });
       }
       toast({ title: "Salvo!", description: "Dados sincronizados com sucesso." });
