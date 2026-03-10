@@ -93,7 +93,7 @@ export function MatchCalendar({
           <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase mb-1 px-3">Brasileirão 2026</Badge>
           <div className="flex items-baseline gap-2">
              <span className="text-xs font-bold text-muted-foreground uppercase">Rodada</span>
-             <span className="text-2xl font-black italic text-foreground leading-none">#{round}</span>
+             <span className="text-2xl font-black italic text-primary leading-none">#{round}</span>
           </div>
         </div>
         <Button variant="ghost" size="icon" onClick={onNext} disabled={round >= totalRounds} className="rounded-2xl hover:bg-primary/10">
