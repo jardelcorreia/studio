@@ -17,7 +17,8 @@ Se o botão de "Publish" no painel falhar, você pode usar o Firebase CLI:
 1. **Instalar o CLI**: `npm install -g firebase-tools`
 2. **Login**: `firebase login`
 3. **Publicar Funções e Regras**: `npm run deploy`
-4. **Publicar App (Next.js)**: O App Hosting sincroniza automaticamente com o GitHub. Para forçar um rollout, use `firebase apphosting:rollouts:create --backend seu-backend-id`.
+4. **Publicar App (Next.js)**: O App Hosting sincroniza automaticamente com o GitHub. Para forçar um rollout manual via terminal, use:
+   `firebase apphosting:rollouts:create --backend studio-7344387368-26e1e`
 
 ## 🔔 Sistema de Notificações (Push)
 
