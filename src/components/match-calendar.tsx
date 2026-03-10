@@ -272,7 +272,7 @@ export function MatchCalendar({
           className="h-16 px-12 rounded-3xl gap-4 font-black italic uppercase text-xl sports-gradient shadow-2xl shadow-primary/40 hover:scale-[1.05] transition-transform active:scale-95"
         >
           {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : <Sparkles className="h-6 w-6 fill-current" />}
-          {isSaving ? "Sincronizando..." : "CONFIRMAR DADOS"}
+          {isSaving ? "Sincronizando..." : "CONFIRMAR QUILA"}
         </Button>
       </div>
     </div>
