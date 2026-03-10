@@ -396,7 +396,7 @@ export default function AdminPage() {
                   <div className="grid grid-cols-5 sm:grid-cols-8 gap-1.5">
                     {roundWinners.map((rw, idx) => (
                       <div key={idx} className="bg-muted/30 p-1.5 rounded-lg border border-primary/5 flex flex-col items-center gap-0.5">
-                        <span className="text-[6px] font-black uppercase text-muted-foreground/40">R{rw.round}</span>
+                        <span className="text-[6px] font-black uppercase text-foreground">R{rw.round}</span>
                         <div className="flex items-center gap-0.5">
                           <span className="text-[6px] font-bold text-primary/40">R$</span>
                           <input 
