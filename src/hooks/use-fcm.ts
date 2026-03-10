@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,7 +6,7 @@ import { getToken, onMessage } from 'firebase/messaging';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
-// IMPORTANTE: Substitua por sua VAPID KEY gerada no console do Firebase
+// VAPID KEY gerada no console do Firebase
 const VAPID_KEY = 'BDJfhs7Q5xip0lcpZNOZp5APUhbIWpzwEuG9Vck9TI6wXmDrNedtdWy6Ky1ULQ58014V-uAZpHdoa1x6_iTGpo4';
 
 export function useFcm() {
@@ -26,11 +25,23 @@ export function useFcm() {
     if (!messaging || !user || !firestore) return;
 
     try {
+      // Verifica se o navegador suporta Service Workers antes de tentar o registro
+      if (!('serviceWorker' in navigator)) {
+        throw new Error('Navegador não suporta Service Workers.');
+      }
+
       const status = await Notification.requestPermission();
       setPermission(status);
 
       if (status === 'granted') {
-        const fcmToken = await getToken(messaging, { vapidKey: VAPID_KEY });
+        // Registra explicitamente o service worker para evitar o AbortError
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        
+        const fcmToken = await getToken(messaging, { 
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: registration
+        });
+
         if (fcmToken) {
           setToken(fcmToken);
           // Salva o token no Firestore
@@ -38,16 +49,29 @@ export function useFcm() {
           await updateDoc(userRef, {
             fcmTokens: arrayUnion(fcmToken)
           });
+          
+          toast({
+            title: 'Notificações Ativas!',
+            description: 'Você receberá alertas da rodada agora.'
+          });
         }
-      } else {
+      } else if (status === 'denied') {
         toast({
           variant: 'destructive',
           title: 'Permissão Negada',
-          description: 'Ative as notificações nas configurações do seu navegador.'
+          description: 'Ative as notificações nas configurações do seu navegador para não perder o prazo.'
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao solicitar permissão FCM:', error);
+      // Se for um AbortError ou erro de registro, avisa o usuário
+      if (error.name === 'AbortError' || error.message.includes('service error')) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro de Conexão Push',
+          description: 'O serviço de push do navegador falhou. Tente atualizar a página ou usar outro navegador.'
+        });
+      }
     }
   }, [messaging, user, firestore, toast]);
 
@@ -60,10 +84,14 @@ export function useFcm() {
         fcmTokens: arrayRemove(token)
       });
       setToken(null);
+      toast({
+        title: 'Notificações Desativadas',
+        description: 'Você não receberá mais lembretes de quila.'
+      });
     } catch (error) {
       console.error('Erro ao desativar notificações:', error);
     }
-  }, [user, firestore, token]);
+  }, [user, firestore, token, toast]);
 
   // Listener para mensagens em primeiro plano (quando o app está aberto)
   useEffect(() => {
