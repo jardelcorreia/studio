@@ -30,6 +30,49 @@ function isQuietHours(): boolean {
 }
 
 /**
+ * Lógica de Janela de Validade (Replicada do Client)
+ * Identifica jogos que estão fora da janela de 3 dias da data principal da rodada.
+ */
+function getValidMatchesCount(matches: any[]): number {
+  if (!matches || matches.length === 0) return 0;
+  
+  const matchesToProcess = matches.slice(0, 10);
+  
+  // 1. Encontrar a Data Principal (dia com mais jogos)
+  const dateCounts: Record<string, number> = {};
+  matchesToProcess.forEach(m => {
+    if (m.utcDate) {
+      const date = m.utcDate.split('T')[0];
+      dateCounts[date] = (dateCounts[date] || 0) + 1;
+    }
+  });
+
+  let mainDateStr = "";
+  let maxCount = -1;
+  for (const date in dateCounts) {
+    if (dateCounts[date] > maxCount) {
+      maxCount = dateCounts[date];
+      mainDateStr = date;
+    }
+  }
+
+  if (!mainDateStr) return matchesToProcess.filter(m => m.status !== 'cancelled').length;
+
+  const mainDate = new Date(`${mainDateStr}T12:00:00Z`).getTime();
+  const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+
+  // 2. Contar jogos que não são 'cancelled' E estão na janela
+  return matchesToProcess.filter(m => {
+    if (m.status === 'cancelled') return false;
+    if (!m.utcDate) return true; // Se não tem data mas tá na lista, assume válido por precaução
+
+    const matchTime = new Date(m.utcDate).getTime();
+    const diff = Math.abs(matchTime - mainDate);
+    return diff <= (threeDaysInMs + 12 * 60 * 60 * 1000); // Janela de 3 dias + tolerância de fuso
+  }).length;
+}
+
+/**
  * Notifica os usuários quando os palpites são revelados.
  */
 export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event) => {
@@ -168,28 +211,33 @@ export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => 
   if (roundData.isScoresHidden === false) return;
 
   const matches = roundData.matches || [];
-  if (matches.length > 0) {
-    // Filtra partidas canceladas ou com data inválida para encontrar o início real
-    const firstMatchTime = matches
-      .filter((m: any) => m.status !== 'cancelled' && m.utcDate)
-      .reduce((earliest: number, m: any) => {
-        const d = new Date(m.utcDate).getTime();
-        return (d > 0 && d < earliest) ? d : earliest;
-      }, Infinity);
+  const targetCount = getValidMatchesCount(matches);
+  
+  if (targetCount === 0) {
+    console.log("notifyRoundStart: Nenhum jogo válido para esta rodada no momento.");
+    return;
+  }
 
-    if (!Number.isFinite(firstMatchTime)) {
-      console.log("notifyRoundStart: Nenhuma partida válida encontrada para calcular o tempo.");
-      return;
-    }
+  // Filtra partidas para encontrar o início real (ignora canceladas)
+  const firstMatchTime = matches
+    .filter((m: any) => m.status !== 'cancelled' && m.utcDate)
+    .reduce((earliest: number, m: any) => {
+      const d = new Date(m.utcDate).getTime();
+      return (d > 0 && d < earliest) ? d : earliest;
+    }, Infinity);
 
-    const now = Date.now();
-    const twentyFourHours = 24 * 60 * 60 * 1000;
+  if (!Number.isFinite(firstMatchTime)) {
+    console.log("notifyRoundStart: Nenhuma partida válida encontrada para calcular o tempo.");
+    return;
+  }
 
-    // Só envia lembrete nas 24h que antecedem o primeiro jogo
-    if (now < (firstMatchTime - twentyFourHours) || now >= firstMatchTime) {
-      console.log(`notifyRoundStart: Fora da janela de notificação. Agora: ${new Date(now).toISOString()}, Início: ${new Date(firstMatchTime).toISOString()}`);
-      return;
-    }
+  const now = Date.now();
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+
+  // Só envia lembrete nas 24h que antecedem o primeiro jogo
+  if (now < (firstMatchTime - twentyFourHours) || now >= firstMatchTime) {
+    console.log(`notifyRoundStart: Fora da janela de lembrete. Início: ${new Date(firstMatchTime).toISOString()}`);
+    return;
   }
 
   const usersSnapshot = await admin.firestore().collection("users").get();
@@ -205,12 +253,13 @@ export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => 
       .where("userId", "==", userId)
       .get();
 
-    // Notifica quem não completou os 10 palpites obrigatórios
-    if (userBetsSnapshot.size < 10) {
+    // Notifica quem não completou os palpites obrigatórios (agora dinâmico)
+    if (userBetsSnapshot.size < targetCount) {
+      const remaining = targetCount - userBetsSnapshot.size;
       const message = {
         notification: {
           title: "⚠️ PALPITES PENDENTES!",
-          body: `Ei ${userData.username || 'campeão'}, faltam ${10 - userBetsSnapshot.size} palpites para a ${roundData.name}. O primeiro jogo já vai começar!`,
+          body: `Ei ${userData.username || 'campeão'}, faltam ${remaining} palpite${remaining > 1 ? 's' : ''} para a ${roundData.name}. O primeiro jogo já vai começar!`,
         },
         tokens: userData.fcmTokens,
         webpush: {
@@ -225,7 +274,7 @@ export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => 
 
       try {
         await admin.messaging().sendEachForMulticast(message);
-        console.log(`notifyRoundStart: Lembrete enviado para ${userId} (${userBetsSnapshot.size}/10)`);
+        console.log(`notifyRoundStart: Lembrete enviado para ${userId} (${userBetsSnapshot.size}/${targetCount})`);
       } catch (error) {
         console.error(`notifyRoundStart: Erro ao notificar ${userId}:`, error);
       }
