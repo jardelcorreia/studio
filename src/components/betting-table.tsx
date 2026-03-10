@@ -228,42 +228,44 @@ export function BettingTable({
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4">
-      <div className="flex justify-end px-2">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground font-black italic uppercase rounded-full gap-2 shadow-lg shadow-accent/20 h-10 px-6">
-              <Camera className="h-4 w-4" />
-              Gerar Card da Rodada
-            </Button>
-          </DialogTrigger>
+      {isAdmin && (
+        <div className="flex justify-end px-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground font-black italic uppercase rounded-full gap-2 shadow-lg shadow-accent/20 h-10 px-6">
+                <Camera className="h-4 w-4" />
+                Gerar Card da Rodada
+              </Button>
+            </DialogTrigger>
 
-          <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[95vh] p-0 border-none bg-black/95 backdrop-blur-xl shadow-2xl focus:outline-none rounded-[2rem] overflow-hidden">
-            <DialogHeader className="sr-only">
-              <DialogTitle>Card da Rodada</DialogTitle>
-              <DialogDescription>Visualização técnica dos palpites da rodada para compartilhamento.</DialogDescription>
-            </DialogHeader>
+            <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[95vh] p-0 border-none bg-black/95 backdrop-blur-xl shadow-2xl focus:outline-none rounded-[2rem] overflow-hidden">
+              <DialogHeader className="sr-only">
+                <DialogTitle>Card da Rodada</DialogTitle>
+                <DialogDescription>Visualização técnica dos palpites da rodada para compartilhamento.</DialogDescription>
+              </DialogHeader>
 
-            <div className="flex flex-col p-4 gap-3">
-              <div className="flex justify-between items-center px-1">
-                <p className="text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <Share2 className="h-3 w-3 text-accent" /> AlphaBet League
-                </p>
-                <DialogClose className="text-white/40 hover:text-white transition-colors p-1">
-                  <X className="h-5 w-5" />
-                </DialogClose>
+              <div className="flex flex-col p-4 gap-3">
+                <div className="flex justify-between items-center px-1">
+                  <p className="text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                    <Share2 className="h-3 w-3 text-accent" /> AlphaBet League
+                  </p>
+                  <DialogClose className="text-white/40 hover:text-white transition-colors p-1">
+                    <X className="h-5 w-5" />
+                  </DialogClose>
+                </div>
+
+                <RoundCardView
+                  roundName={roundName}
+                  matches={matches}
+                  predictions={predictions}
+                  sortedUsers={sortedUsers}
+                  getTeamAbrev={getTeamAbrev}
+                />
               </div>
-
-              <RoundCardView
-                roundName={roundName}
-                matches={matches}
-                predictions={predictions}
-                sortedUsers={sortedUsers}
-                getTeamAbrev={getTeamAbrev}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
 
       <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-3 bg-primary/5 rounded-2xl border border-primary/10 mb-2">
         <div className="col-span-3 text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Confronto</div>
