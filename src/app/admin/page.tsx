@@ -255,7 +255,7 @@ export default function AdminPage() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="text-center min-w-[50px]">
-                  <h2 className="text-sm font-black italic uppercase text-primary leading-tight">#{currentRound}</h2>
+                  <h2 className="text-sm font-black italic uppercase text-foreground leading-tight">#{currentRound}</h2>
                 </div>
                 <Button 
                   variant="outline" 
