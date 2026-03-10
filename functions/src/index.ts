@@ -7,11 +7,16 @@ if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
-// URL base do App (substituir pela URL real de produção se necessário)
-const APP_URL = "https://alphabet-league.web.app";
+/**
+ * URL base do App. 
+ * Utiliza o ID do projeto do Firebase para garantir que os links funcionem no ambiente de teste e produção.
+ */
+const PROJECT_ID = process.env.GCLOUD_PROJECT || "studio-7344387368-26e1e";
+const APP_URL = `https://${PROJECT_ID}.web.app`;
 
 /**
  * Verifica se estamos no horário de silêncio (22h às 08h BRT).
+ * Isso evita incomodar os usuários durante a madrugada com lembretes automáticos.
  */
 function isQuietHours(): boolean {
   const now = new Date();
@@ -33,8 +38,8 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
 
   if (!before || !after) return;
 
+  // Só dispara quando isScoresHidden muda de true para false
   if (before.isScoresHidden === true && after.isScoresHidden === false) {
-    // Respeita o horário de silêncio para revelação de placares
     if (isQuietHours()) {
       console.log("onRevealScores: Notificação cancelada (horário de silêncio).");
       return;
@@ -50,7 +55,10 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
       }
     });
 
-    if (tokens.length === 0) return;
+    if (tokens.length === 0) {
+      console.log("onRevealScores: Nenhum token FCM encontrado.");
+      return;
+    }
 
     const message = {
       notification: {
@@ -70,15 +78,16 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
 
     try {
       await admin.messaging().sendEachForMulticast(message);
+      console.log(`onRevealScores: Notificações enviadas para ${tokens.length} dispositivos.`);
     } catch (error) {
-      console.error("Erro ao enviar notificações de revelação:", error);
+      console.error("onRevealScores: Erro ao enviar notificações:", error);
     }
   }
 });
 
 /**
  * Notifica um usuário específico se ele acertou um placar em cheio.
- * NOTA: Esta notificação IGNORA o horário de silêncio pois jogos podem acabar tarde.
+ * IGNORA o horário de silêncio para garantir feedback imediato do jogo.
  */
 export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (event) => {
   const after = event.data?.after.data();
@@ -94,6 +103,7 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
     const userId = bet.userId;
     const match = matches.find((m: any) => m.id === bet.matchId);
     
+    // Verifica se a partida acabou e se o palpite foi certeiro
     if (match && match.status === 'finished') {
       const isExact = bet.homeScorePrediction === match.homeScore && 
                       bet.awayScorePrediction === match.awayScore;
@@ -121,8 +131,9 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
 
           try {
             await admin.messaging().sendEachForMulticast(message);
+            console.log(`onMatchScoreUpdate: Sucesso para o usuário ${userId}`);
           } catch (error) {
-            console.error(`Erro ao notificar acerto exato para ${userId}:`, error);
+            console.error(`onMatchScoreUpdate: Erro para o usuário ${userId}:`, error);
           }
         }
       }
@@ -132,15 +143,15 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
 
 /**
  * Lembrete de Palpites Pendentes.
- * Roda a cada 60 minutos, mas só notifica nas 24h que antecedem o primeiro jogo.
+ * Roda a cada 30 minutos para maior precisão no lembrete pré-jogo.
  */
-export const notifyRoundStart = onSchedule("every 60 minutes", async (event) => {
-  // Respeita o horário de silêncio para lembretes de quila
+export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => {
   if (isQuietHours()) {
     console.log("notifyRoundStart: Job cancelado (horário de silêncio).");
     return;
   }
 
+  // Pega a rodada mais recente
   const roundsSnapshot = await admin.firestore()
     .collection("rounds")
     .orderBy("roundNumber", "desc")
@@ -153,23 +164,30 @@ export const notifyRoundStart = onSchedule("every 60 minutes", async (event) => 
   const roundData = currentRound.data();
   const roundId = currentRound.id;
 
-  // Se a rodada já começou (palpites revelados), não precisa de lembrete
+  // Se os palpites já foram revelados, a rodada já começou
   if (roundData.isScoresHidden === false) return;
 
-  // Lógica Inteligente de Tempo:
-  // Só envia lembrete se estivermos nas 24h antes do primeiro jogo da rodada
   const matches = roundData.matches || [];
   if (matches.length > 0) {
-    const firstMatchTime = matches.reduce((earliest: number, m: any) => {
-      const d = new Date(m.utcDate).getTime();
-      return (d > 0 && d < earliest) ? d : earliest;
-    }, Infinity);
+    // Filtra partidas canceladas ou com data inválida para encontrar o início real
+    const firstMatchTime = matches
+      .filter((m: any) => m.status !== 'cancelled' && m.utcDate)
+      .reduce((earliest: number, m: any) => {
+        const d = new Date(m.utcDate).getTime();
+        return (d > 0 && d < earliest) ? d : earliest;
+      }, Infinity);
+
+    if (!Number.isFinite(firstMatchTime)) {
+      console.log("notifyRoundStart: Nenhuma partida válida encontrada para calcular o tempo.");
+      return;
+    }
 
     const now = Date.now();
     const twentyFourHours = 24 * 60 * 60 * 1000;
 
-    // Se ainda falta mais de 24h para o primeiro jogo, ou o jogo já começou, encerra silenciosamente
+    // Só envia lembrete nas 24h que antecedem o primeiro jogo
     if (now < (firstMatchTime - twentyFourHours) || now >= firstMatchTime) {
+      console.log(`notifyRoundStart: Fora da janela de notificação. Agora: ${new Date(now).toISOString()}, Início: ${new Date(firstMatchTime).toISOString()}`);
       return;
     }
   }
@@ -187,12 +205,12 @@ export const notifyRoundStart = onSchedule("every 60 minutes", async (event) => 
       .where("userId", "==", userId)
       .get();
 
-    // Se faltar algum dos 10 palpites
+    // Notifica quem não completou os 10 palpites obrigatórios
     if (userBetsSnapshot.size < 10) {
       const message = {
         notification: {
           title: "⚠️ PALPITES PENDENTES!",
-          body: `Ei ${userData.username || 'campeão'}, você ainda não completou seus 10 palpites para a ${roundData.name}. Corre que o primeiro jogo já vai começar!`,
+          body: `Ei ${userData.username || 'campeão'}, faltam ${10 - userBetsSnapshot.size} palpites para a ${roundData.name}. O primeiro jogo já vai começar!`,
         },
         tokens: userData.fcmTokens,
         webpush: {
@@ -207,8 +225,9 @@ export const notifyRoundStart = onSchedule("every 60 minutes", async (event) => 
 
       try {
         await admin.messaging().sendEachForMulticast(message);
+        console.log(`notifyRoundStart: Lembrete enviado para ${userId} (${userBetsSnapshot.size}/10)`);
       } catch (error) {
-        console.error(`Erro ao enviar lembrete para ${userId}:`, error);
+        console.error(`notifyRoundStart: Erro ao notificar ${userId}:`, error);
       }
     }
   }
