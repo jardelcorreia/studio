@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Recomendado para App Hosting para otimizar o deploy e runtime
+  output: 'standalone',
   images: {
     remotePatterns: [
       {

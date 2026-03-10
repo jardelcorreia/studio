@@ -1,9 +1,8 @@
-// Scripts necessários para o Firebase Messaging no Service Worker
-importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Configuração do Firebase (deve ser idêntica à do app)
-// O Service Worker usa a versão compat (v9/v10 compat) para facilitar a implementação offline
+// O Firebase App Hosting injeta as configurações, mas para o SW
+// usamos a inicialização compat para interceptar mensagens em background.
 firebase.initializeApp({
   apiKey: "AIzaSyA6noJTkCcRypfeqi91qa6a2hDEcQ606N0",
   authDomain: "studio-7344387368-26e1e.firebaseapp.com",
@@ -15,16 +14,36 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handler opcional para mensagens em segundo plano
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Mensagem em segundo plano recebida: ', payload);
+  console.log('[firebase-messaging-sw.js] Mensagem recebida em background: ', payload);
   
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
     icon: '/icons/android-chrome-192x192.png',
-    data: payload.data
+    data: {
+      url: payload.data?.link || '/'
+    }
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification.data.url;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
 });
