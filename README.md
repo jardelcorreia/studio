@@ -16,9 +16,11 @@ Se o botão de "Publish" no painel falhar ou se você quiser forçar uma atualiz
 
 1. **Atualizar o CLI**: Garanta que tem a versão mais recente: `npm install -g firebase-tools`
 2. **Login**: `firebase login`
-3. **Publicar Regras e Funções**: Use o comando `npm run deploy` (ou `firebase deploy --only functions,firestore:rules`)
-4. **Publicar App (Next.js)**: O App Hosting sincroniza via Git. Para forçar um rollout manual:
-   `firebase apphosting:rollouts:create studio-7344387368-26e1e`
+3. **Publicar Regras e Funções**: `npm run deploy` (isso ativa as travas de segurança e as notificações).
+4. **Publicar App (Next.js)**: 
+   - Primeiro, descubra o nome do seu backend: `firebase apphosting:backends:list`
+   - Use o nome que aparecer na lista (ex: `meu-app-next`) no comando abaixo:
+   `firebase apphosting:rollouts:create <NOME_DO_BACKEND>`
 
 ## 🔔 Sistema de Notificações (Push)
 
