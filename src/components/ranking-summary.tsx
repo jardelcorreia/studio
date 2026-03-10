@@ -14,10 +14,10 @@ interface RankingSummaryProps {
   scores: PlayerScore[];
   isScoresHidden: boolean;
   isRoundFinished: boolean;
+  totalValidMatches?: number;
 }
 
-export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: RankingSummaryProps) {
-  // Já vem ordenado do pai (page.tsx) com a lógica de winner definida
+export function RankingSummary({ scores, isScoresHidden, isRoundFinished, totalValidMatches = 10 }: RankingSummaryProps) {
   const sortedScores = scores;
 
   return (
@@ -33,8 +33,7 @@ export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: Rank
 
       <div className="flex flex-col md:grid md:grid-cols-4 gap-4">
         {sortedScores.map((score, index) => {
-          const progressPercentage = (score.betsCount / 10) * 100;
-          // Agora o estilo de vencedor é controlado pela flag isWinner (definida matematicamente no pai)
+          const progressPercentage = (score.betsCount / Math.max(1, totalValidMatches)) * 100;
           const showWinnerStyles = score.isWinner;
           const showMedals = score.points > 0 && (isRoundFinished || score.isWinner);
           
@@ -55,7 +54,6 @@ export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: Rank
               )}
               
               <CardContent className="p-4 md:p-6 flex flex-row md:flex-col items-center md:text-center gap-5 relative z-10">
-                {/* Squircle Avatar Container */}
                 <div className="relative shrink-0 group">
                   <div className={cn(
                     "relative h-14 w-14 md:h-20 md:w-20 flex items-center justify-center rounded-[1.25rem] md:rounded-[1.75rem] shadow-inner transition-transform group-hover:scale-105",
@@ -94,7 +92,6 @@ export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: Rank
                   )}
                 </div>
 
-                {/* Info Section */}
                 <div className="flex-1 w-full min-w-0 space-y-1">
                   <div className="flex flex-row md:flex-col justify-between md:justify-start items-center md:items-center gap-2">
                     <h3 className={cn(
@@ -129,7 +126,7 @@ export function RankingSummary({ scores, isScoresHidden, isRoundFinished }: Rank
                               : (showWinnerStyles ? "text-white/60" : "text-muted-foreground/60")
                           )}>
                             {score.betsCompleted ? "Quilado" : "Não Quilou"}
-                            <span className="ml-1 opacity-50 tabular-nums">({score.betsCount}/10)</span>
+                            <span className="ml-1 opacity-50 tabular-nums">({score.betsCount}/{totalValidMatches})</span>
                           </span>
                        </div>
                      )}

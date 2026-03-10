@@ -207,11 +207,17 @@ function HomeContent() {
     return matches.every(m => m.status === 'finished' || m.status === 'cancelled' || m.isValidForPoints === false);
   }, [matches, loadingMatches]);
 
+  // Contagem de jogos válidos na rodada atual
+  const totalValidMatchesCount = useMemo(() => {
+    if (matches.length === 0) return 10;
+    return matches.slice(0, 10).filter(m => m.isValidForPoints !== false).length;
+  }, [matches]);
+
   const scores = useMemo((): PlayerScore[] => {
     if (!allUsers || allUsers.length === 0) return [];
     const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
-    const totalActiveMatches = activeIndices.length;
-
+    
+    // Contagem de jogos válidos em que o placar oficial ainda não está definido
     const unfinishedMatchesCount = activeIndices.filter(idx => {
       const res = results[idx];
       const isMatchValid = matches[idx]?.isValidForPoints !== false;
@@ -220,15 +226,21 @@ function HomeContent() {
     }).length;
 
     const playerStats = allUsers.map(u => {
-      let pts = 0, exs = 0, filledCount = 0;
+      let pts = 0, exs = 0, filledValidCount = 0;
       const userPreds = predictions[u.id];
       if (!userPreds) return { id: u.id, name: u.username || "Jogador", points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl, isWinner: false };
+      
       activeIndices.forEach(idx => {
         const res = results[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
         const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
         const isMatchValid = matches[idx]?.isValidForPoints !== false;
-        if (hasPred) filledCount++;
+        
+        // Só conta como preenchido se o jogo for válido para pontuação
+        if (isMatchValid && hasPred) {
+          filledValidCount++;
+        }
+
         if (hasRes && hasPred && isMatchValid) {
           const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
           const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
@@ -236,13 +248,14 @@ function HomeContent() {
           else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) { pts += 1; }
         }
       });
+
       return {
         id: u.id,
         name: u.username || "Jogador",
         points: pts,
         exactScores: exs,
-        betsCompleted: filledCount >= totalActiveMatches && totalActiveMatches > 0,
-        betsCount: filledCount,
+        betsCompleted: filledValidCount >= totalValidMatchesCount && totalValidMatchesCount > 0,
+        betsCount: filledValidCount,
         photoUrl: u.photoUrl,
         isWinner: false
       };
@@ -284,7 +297,7 @@ function HomeContent() {
     }
     
     return finalScoresWithWinner;
-  }, [matchDescriptions, results, predictions, allUsers, matches, isRoundFinished]);
+  }, [matchDescriptions, results, predictions, allUsers, matches, isRoundFinished, totalValidMatchesCount]);
 
   useEffect(() => {
     async function init() {
@@ -408,7 +421,6 @@ function HomeContent() {
           const betRef = doc(db, "rounds", roundId, "bets", betId);
           
           if (pred.homeScore === "" || pred.awayScore === "") {
-            // Se o palpite estiver vazio, deletamos o documento para "apagar" o palpite no banco
             deleteDocumentNonBlocking(betRef);
           } else {
             setDocumentNonBlocking(betRef, {
@@ -675,6 +687,7 @@ function HomeContent() {
                   scores={scores} 
                   isScoresHidden={isEffectivelyHidden} 
                   isRoundFinished={isRoundFinished}
+                  totalValidMatches={totalValidMatchesCount}
                 />
               </section>
 
