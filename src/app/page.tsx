@@ -82,13 +82,11 @@ function HomeContent() {
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [currentRound, setCurrentRound] = useState<number | null>(null);
   const [realCurrentRound, setRealCurrentRound] = useState<number | null>(null);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [rawMatches, setRawMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
   const [roundName, setRoundName] = useState("");
-  const [matchDescriptions, setMatchDescriptions] = useState<string[]>(Array(10).fill(""));
   const [predictions, setPredictions] = useState<PlayerPredictions>({});
-  const [results, setResults] = useState<Prediction[]>(Array(10).fill({ homeScore: "", awayScore: "" }));
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -128,6 +126,40 @@ function HomeContent() {
   }, [allUsers, user]);
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
+
+  // Mescla partidas da API com as sobreposições do Firestore
+  const matches = useMemo(() => {
+    if (!rawMatches.length) return [];
+    
+    let data = determineMatchValidity(rawMatches);
+
+    if (roundData?.matches && Array.isArray(roundData.matches)) {
+      data = data.map(m => {
+        const override = roundData.matches.find((o: any) => o.id === m.id);
+        if (override) {
+          return {
+            ...m,
+            homeScore: override.homeScore !== undefined && override.homeScore !== null ? override.homeScore : m.homeScore,
+            awayScore: override.awayScore !== undefined && override.awayScore !== null ? override.awayScore : m.awayScore,
+            status: override.status || m.status,
+          };
+        }
+        return m;
+      });
+    }
+    return data;
+  }, [rawMatches, roundData?.matches]);
+
+  const matchDescriptions = useMemo(() => {
+    return matches.slice(0, 10).map(m => `${cleanTeamName(m.homeTeam)} x ${cleanTeamName(m.awayTeam)}`);
+  }, [matches]);
+
+  const results = useMemo((): Prediction[] => {
+    return matches.slice(0, 10).map(m => ({
+      homeScore: m.status === 'finished' ? m.homeScore?.toString() || "0" : "",
+      awayScore: m.status === 'finished' ? m.awayScore?.toString() || "0" : "",
+    }));
+  }, [matches]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -207,7 +239,6 @@ function HomeContent() {
     return matches.every(m => m.status === 'finished' || m.status === 'cancelled' || m.isValidForPoints === false);
   }, [matches, loadingMatches]);
 
-  // Contagem de jogos válidos na rodada atual (desconsidera fora da janela e cancelados)
   const totalValidMatchesCount = useMemo(() => {
     if (matches.length === 0) return 10;
     return matches.slice(0, 10).filter(m => m.isValidForPoints !== false && m.status !== 'cancelled').length;
@@ -217,7 +248,6 @@ function HomeContent() {
     if (!allUsers || allUsers.length === 0) return [];
     const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
     
-    // Contagem de jogos válidos em que o placar oficial ainda não está definido
     const unfinishedMatchesCount = activeIndices.filter(idx => {
       const res = results[idx];
       const match = matches[idx];
@@ -238,7 +268,6 @@ function HomeContent() {
         const match = matches[idx];
         const isMatchValid = match?.isValidForPoints !== false && match?.status !== 'cancelled';
         
-        // Só conta como preenchido se o jogo for válido para pontuação
         if (isMatchValid && hasPred) {
           filledValidCount++;
         }
@@ -325,55 +354,24 @@ function HomeContent() {
     }
   }, [roundData, currentRound]);
 
+  // Busca partidas da API apenas quando a rodada muda
   useEffect(() => {
     if (currentRound === null) return;
-    async function loadMatches() {
+    async function loadOfficialData() {
       setLoadingMatches(true);
-      const rawData = await getBrasileiraoMatches(currentRound!);
-      let data = determineMatchValidity(rawData);
-
-      if (roundData?.matches && Array.isArray(roundData.matches)) {
-        data = data.map(m => {
-          const override = roundData.matches.find((o: any) => o.id === m.id);
-          if (override) {
-            return {
-              ...m,
-              homeScore: override.homeScore !== undefined ? override.homeScore : m.homeScore,
-              awayScore: override.awayScore !== undefined ? override.awayScore : m.awayScore,
-              status: override.status || m.status,
-            };
-          }
-          return m;
-        });
+      try {
+        const raw = await getBrasileiraoMatches(currentRound!);
+        setRawMatches(raw);
+        const leagueTable = await getLeagueStandings();
+        setStandings(leagueTable);
+      } catch (error) {
+        console.error("Erro ao carregar dados oficiais:", error);
+      } finally {
+        setLoadingMatches(false);
       }
-
-      setMatches(data);
-      const leagueTable = await getLeagueStandings();
-      setStandings(leagueTable);
-      
-      if (data.length > 0) {
-        const newDescriptions = Array(10).fill("");
-        const newResults = Array(10).fill({ homeScore: "", awayScore: "" });
-        data.forEach((match, idx) => {
-          if (idx < 10) {
-            const home = cleanTeamName(match.homeTeam);
-            const away = cleanTeamName(match.awayTeam);
-            newDescriptions[idx] = `${home} x ${away}`;
-            if (match.status === 'finished') {
-              newResults[idx] = {
-                homeScore: match.homeScore?.toString() || "",
-                awayScore: match.awayScore?.toString() || ""
-              };
-            }
-          }
-        });
-        setMatchDescriptions(newDescriptions);
-        setResults(newResults);
-      }
-      setLoadingMatches(false);
     }
-    loadMatches();
-  }, [currentRound, roundData?.matches]);
+    loadOfficialData();
+  }, [currentRound]);
 
   useEffect(() => {
     if (!allBets || !allUsers) return;
