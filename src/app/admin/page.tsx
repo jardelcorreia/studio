@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
@@ -31,12 +31,15 @@ import {
   CheckCircle2,
   Settings2,
   DollarSign,
-  LayoutGrid,
-  Table
+  Table,
+  RotateCcw,
+  Trash2,
+  Info
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getTeamAbrev, cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -130,9 +133,10 @@ export default function AdminPage() {
         if (override) {
           return {
             ...m,
-            homeScore: override.homeScore !== undefined && override.homeScore !== null ? override.homeScore : m.homeScore,
-            awayScore: override.awayScore !== undefined && override.awayScore !== null ? override.awayScore : m.awayScore,
+            homeScore: (override.homeScore !== undefined && override.homeScore !== null) ? override.homeScore : m.homeScore,
+            awayScore: (override.awayScore !== undefined && override.awayScore !== null) ? override.awayScore : m.awayScore,
             status: override.status || m.status,
+            isManual: true // Flag local para controle visual no admin
           };
         }
         return m;
@@ -142,7 +146,14 @@ export default function AdminPage() {
   }, [apiMatches, roundData?.matches]);
 
   const updateMatch = (idx: number, updates: Partial<Match>) => {
-    setMatches(prev => prev.map((m, i) => i === idx ? { ...m, ...updates } : m));
+    setMatches(prev => prev.map((m, i) => i === idx ? { ...m, ...updates, isManual: true } : m));
+  };
+
+  const resetMatch = (idx: number) => {
+    const apiMatch = apiMatches[idx];
+    if (!apiMatch) return;
+    setMatches(prev => prev.map((m, i) => i === idx ? { ...apiMatch, isManual: false } : m));
+    toast({ title: "Modo API", description: "O jogo voltará a seguir os dados automáticos após salvar." });
   };
 
   const handleSaveRound = async () => {
@@ -150,13 +161,17 @@ export default function AdminPage() {
     setSaving(true);
     try {
       const roundRef = doc(db, "rounds", roundId);
-      const matchOverrides = matches.map(m => ({
-        id: m.id,
-        homeScore: m.homeScore ?? null,
-        awayScore: m.awayScore ?? null,
-        status: m.status || 'upcoming',
-        utcDate: m.utcDate
-      }));
+      
+      // Somente salva no Firestore os jogos que foram marcados como manuais ou já eram manuais
+      const matchOverrides = matches
+        .filter(m => m.isManual)
+        .map(m => ({
+          id: m.id,
+          homeScore: m.homeScore ?? null,
+          awayScore: m.awayScore ?? null,
+          status: m.status || 'upcoming',
+          utcDate: m.utcDate
+        }));
 
       setDocumentNonBlocking(roundRef, {
         id: roundId,
@@ -168,7 +183,7 @@ export default function AdminPage() {
         dateCreated: roundData?.dateCreated || serverTimestamp(),
       }, { merge: true });
 
-      toast({ title: "Sucesso!", description: "Dados da rodada atualizados." });
+      toast({ title: "Sucesso!", description: "Configurações da rodada salvas." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Falha ao salvar." });
     } finally {
@@ -252,7 +267,7 @@ export default function AdminPage() {
             className="rounded-lg h-8 px-4 font-black italic uppercase gap-2 shadow-lg shadow-primary/20 text-[9px]"
           >
             {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-            Salvar
+            Salvar Rodada
           </Button>
         </div>
       </header>
@@ -262,11 +277,11 @@ export default function AdminPage() {
           <TabsList className="grid w-full grid-cols-2 h-10 bg-muted/50 rounded-xl p-1 mb-4">
             <TabsTrigger value="rodada" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <Table className="h-3 w-3" />
-              Jogos
+              Controle de Jogos
             </TabsTrigger>
             <TabsTrigger value="financeiro" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <DollarSign className="h-3 w-3" />
-              Liga
+              Financeiro Liga
             </TabsTrigger>
           </TabsList>
 
@@ -298,7 +313,11 @@ export default function AdminPage() {
                  <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setCurrentRound(currentRound)}
+                  onClick={() => {
+                     const matchday = currentRound;
+                     setCurrentRound(null);
+                     setTimeout(() => setCurrentRound(matchday), 10);
+                  }}
                   className="h-7 w-7 rounded-lg border-primary/10"
                   disabled={loading}
                 >
@@ -311,14 +330,24 @@ export default function AdminPage() {
                   className="rounded-lg h-7 px-4 gap-2 font-black italic uppercase text-[8px] shadow-md transition-all active:scale-95"
                 >
                   {placaresOcultos ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                  {placaresOcultos ? "Revelar" : "Ocultar"}
+                  {placaresOcultos ? "Revelar Palpites" : "Ocultar Palpites"}
                 </Button>
               </div>
             </section>
 
+            <div className="bg-muted/30 p-2 rounded-lg flex items-center gap-2 border border-primary/5">
+              <Info className="h-3 w-3 text-primary/60 shrink-0" />
+              <p className="text-[8px] font-bold text-muted-foreground uppercase leading-tight">
+                Prioridade: API. Edite os campos para criar uma sobreposição manual. Use o ícone de lixeira para voltar ao modo automático da API.
+              </p>
+            </div>
+
             <section className="space-y-1">
               {matches.map((match, idx) => (
-                <Card key={match.id} className="glass-card border-none rounded-xl overflow-hidden group">
+                <Card key={match.id} className={cn(
+                  "glass-card border-none rounded-xl overflow-hidden group transition-all",
+                  match.isManual && "ring-1 ring-primary/20 bg-primary/[0.02]"
+                )}>
                   <CardContent className="p-2 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 flex-1 justify-center">
                       <span className="text-[11px] font-black italic uppercase text-primary w-8 text-right">
@@ -364,8 +393,28 @@ export default function AdminPage() {
                         </SelectContent>
                       </Select>
                       
-                      {match.status === 'finished' && (
-                        <CheckCircle2 className="h-3 w-3 text-secondary shrink-0" />
+                      {match.isManual ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => resetMatch(idx)}
+                                className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-[10px] font-bold">Voltar para Modo API</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <div className="w-7 flex justify-center">
+                          <RefreshCw className="h-2.5 w-2.5 text-primary/20" />
+                        </div>
                       )}
                     </div>
                   </CardContent>

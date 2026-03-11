@@ -127,24 +127,23 @@ function HomeContent() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Lógica Robusta de Mesclagem: API + Firestore Overrides
+  // Lógica de Prioridade: Dados da API são soberanos, a menos que o admin tenha editado.
   const matches = useMemo(() => {
     if (!rawMatches || !rawMatches.length) return [];
     
     // 1. Aplica validade básica (datas/janelas) nos dados da API
     let data = determineMatchValidity(rawMatches);
 
-    // 2. Aplica sobreposições do Administrador vindas do Firestore
+    // 2. Aplica sobreposições do Administrador vindas do Firestore (se houver)
     if (roundData?.matches && Array.isArray(roundData.matches)) {
       data = data.map(m => {
         const override = roundData.matches.find((o: any) => o.id === m.id);
         if (override) {
           return {
             ...m,
-            // Prioriza placares do Admin se existirem
+            // Só usa o dado do admin se ele não for nulo/indefinido
             homeScore: (override.homeScore !== undefined && override.homeScore !== null) ? override.homeScore : m.homeScore,
             awayScore: (override.awayScore !== undefined && override.awayScore !== null) ? override.awayScore : m.awayScore,
-            // Prioriza status do Admin (essencial para 'live' manual)
             status: override.status || m.status,
           };
         }
