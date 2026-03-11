@@ -7,7 +7,7 @@ import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
-import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle, ShieldCheck, User, Zap, Lock } from "lucide-react";
+import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle, ShieldCheck, User, Zap, Lock, AlertCircle } from "lucide-react";
 import { cn, cleanTeamName } from "@/lib/utils";
 import { Button } from "./ui/button";
 import {
@@ -85,6 +85,15 @@ export function MatchCalendar({
       }
     }
   };
+
+  if (!matches || matches.length === 0) {
+    return (
+      <div className="h-96 flex flex-col items-center justify-center glass-card rounded-[2.5rem] border-dashed border-2 gap-4">
+        <AlertCircle className="h-10 w-10 text-muted-foreground opacity-30" />
+        <span className="text-sm font-black italic uppercase text-muted-foreground">Nenhum jogo encontrado para esta rodada.</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -324,4 +333,3 @@ export function MatchCalendar({
     </div>
   );
 }
-

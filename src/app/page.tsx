@@ -39,7 +39,8 @@ import {
   BellRing,
   CheckCircle2,
   Settings,
-  Camera
+  Camera,
+  AlertCircle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -90,7 +91,7 @@ function HomeContent() {
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const [showNotificationSuccess, setShowNotificationSuccess] = useState(false);
 
   const initialPermissionRef = useRef<string | null>(null);
@@ -127,9 +128,8 @@ function HomeContent() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Mescla partidas da API com as sobreposições do Firestore de forma reativa
   const matches = useMemo(() => {
-    if (!rawMatches.length) return [];
+    if (!rawMatches || !rawMatches.length) return [];
     
     let data = determineMatchValidity(rawMatches);
 
@@ -154,7 +154,6 @@ function HomeContent() {
     return matches.slice(0, 10).map(m => `${cleanTeamName(m.homeTeam)} x ${cleanTeamName(m.awayTeam)}`);
   }, [matches]);
 
-  // Resultados que alimentam os pontos (Agora inclui jogos ao vivo para ranking em tempo real)
   const results = useMemo((): Prediction[] => {
     return matches.slice(0, 10).map(m => {
       const hasScore = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
@@ -212,6 +211,7 @@ function HomeContent() {
   }, [showProfileDialog]);
 
   useEffect(() => {
+    setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
@@ -227,7 +227,7 @@ function HomeContent() {
   }, [permission, isAdminUser]);
 
   const isTimePassed = useMemo(() => {
-    if (!currentRound || currentRound !== realCurrentRound || matches.length === 0 || loadingMatches) return false;
+    if (!now || !currentRound || currentRound !== realCurrentRound || matches.length === 0 || loadingMatches) return false;
     if (matches[0].matchday !== currentRound) return false;
     return matches.some(m => {
       if (m.status === 'cancelled' || m.isValidForPoints === false) return false;
@@ -360,7 +360,6 @@ function HomeContent() {
     }
   }, [roundData, currentRound]);
 
-  // Busca partidas da API apenas quando a rodada muda
   useEffect(() => {
     if (currentRound === null) return;
     async function loadOfficialData() {
@@ -712,8 +711,14 @@ function HomeContent() {
                       onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
                       onSave={handleSaveAll}
                       isSaving={isSaving}
-                      isLocked={!isEffectivelyHidden}
+                      isLocked={!now || isEffectivelyHidden}
                     />
+                  )}
+                  {currentRound === null && (
+                    <div className="h-96 flex flex-col items-center justify-center glass-card rounded-[2.5rem] border-dashed border-2 gap-4">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                      <span className="text-sm font-black italic uppercase text-muted-foreground">Buscando rodada atual...</span>
+                    </div>
                   )}
                 </div>
                 <div className="lg:col-span-4 hidden lg:block">
@@ -830,4 +835,3 @@ export default function Home() {
     </React.Suspense>
   );
 }
-

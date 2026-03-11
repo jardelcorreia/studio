@@ -207,7 +207,7 @@ export function BettingTable({
   allUsers,
 }: BettingTableProps) {
   const getPoints = (userId: string, idx: number) => {
-    if (matches[idx]?.isValidForPoints === false) return null;
+    if (!matches[idx] || matches[idx]?.isValidForPoints === false) return null;
     const res = results[idx];
     const pred = predictions[userId]?.[idx];
     if (!res?.homeScore || !res?.awayScore || !pred?.homeScore || !pred?.awayScore) return null;
@@ -225,6 +225,15 @@ export function BettingTable({
   };
 
   const sortedUsers = [...allUsers].sort((a, b) => (a.username || "").localeCompare(b.username || ""));
+
+  if (!matches || matches.length === 0) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center py-20 gap-4 glass-card rounded-3xl border-dashed border-2">
+        <AlertCircle className="h-10 w-10 text-muted-foreground opacity-30" />
+        <p className="text-sm font-black italic uppercase text-muted-foreground">Aguardando dados da rodada para exibir comparativo.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4">
