@@ -16,11 +16,13 @@ Se o botão de "Publish" no painel falhar ou se você quiser forçar uma atualiz
 
 1. **Atualizar o CLI**: Garanta que tem a versão mais recente: `npm install -g firebase-tools`
 2. **Login**: `firebase login`
-3. **Publicar Regras e Funções**: `npm run deploy` (isso ativa as travas de segurança e as notificações).
+3. **Publicar Regras e Funções**: `firebase deploy --only firestore:rules,functions`
 4. **Publicar App (Next.js)**: 
    - O nome do seu backend é **studio**.
    - Use o comando abaixo para forçar uma nova versão do site:
    `firebase apphosting:rollouts:create studio`
+
+> **💡 Dica de Produção**: Se você publicou e não vê as mudanças, use `Ctrl + F5` (Windows) ou `Cmd + Shift + R` (Mac) para limpar o cache do navegador e do Service Worker.
 
 ## 🔔 Sistema de Notificações (Push)
 

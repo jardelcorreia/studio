@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -210,6 +211,7 @@ function HomeContent() {
   }, [showProfileDialog]);
 
   useEffect(() => {
+    // Hidratação segura: inicializa o tempo apenas no cliente
     setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
@@ -239,6 +241,7 @@ function HomeContent() {
     return placaresOcultos && !isTimePassed;
   }, [placaresOcultos, isTimePassed]);
 
+  // TRAVA DE SEGURANÇA: Bloqueia palpites se revelados OU se o tempo passou
   const isLocked = useMemo(() => {
     if (!now) return true; // Enquanto carrega o tempo, trava por segurança
     return !isEffectivelyHidden; // Se os placares NÃO estão ocultos, o jogo está travado
