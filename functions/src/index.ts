@@ -12,7 +12,7 @@ if (admin.apps.length === 0) {
  * Utiliza o ID do projeto do Firebase para garantir que os links funcionem no ambiente de teste e produção.
  */
 const PROJECT_ID = process.env.GCLOUD_PROJECT || "studio-7344387368-26e1e";
-const APP_URL = `https://${PROJECT_ID}.web.app`;
+const APP_URL = `https://studio--studio-${PROJECT_ID}.us-central1.hosted.app`;
 
 /**
  * Verifica se estamos no horário de silêncio (22h às 08h BRT).

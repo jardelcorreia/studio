@@ -211,7 +211,6 @@ function HomeContent() {
   }, [showProfileDialog]);
 
   useEffect(() => {
-    // Hidratação segura: inicializa o tempo apenas no cliente
     setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
@@ -237,15 +236,24 @@ function HomeContent() {
     });
   }, [matches, now, currentRound, realCurrentRound, loadingMatches]);
 
+  /**
+   * Lógica de Visibilidade:
+   * Segue estritamente a escolha do administrador (placaresOcultos).
+   * Se placaresOcultos for true, oculta palpites alheios e abre a edição.
+   * Se placaresOcultos for false, revela palpites alheios e trava a edição.
+   */
   const isEffectivelyHidden = useMemo(() => {
-    return placaresOcultos && !isTimePassed;
-  }, [placaresOcultos, isTimePassed]);
+    return placaresOcultos;
+  }, [placaresOcultos]);
 
-  // TRAVA DE SEGURANÇA: Bloqueia palpites se revelados OU se o tempo passou
+  /**
+   * Lógica de Travamento:
+   * Se os palpites NÃO estão ocultos (ou seja, estão revelados), então a quila está travada.
+   */
   const isLocked = useMemo(() => {
-    if (!now) return true; // Enquanto carrega o tempo, trava por segurança
-    return !isEffectivelyHidden; // Se os placares NÃO estão ocultos, o jogo está travado
-  }, [now, isEffectivelyHidden]);
+    if (!now) return true;
+    return !placaresOcultos;
+  }, [now, placaresOcultos]);
 
   const isRoundFinished = useMemo(() => {
     if (matches.length === 0 || loadingMatches) return false;
