@@ -127,7 +127,7 @@ function HomeContent() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
-  // Mescla partidas da API com as sobreposições do Firestore
+  // Mescla partidas da API com as sobreposições do Firestore de forma reativa
   const matches = useMemo(() => {
     if (!rawMatches.length) return [];
     
@@ -154,11 +154,17 @@ function HomeContent() {
     return matches.slice(0, 10).map(m => `${cleanTeamName(m.homeTeam)} x ${cleanTeamName(m.awayTeam)}`);
   }, [matches]);
 
+  // Resultados que alimentam os pontos (Agora inclui jogos ao vivo para ranking em tempo real)
   const results = useMemo((): Prediction[] => {
-    return matches.slice(0, 10).map(m => ({
-      homeScore: m.status === 'finished' ? m.homeScore?.toString() || "0" : "",
-      awayScore: m.status === 'finished' ? m.awayScore?.toString() || "0" : "",
-    }));
+    return matches.slice(0, 10).map(m => {
+      const hasScore = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
+      const isActive = m.status === 'finished' || m.status === 'live';
+      
+      return {
+        homeScore: (isActive && hasScore) ? m.homeScore!.toString() : "",
+        awayScore: (isActive && hasScore) ? m.awayScore!.toString() : "",
+      };
+    });
   }, [matches]);
 
   useEffect(() => {
