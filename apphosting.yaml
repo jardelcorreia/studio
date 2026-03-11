@@ -1,10 +1,15 @@
+
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Aumentando recursos para evitar falhas de rollout por timeout ou falta de memória
   minInstances: 0
-  maxInstances: 2
+  maxInstances: 10
   cpu: 1
   memoryMiB: 1024
   concurrency: 80
+
+# Forçando o uso do Node.js 22 no ambiente de execução
+env:
+  - variable: NODE_VERSION
+    value: "22"
