@@ -240,6 +240,11 @@ function HomeContent() {
     return placaresOcultos && !isTimePassed;
   }, [placaresOcultos, isTimePassed]);
 
+  const isLocked = useMemo(() => {
+    if (!now) return true; // Enquanto carrega o tempo, trava por segurança
+    return !isEffectivelyHidden; // Se os placares NÃO estão ocultos, o jogo está travado
+  }, [now, isEffectivelyHidden]);
+
   const isRoundFinished = useMemo(() => {
     if (matches.length === 0 || loadingMatches) return false;
     return matches.every(m => m.status === 'finished' || m.status === 'cancelled' || m.isValidForPoints === false);
@@ -414,7 +419,7 @@ function HomeContent() {
   }, [scores, currentRound, isRoundFinished]);
 
   const handleSaveAll = async () => {
-    if (!currentRound || !user || !roundId) return;
+    if (!currentRound || !user || !roundId || isLocked) return;
     setIsSaving(true);
     try {
       const myPreds = predictions[user.uid];
@@ -449,7 +454,7 @@ function HomeContent() {
   const handleLogout = () => { setMustChangePassword(false); signOut(auth); };
 
   const updatePrediction = (userId: string, idx: number, type: 'home' | 'away', value: string) => {
-    if (userId !== user?.uid) return;
+    if (userId !== user?.uid || isLocked) return;
     setPredictions(prev => ({
       ...prev,
       [userId]: (prev[userId] || Array(10).fill({ homeScore: "", awayScore: "" })).map((p, i) =>
@@ -711,7 +716,7 @@ function HomeContent() {
                       onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
                       onSave={handleSaveAll}
                       isSaving={isSaving}
-                      isLocked={!now || isEffectivelyHidden}
+                      isLocked={isLocked}
                     />
                   )}
                   {currentRound === null && (
