@@ -310,19 +310,29 @@ export default function AdminPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                 <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                     const matchday = currentRound;
-                     setCurrentRound(null);
-                     setTimeout(() => setCurrentRound(matchday), 10);
-                  }}
-                  className="h-7 w-7 rounded-lg border-primary/10"
-                  disabled={loading}
-                >
-                  <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                           const matchday = currentRound;
+                           setCurrentRound(null);
+                           setTimeout(() => setCurrentRound(matchday), 10);
+                        }}
+                        className="h-7 w-7 rounded-lg border-primary/10"
+                        disabled={loading}
+                      >
+                        <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-[10px] font-bold">Forçar atualização dos dados da API</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 <Button
                   variant={placaresOcultos ? "destructive" : "secondary"}
                   onClick={toggleVisibility}
