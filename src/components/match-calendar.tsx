@@ -7,7 +7,7 @@ import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
-import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle, ShieldCheck, User } from "lucide-react";
+import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle, ShieldCheck, User, Zap } from "lucide-react";
 import { cn, cleanTeamName } from "@/lib/utils";
 import { Button } from "./ui/button";
 import {
@@ -199,18 +199,44 @@ export function MatchCalendar({
                       </div>
                     )}
 
-                    {/* Palpite Pessoal (Todos os usuários, incluindo Admin) */}
-                    {isFinished && !isAdmin ? (
-                      <div className="flex items-center gap-2 md:gap-4">
-                        <span className="text-3xl md:text-4xl font-black italic text-primary">{match.homeScore}</span>
-                        <div className="h-6 md:h-8 w-[2px] bg-muted/50 rotate-12" />
-                        <span className="text-3xl md:text-4xl font-black italic text-primary">{match.awayScore}</span>
+                    {/* Palpite Pessoal / Placar Atual (Todos os usuários, incluindo Admin) */}
+                    {(isFinished || isLive) && !isAdmin ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-4 relative">
+                          {isLive && (
+                            <Zap className="h-3 w-3 text-destructive absolute -top-4 left-1/2 -translate-x-1/2 animate-bounce fill-current" />
+                          )}
+                          <span className={cn(
+                            "text-3xl md:text-4xl font-black italic",
+                            isLive ? "text-destructive" : "text-primary"
+                          )}>{match.homeScore ?? 0}</span>
+                          <div className="h-6 md:h-8 w-[2px] bg-muted/50 rotate-12" />
+                          <span className={cn(
+                            "text-3xl md:text-4xl font-black italic",
+                            isLive ? "text-destructive" : "text-primary"
+                          )}>{match.awayScore ?? 0}</span>
+                        </div>
+                        
+                        {isLive && (
+                          <div className="flex flex-col items-center bg-primary/5 px-3 py-1 rounded-xl border border-primary/10 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+                             <div className="flex items-center gap-1 text-[7px] font-black uppercase text-muted-foreground/70 tracking-widest">
+                                <User className="h-2 w-2" /> Meu Palpite
+                             </div>
+                             <div className="flex items-center gap-1.5 font-black italic text-xs text-primary/70 tabular-nums">
+                                <span>{currentPred.homeScore || "0"}</span>
+                                <span className="text-[8px] opacity-30">X</span>
+                                <span>{currentPred.awayScore || "0"}</span>
+                             </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-1.5">
-                         <div className="flex items-center gap-1 text-[7px] font-black uppercase text-muted-foreground">
-                            <User className="h-2 w-2" /> Meu Palpite
-                         </div>
+                         {!isAdmin && (
+                           <div className="flex items-center gap-1 text-[7px] font-black uppercase text-muted-foreground">
+                              <User className="h-2 w-2" /> Meu Palpite
+                           </div>
+                         )}
                          <div className="flex items-center gap-1.5">
                             <Input
                               id={`cal-input-${idx}-home`}
@@ -218,7 +244,7 @@ export function MatchCalendar({
                               value={currentPred.homeScore}
                               onChange={(e) => handlePredictionChange(idx, 'home', e.target.value)}
                               className="w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
-                              disabled={isFinished || isCancelled || isOutOfWindow}
+                              disabled={isFinished || isCancelled || isOutOfWindow || isLive}
                             />
                             <span className="font-black text-primary/40 italic text-xs">X</span>
                             <Input
@@ -227,7 +253,7 @@ export function MatchCalendar({
                               value={currentPred.awayScore}
                               onChange={(e) => handlePredictionChange(idx, 'away', e.target.value)}
                               className="w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
-                              disabled={isFinished || isCancelled || isOutOfWindow}
+                              disabled={isFinished || isCancelled || isOutOfWindow || isLive}
                             />
                          </div>
                       </div>
