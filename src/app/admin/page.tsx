@@ -46,6 +46,7 @@ export default function AdminPage() {
 
   const [currentRound, setCurrentRound] = useState<number | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [apiMatches, setApiMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [placaresOcultos, setPlacaresOcultos] = useState(true);
@@ -101,32 +102,44 @@ export default function AdminPage() {
     }
   }, [roundData, currentRound]);
 
+  // Carrega apenas os dados da API quando a rodada muda
   useEffect(() => {
     if (currentRound === null) return;
-    async function loadMatches() {
+    async function loadApiMatches() {
       setLoading(true);
-      const rawData = await getBrasileiraoMatches(currentRound!);
-      let data = rawData;
-
-      if (roundData?.matches && Array.isArray(roundData.matches)) {
-        data = data.map(m => {
-          const override = roundData.matches.find((o: any) => o.id === m.id);
-          if (override) {
-            return {
-              ...m,
-              homeScore: override.homeScore !== undefined && override.homeScore !== null ? override.homeScore : m.homeScore,
-              awayScore: override.awayScore !== undefined && override.awayScore !== null ? override.awayScore : m.awayScore,
-              status: override.status || m.status,
-            };
-          }
-          return m;
-        });
+      try {
+        const rawData = await getBrasileiraoMatches(currentRound!);
+        setApiMatches(rawData);
+      } catch (error) {
+        toast({ variant: "destructive", title: "Erro API", description: "Falha ao carregar jogos oficiais." });
+      } finally {
+        setLoading(false);
       }
-      setMatches(data);
-      setLoading(false);
     }
-    loadMatches();
-  }, [currentRound, roundData?.matches]);
+    loadApiMatches();
+  }, [currentRound, toast]);
+
+  // Mescla API com Firestore para exibição local
+  useEffect(() => {
+    if (apiMatches.length === 0) return;
+    
+    let merged = [...apiMatches];
+    if (roundData?.matches && Array.isArray(roundData.matches)) {
+      merged = merged.map(m => {
+        const override = roundData.matches.find((o: any) => o.id === m.id);
+        if (override) {
+          return {
+            ...m,
+            homeScore: override.homeScore !== undefined && override.homeScore !== null ? override.homeScore : m.homeScore,
+            awayScore: override.awayScore !== undefined && override.awayScore !== null ? override.awayScore : m.awayScore,
+            status: override.status || m.status,
+          };
+        }
+        return m;
+      });
+    }
+    setMatches(merged);
+  }, [apiMatches, roundData?.matches]);
 
   const updateMatch = (idx: number, updates: Partial<Match>) => {
     setMatches(prev => prev.map((m, i) => i === idx ? { ...m, ...updates } : m));
@@ -141,7 +154,7 @@ export default function AdminPage() {
         id: m.id,
         homeScore: m.homeScore ?? null,
         awayScore: m.awayScore ?? null,
-        status: m.status,
+        status: m.status || 'upcoming',
         utcDate: m.utcDate
       }));
 
@@ -281,15 +294,26 @@ export default function AdminPage() {
                 </Button>
               </div>
 
-              <Button
-                variant={placaresOcultos ? "destructive" : "secondary"}
-                onClick={toggleVisibility}
-                size="sm"
-                className="rounded-lg h-7 px-4 gap-2 font-black italic uppercase text-[8px] shadow-md transition-all active:scale-95"
-              >
-                {placaresOcultos ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                {placaresOcultos ? "Revelar" : "Ocultar"}
-              </Button>
+              <div className="flex items-center gap-2">
+                 <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentRound(currentRound)}
+                  className="h-7 w-7 rounded-lg border-primary/10"
+                  disabled={loading}
+                >
+                  <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+                </Button>
+                <Button
+                  variant={placaresOcultos ? "destructive" : "secondary"}
+                  onClick={toggleVisibility}
+                  size="sm"
+                  className="rounded-lg h-7 px-4 gap-2 font-black italic uppercase text-[8px] shadow-md transition-all active:scale-95"
+                >
+                  {placaresOcultos ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  {placaresOcultos ? "Revelar" : "Ocultar"}
+                </Button>
+              </div>
             </section>
 
             <section className="space-y-1">

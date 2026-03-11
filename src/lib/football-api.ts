@@ -59,7 +59,7 @@ export async function getBrasileiraoMatches(matchday: number): Promise<Match[]> 
       const awayScore = m.score.fullTime.away;
       const rawStatus = m.status;
 
-      // 1. Mapeamento Direto de Status
+      // Mapeamento Direto de Status da API Football-Data.org
       let status: MatchStatus = 'upcoming';
 
       if (['SCHEDULED', 'TIMED', 'SUSPENDED'].includes(rawStatus)) {
@@ -70,12 +70,6 @@ export async function getBrasileiraoMatches(matchday: number): Promise<Match[]> 
         status = 'finished';
       } else if (['POSTPONED', 'CANCELLED'].includes(rawStatus)) {
         status = 'cancelled';
-      }
-
-      // 2. Regra de Segurança para Resultados Finais
-      // Se houver placar, consideramos finalizado independentemente do status da API
-      if (homeScore !== null && awayScore !== null) {
-        status = 'finished';
       }
 
       return {

@@ -82,7 +82,6 @@ function HomeContent() {
   const [darkMode, setDarkMode] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [currentRound, setCurrentRound] = useState<number | null>(null);
-  const [realCurrentRound, setRealCurrentRound] = useState<number | null>(null);
   const [rawMatches, setRawMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
@@ -128,19 +127,24 @@ function HomeContent() {
 
   const isAdminUser = user?.email === "jardel@alphabet.com";
 
+  // Lógica Robusta de Mesclagem: API + Firestore Overrides
   const matches = useMemo(() => {
     if (!rawMatches || !rawMatches.length) return [];
     
+    // 1. Aplica validade básica (datas/janelas) nos dados da API
     let data = determineMatchValidity(rawMatches);
 
+    // 2. Aplica sobreposições do Administrador vindas do Firestore
     if (roundData?.matches && Array.isArray(roundData.matches)) {
       data = data.map(m => {
         const override = roundData.matches.find((o: any) => o.id === m.id);
         if (override) {
           return {
             ...m,
-            homeScore: override.homeScore !== undefined && override.homeScore !== null ? override.homeScore : m.homeScore,
-            awayScore: override.awayScore !== undefined && override.awayScore !== null ? override.awayScore : m.awayScore,
+            // Prioriza placares do Admin se existirem
+            homeScore: (override.homeScore !== undefined && override.homeScore !== null) ? override.homeScore : m.homeScore,
+            awayScore: (override.awayScore !== undefined && override.awayScore !== null) ? override.awayScore : m.awayScore,
+            // Prioriza status do Admin (essencial para 'live' manual)
             status: override.status || m.status,
           };
         }
@@ -157,6 +161,7 @@ function HomeContent() {
   const results = useMemo((): Prediction[] => {
     return matches.slice(0, 10).map(m => {
       const hasScore = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
+      // Considera pontos para jogos Finalizados OU Ao Vivo (para feedback instantâneo)
       const isActive = m.status === 'finished' || m.status === 'live';
       
       return {
@@ -226,21 +231,11 @@ function HomeContent() {
     }
   }, [permission, isAdminUser]);
 
-  /**
-   * Lógica de Visibilidade e Bloqueio:
-   * 1. Se placaresOcultos for TRUE (ADMIN clicou em Ocultar):
-   *    - Os usuários veem '?' para os outros.
-   *    - Os usuários podem EDITAR seus próprios palpites (isLocked = false).
-   * 2. Se placaresOcultos for FALSE (ADMIN clicou em Revelar):
-   *    - Todos veem os palpites de todos.
-   *    - A edição é bloqueada para todos (isLocked = true).
-   */
   const isEffectivelyHidden = useMemo(() => {
     return placaresOcultos;
   }, [placaresOcultos]);
 
   const isLocked = useMemo(() => {
-    // Se os placares estão revelados, a edição está travada.
     return !placaresOcultos;
   }, [placaresOcultos]);
 
@@ -344,7 +339,6 @@ function HomeContent() {
     async function init() {
       const matchday = await getBrasileiraoCurrentMatchday();
       setCurrentRound(matchday);
-      setRealCurrentRound(matchday);
     }
     init();
   }, []);
