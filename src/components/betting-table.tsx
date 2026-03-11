@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -21,6 +20,7 @@ interface BettingTableProps {
   currentPlayerId: string;
   isAdmin?: boolean;
   allUsers: any[];
+  isLocked?: boolean;
 }
 
 function RoundCardView({
@@ -205,6 +205,7 @@ export function BettingTable({
   currentPlayerId,
   isAdmin,
   allUsers,
+  isLocked = false,
 }: BettingTableProps) {
   const getPoints = (userId: string, idx: number) => {
     if (!matches[idx] || matches[idx]?.isValidForPoints === false) return null;
@@ -339,13 +340,17 @@ export function BettingTable({
                           </div>
                           
                           {isCurrent ? (
-                            <div className="flex items-center justify-center gap-0.5 px-1 py-0.5 rounded-xl border border-primary/20 bg-primary/5">
+                            <div className={cn(
+                              "flex items-center justify-center gap-0.5 px-1 py-0.5 rounded-xl border border-primary/20 transition-all",
+                              isLocked ? "bg-muted/30 opacity-50" : "bg-primary/5"
+                            )}>
                               <Input 
                                 type="number" 
                                 value={pred.homeScore} 
                                 onChange={(e) => setPrediction(u.id, idx, 'home', e.target.value)} 
                                 className="w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0" 
                                 placeholder="-"
+                                disabled={isLocked}
                               />
                               <span className="text-[8px] font-black opacity-30 italic">x</span>
                               <Input 
@@ -354,6 +359,7 @@ export function BettingTable({
                                 onChange={(e) => setPrediction(u.id, idx, 'away', e.target.value)} 
                                 className="w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0" 
                                 placeholder="-"
+                                disabled={isLocked}
                               />
                             </div>
                           ) : (

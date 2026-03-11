@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -749,6 +748,7 @@ function HomeContent() {
                 currentPlayerId={user?.uid || ""}
                 isAdmin={isAdminUser}
                 allUsers={allUsers || []}
+                isLocked={isLocked}
               />
             </div>
           )}
