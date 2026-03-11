@@ -7,7 +7,7 @@ import { TEAMS } from "@/lib/constants";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
-import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle, ShieldCheck, User, Zap } from "lucide-react";
+import { CalendarDays, Clock, ChevronLeft, ChevronRight, Save, Loader2, Sparkles, AlertTriangle, ShieldCheck, User, Zap, Lock } from "lucide-react";
 import { cn, cleanTeamName } from "@/lib/utils";
 import { Button } from "./ui/button";
 import {
@@ -30,6 +30,7 @@ interface MatchCalendarProps {
   onNext: () => void;
   onSave: () => void;
   isSaving: boolean;
+  isLocked?: boolean;
 }
 
 export function MatchCalendar({ 
@@ -43,7 +44,8 @@ export function MatchCalendar({
   onPrev, 
   onNext,
   onSave,
-  isSaving
+  isSaving,
+  isLocked = false
 }: MatchCalendarProps) {
   
   const getTeamInfo = (name: string) => {
@@ -69,6 +71,7 @@ export function MatchCalendar({
   };
 
   const handlePredictionChange = (idx: number, type: 'home' | 'away', value: string) => {
+    if (isLocked) return;
     const cleanValue = value.slice(-1);
     setPrediction(idx, type, cleanValue);
 
@@ -217,24 +220,22 @@ export function MatchCalendar({
                           )}>{match.awayScore ?? 0}</span>
                         </div>
                         
-                        {isLive && (
-                          <div className="flex flex-col items-center bg-primary/5 px-3 py-1 rounded-xl border border-primary/10 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
-                             <div className="flex items-center gap-1 text-[7px] font-black uppercase text-muted-foreground/70 tracking-widest">
-                                <User className="h-2 w-2" /> Meu Palpite
-                             </div>
-                             <div className="flex items-center gap-1.5 font-black italic text-xs text-primary/70 tabular-nums">
-                                <span>{currentPred.homeScore || "0"}</span>
-                                <span className="text-[8px] opacity-30">X</span>
-                                <span>{currentPred.awayScore || "0"}</span>
-                             </div>
-                          </div>
-                        )}
+                        <div className="flex flex-col items-center bg-primary/5 px-3 py-1 rounded-xl border border-primary/10 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+                           <div className="flex items-center gap-1 text-[7px] font-black uppercase text-muted-foreground/70 tracking-widest">
+                              <User className="h-2 w-2" /> Meu Palpite
+                           </div>
+                           <div className="flex items-center gap-1.5 font-black italic text-xs text-primary/70 tabular-nums">
+                              <span>{currentPred.homeScore || "0"}</span>
+                              <span className="text-[8px] opacity-30">X</span>
+                              <span>{currentPred.awayScore || "0"}</span>
+                           </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-1.5">
                          {!isAdmin && (
                            <div className="flex items-center gap-1 text-[7px] font-black uppercase text-muted-foreground">
-                              <User className="h-2 w-2" /> Meu Palpite
+                              <User className="h-2 w-2" /> {isLocked ? "Palpite Encerrado" : "Meu Palpite"}
                            </div>
                          )}
                          <div className="flex items-center gap-1.5">
@@ -243,8 +244,11 @@ export function MatchCalendar({
                               type="number"
                               value={currentPred.homeScore}
                               onChange={(e) => handlePredictionChange(idx, 'home', e.target.value)}
-                              className="w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
-                              disabled={isFinished || isCancelled || isOutOfWindow || isLive}
+                              className={cn(
+                                "w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner",
+                                isLocked && "bg-muted/30 opacity-50 cursor-not-allowed"
+                              )}
+                              disabled={isFinished || isCancelled || isOutOfWindow || isLive || isLocked}
                             />
                             <span className="font-black text-primary/40 italic text-xs">X</span>
                             <Input
@@ -252,8 +256,11 @@ export function MatchCalendar({
                               type="number"
                               value={currentPred.awayScore}
                               onChange={(e) => handlePredictionChange(idx, 'away', e.target.value)}
-                              className="w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner"
-                              disabled={isFinished || isCancelled || isOutOfWindow || isLive}
+                              className={cn(
+                                "w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner",
+                                isLocked && "bg-muted/30 opacity-50 cursor-not-allowed"
+                              )}
+                              disabled={isFinished || isCancelled || isOutOfWindow || isLive || isLocked}
                             />
                          </div>
                       </div>
@@ -276,7 +283,7 @@ export function MatchCalendar({
                    <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3 text-primary/40" />
                       <span className="text-[10px] font-black italic text-primary/60">
-                        {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isLive ? "AO VIVO" : isCancelled ? "PARTIDA ADIADA" : "AGUARDANDO PALPITE"}
+                        {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isLive ? "AO VIVO" : isCancelled ? "PARTIDA ADIADA" : isLocked ? "PALPITES ENCERRADOS" : "AGUARDANDO PALPITE"}
                       </span>
                    </div>
                    {isEffectivelyInvalid && (
@@ -292,17 +299,29 @@ export function MatchCalendar({
         })}
       </div>
 
-      <div className="flex justify-center pt-8">
-        <Button 
-          size="lg" 
-          onClick={onSave} 
-          disabled={isSaving}
-          className="h-16 px-12 rounded-3xl gap-4 font-black italic uppercase text-xl sports-gradient shadow-2xl shadow-primary/40 hover:scale-[1.05] transition-transform active:scale-95"
-        >
-          {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : <Sparkles className="h-6 w-6 fill-current" />}
-          {isSaving ? "Sincronizando..." : "CONFIRMAR QUILA"}
-        </Button>
-      </div>
+      {!isLocked && (
+        <div className="flex justify-center pt-8">
+          <Button 
+            size="lg" 
+            onClick={onSave} 
+            disabled={isSaving}
+            className="h-16 px-12 rounded-3xl gap-4 font-black italic uppercase text-xl sports-gradient shadow-2xl shadow-primary/40 hover:scale-[1.05] transition-transform active:scale-95"
+          >
+            {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : <Sparkles className="h-6 w-6 fill-current" />}
+            {isSaving ? "Sincronizando..." : "CONFIRMAR QUILA"}
+          </Button>
+        </div>
+      )}
+
+      {isLocked && !isAdmin && (
+        <div className="flex justify-center pt-8">
+           <div className="flex items-center gap-3 bg-muted/50 px-8 py-4 rounded-3xl border border-dashed border-primary/20 text-muted-foreground animate-in fade-in zoom-in duration-500">
+              <Lock className="h-5 w-5 opacity-40" />
+              <span className="text-sm font-black italic uppercase tracking-widest">Os palpites para esta rodada foram encerrados</span>
+           </div>
+        </div>
+      )}
     </div>
   );
 }
+

@@ -712,6 +712,7 @@ function HomeContent() {
                       onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))}
                       onSave={handleSaveAll}
                       isSaving={isSaving}
+                      isLocked={!isEffectivelyHidden}
                     />
                   )}
                 </div>
@@ -829,3 +830,4 @@ export default function Home() {
     </React.Suspense>
   );
 }
+
