@@ -45,7 +45,7 @@ export async function getBrasileiraoMatches(matchday: number): Promise<Match[]> 
       headers: {
         'X-Auth-Token': API_KEY,
       },
-      next: { revalidate: 3600 }, // Cache de 1 hora
+      next: { revalidate: 60 }, // Cache de 1 minuto para resultados em tempo real
     });
 
     if (!response.ok) {
@@ -100,7 +100,7 @@ export async function getLeagueStandings(): Promise<StandingEntry[]> {
       headers: {
         'X-Auth-Token': API_KEY,
       },
-      next: { revalidate: 3600 },
+      next: { revalidate: 300 }, // Cache de 5 minutos para tabela
     });
 
     if (!response.ok) return [];
