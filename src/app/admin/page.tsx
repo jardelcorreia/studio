@@ -31,7 +31,8 @@ import {
   CheckCircle2,
   Settings2,
   DollarSign,
-  LayoutGrid
+  LayoutGrid,
+  Table
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getTeamAbrev, cn } from "@/lib/utils";
@@ -113,8 +114,8 @@ export default function AdminPage() {
           if (override) {
             return {
               ...m,
-              homeScore: override.homeScore !== undefined ? override.homeScore : m.homeScore,
-              awayScore: override.awayScore !== undefined ? override.awayScore : m.awayScore,
+              homeScore: override.homeScore !== undefined && override.homeScore !== null ? override.homeScore : m.homeScore,
+              awayScore: override.awayScore !== undefined && override.awayScore !== null ? override.awayScore : m.awayScore,
               status: override.status || m.status,
             };
           }
@@ -194,7 +195,7 @@ export default function AdminPage() {
   const toggleVisibility = () => {
     if (!roundId) return;
     const newState = !placaresOcultos;
-    setPlacaresOcultos(newState); // Optimistic UI update
+    setPlacaresOcultos(newState);
 
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
