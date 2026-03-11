@@ -226,34 +226,23 @@ function HomeContent() {
     }
   }, [permission, isAdminUser]);
 
-  const isTimePassed = useMemo(() => {
-    if (!now || !currentRound || currentRound !== realCurrentRound || matches.length === 0 || loadingMatches) return false;
-    if (matches[0].matchday !== currentRound) return false;
-    return matches.some(m => {
-      if (m.status === 'cancelled' || m.isValidForPoints === false) return false;
-      const matchStartTime = new Date(m.utcDate);
-      return now >= matchStartTime;
-    });
-  }, [matches, now, currentRound, realCurrentRound, loadingMatches]);
-
   /**
-   * Lógica de Visibilidade:
-   * Segue estritamente a escolha do administrador (placaresOcultos).
-   * Se placaresOcultos for true, oculta palpites alheios e abre a edição.
-   * Se placaresOcultos for false, revela palpites alheios e trava a edição.
+   * Lógica de Visibilidade e Bloqueio:
+   * 1. Se placaresOcultos for TRUE (ADMIN clicou em Ocultar):
+   *    - Os usuários veem '?' para os outros.
+   *    - Os usuários podem EDITAR seus próprios palpites (isLocked = false).
+   * 2. Se placaresOcultos for FALSE (ADMIN clicou em Revelar):
+   *    - Todos veem os palpites de todos.
+   *    - A edição é bloqueada para todos (isLocked = true).
    */
   const isEffectivelyHidden = useMemo(() => {
     return placaresOcultos;
   }, [placaresOcultos]);
 
-  /**
-   * Lógica de Travamento:
-   * Se os palpites NÃO estão ocultos (ou seja, estão revelados), então a quila está travada.
-   */
   const isLocked = useMemo(() => {
-    if (!now) return true;
+    // Se os placares estão revelados, a edição está travada.
     return !placaresOcultos;
-  }, [now, placaresOcultos]);
+  }, [placaresOcultos]);
 
   const isRoundFinished = useMemo(() => {
     if (matches.length === 0 || loadingMatches) return false;
