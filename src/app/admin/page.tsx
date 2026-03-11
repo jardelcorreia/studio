@@ -192,7 +192,20 @@ export default function AdminPage() {
   };
 
   const toggleVisibility = () => {
-    setPlacaresOcultos(!placaresOcultos);
+    if (!roundId) return;
+    const newState = !placaresOcultos;
+    setPlacaresOcultos(newState); // Optimistic UI update
+
+    const roundRef = doc(db, "rounds", roundId);
+    setDocumentNonBlocking(roundRef, {
+      isScoresHidden: newState,
+      dateUpdated: serverTimestamp(),
+    }, { merge: true });
+
+    toast({ 
+      title: newState ? "Palpites Ocultos" : "Palpites Revelados", 
+      description: newState ? "Ninguém pode ver os palpites alheios ainda." : "Todos agora podem ver os palpites uns dos outros." 
+    });
   };
 
   if (isUserLoading || !isAdmin) {
@@ -234,7 +247,7 @@ export default function AdminPage() {
         <Tabs defaultValue="rodada" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-10 bg-muted/50 rounded-xl p-1 mb-4">
             <TabsTrigger value="rodada" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <LayoutGrid className="h-3 w-3" />
+              <Table className="h-3 w-3" />
               Jogos
             </TabsTrigger>
             <TabsTrigger value="financeiro" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
@@ -271,10 +284,10 @@ export default function AdminPage() {
                 variant={placaresOcultos ? "destructive" : "secondary"}
                 onClick={toggleVisibility}
                 size="sm"
-                className="rounded-lg h-7 px-3 gap-2 font-black italic uppercase text-[8px] shadow-sm"
+                className="rounded-lg h-7 px-4 gap-2 font-black italic uppercase text-[8px] shadow-md transition-all active:scale-95"
               >
                 {placaresOcultos ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                {placaresOcultos ? "Ocultos" : "Visíveis"}
+                {placaresOcultos ? "Revelar" : "Ocultar"}
               </Button>
             </section>
 
@@ -282,7 +295,6 @@ export default function AdminPage() {
               {matches.map((match, idx) => (
                 <Card key={match.id} className="glass-card border-none rounded-xl overflow-hidden group">
                   <CardContent className="p-2 flex items-center justify-between gap-3">
-                    {/* Times Abrev e Placar Compacto */}
                     <div className="flex items-center gap-2 flex-1 justify-center">
                       <span className="text-[11px] font-black italic uppercase text-primary w-8 text-right">
                         {getTeamAbrev(match.homeTeam)}
@@ -311,7 +323,6 @@ export default function AdminPage() {
                       </span>
                     </div>
 
-                    {/* Status Reduzido */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       <Select
                         value={match.status}
