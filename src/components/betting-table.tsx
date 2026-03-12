@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -244,7 +243,7 @@ export function BettingTable({
           <Dialog>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground font-black italic uppercase rounded-full gap-2 shadow-lg shadow-accent/20 h-10 px-6">
-                <Camera className="h-4 w-4" />
+                <Camera className="h-4 w-4 text-accent-foreground" />
                 Gerar Card da Rodada
               </Button>
             </DialogTrigger>
@@ -337,7 +336,7 @@ export function BettingTable({
                       return (
                         <div key={u.id} className={cn("flex flex-col items-center min-w-[55px] md:min-w-[65px] relative transition-all", isCurrent && "scale-105 z-10")}>
                           <div className="flex items-center gap-1 mb-1 px-1 w-full justify-center">
-                            <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/80")}>
+                            <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/90 dark:text-foreground/80")}>
                               {u.username}
                             </span>
                           </div>
