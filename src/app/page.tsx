@@ -147,10 +147,8 @@ function HomeContent() {
       });
     }
 
-    // Adiciona o índice original para preservar os palpites durante a ordenação
     let finalMatches = data.map((m, i) => ({ ...m, originalIndex: i }));
 
-    // No mobile, ordena para colocar os jogos "Ao Vivo" no topo
     if (isMobile) {
       finalMatches.sort((a, b) => {
         const aLive = a.status === 'live';
@@ -165,14 +163,11 @@ function HomeContent() {
   }, [rawMatches, roundData?.matches, isMobile]);
 
   const matchDescriptions = useMemo(() => {
-    // Para descrições e lógica de pontos, usamos a ordem original (0 a 9)
-    // Criamos um mapa baseado no índice original para garantir que as descrições batam com as bets
     const sorted = [...matches].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
     return sorted.slice(0, 10).map(m => `${cleanTeamName(m.homeTeam)} x ${cleanTeamName(m.awayTeam)}`);
   }, [matches]);
 
   const results = useMemo((): Prediction[] => {
-    // Os resultados na BettingTable são mapeados 1:1 com a lista matches atual (que pode estar ordenada)
     return matches.slice(0, 10).map(m => {
       const hasScore = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
       const isActive = m.status === 'finished' || m.status === 'live';
@@ -264,7 +259,6 @@ function HomeContent() {
   const scores = useMemo((): PlayerScore[] => {
     if (!allUsers || allUsers.length === 0) return [];
     
-    // Para cálculo de pontos, sempre usamos a ordem original (índice 0 a 9)
     const sortedOrig = [...matches].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
     const origResults = sortedOrig.slice(0, 10).map(m => {
       const hasScore = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
@@ -407,7 +401,6 @@ function HomeContent() {
       const myPreds = predictions[user.uid];
       if (myPreds) {
         const currentUsername = currentUserFirestore?.username || user.displayName || "Jogador";
-        // Ordenamos os matches de volta para a ordem original para salvar nos índices corretos
         const sortedOrig = [...matches].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
         
         myPreds.forEach((pred, idx) => {
@@ -433,8 +426,8 @@ function HomeContent() {
   if (!user || mustChangePassword) return <LoginScreen forcePasswordChange={mustChangePassword} onPasswordChangeRequired={() => setMustChangePassword(true)} onPasswordChanged={() => setMustChangePassword(false)} />;
 
   return (
-    <div className="flex-1 min-h-screen bg-background pb-24 md:pb-8">
-      <header className="sticky top-0 z-50 glass-card border-none rounded-none shadow-md">
+    <div className="flex flex-col h-screen overflow-hidden bg-background">
+      <header className="shrink-0 glass-card border-none rounded-none shadow-md z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="relative h-10 w-10 overflow-hidden rounded-full bg-transparent dark:bg-slate-900 p-2 flex items-center justify-center -rotate-6 transition-colors">
@@ -482,69 +475,73 @@ function HomeContent() {
           </div>
         </div>
       </header>
+
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <DialogContent className="max-w-2xl p-0 border-none bg-background shadow-2xl focus:outline-none z-[70] overflow-hidden rounded-3xl">
           <DialogHeader className="sr-only"><DialogTitle>Configurações de Perfil</DialogTitle><DialogDescription>Personalize seu perfil na AlphaBet League.</DialogDescription></DialogHeader>
           <div className="max-h-[90vh] overflow-y-auto"><ProfileSettings /></div>
         </DialogContent>
       </Dialog>
-      <main className="max-w-7xl mx-auto px-4 pt-1 pb-24 md:pb-8 space-y-3 md:space-y-6">
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {activeTab === "jogos" && (
-            <div className="space-y-4 md:space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {isInstallable && (
-                  <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Smartphone className="h-16 w-16 text-primary" /></div>
-                    <div className="flex items-center gap-4 relative z-10 text-center sm:text-left"><div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0"><Smartphone className="h-6 w-6 text-primary" /></div><div><h4 className="text-sm font-black italic uppercase text-primary leading-tight">Instale o App</h4><p className="text-[10px] font-medium text-muted-foreground">Acesso rápido na tela inicial.</p></div></div>
-                    <Button onClick={handleInstall} size="sm" className="rounded-xl h-10 px-6 font-black italic uppercase gap-2 shadow-lg shadow-primary/20 relative z-10 w-full sm:w-auto"><Download className="h-4 w-4" />Instalar</Button>
-                  </div>
-                )}
-                {isFcmSupported && permission === 'default' && (
-                  <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><BellRing className="h-16 w-16 text-accent" /></div>
-                    <div className="flex items-center gap-4 relative z-10 text-center sm:text-left"><div className="h-12 w-12 bg-accent/10 rounded-xl flex items-center justify-center shrink-0"><Bell className="h-6 w-6 text-accent" /></div><div><h4 className="text-sm font-black italic uppercase text-accent leading-tight">Ative Lembretes</h4><p className="text-[10px] font-medium text-muted-foreground">Não perca o prazo de palpitar na rodada.</p></div></div>
-                    <Button onClick={requestPermission} size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl h-10 px-6 font-black italic uppercase gap-2 shadow-lg shadow-accent/20 relative z-10 w-full sm:w-auto"><BellRing className="h-4 w-4" />Ativar</Button>
-                  </div>
-                )}
-                {showNotificationSuccess && (
-                  <div className="glass-card border-none rounded-[2rem] p-6 flex items-center gap-4 overflow-hidden relative group bg-secondary/5 animate-in fade-in slide-in-from-top-4 duration-500"><div className="h-10 w-10 bg-secondary/10 rounded-xl flex items-center justify-center shrink-0"><CheckCircle2 className="h-5 w-5 text-secondary" /></div><div><h4 className="text-[10px] font-black italic uppercase text-secondary">Notificações Ativas</h4><p className="text-[9px] font-medium text-muted-foreground">Lembretes de palpites e resultados ativados.</p></div></div>
-                )}
-              </div>
-              <section className="space-y-4">
-                <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Medal className="h-5 w-5 text-accent" /><h2 className="text-lg font-black italic uppercase">Pontuação da Rodada</h2></div>{(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}</div>
-                <RankingSummary scores={scores} isScoresHidden={isEffectivelyHidden} isRoundFinished={isRoundFinished} totalValidMatches={totalValidMatchesCount} />
-              </section>
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div className="lg:col-span-8">
-                  {currentRound !== null && (<MatchCalendar matches={matches} round={currentRound} totalRounds={38} predictions={predictions[user?.uid || ""] || Array(10).fill({ homeScore: "", awayScore: "" })} setPrediction={(idx, type, value) => updatePrediction(user?.uid || "", idx, type, value)} updateMatchManual={() => {}} isAdmin={false} onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))} onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))} onSave={handleSaveAll} isSaving={isSaving} isLocked={isLocked} />)}
-                  {currentRound === null && (<div className="h-96 flex flex-col items-center justify-center glass-card rounded-[2.5rem] border-dashed border-2 gap-4"><Loader2 className="h-10 w-10 animate-spin text-primary" /><span className="text-sm font-black italic uppercase text-muted-foreground">Buscando rodada atual...</span></div>)}
+
+      <main className="flex-1 relative overflow-hidden">
+        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-1 pb-24 md:pb-8 animate-in fade-in duration-500", activeTab !== "jogos" && "hidden")}>
+          <div className="max-w-7xl mx-auto px-4 space-y-4 md:space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+              {isInstallable && (
+                <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Smartphone className="h-16 w-16 text-primary" /></div>
+                  <div className="flex items-center gap-4 relative z-10 text-center sm:text-left"><div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0"><Smartphone className="h-6 w-6 text-primary" /></div><div><h4 className="text-sm font-black italic uppercase text-primary leading-tight">Instale o App</h4><p className="text-[10px] font-medium text-muted-foreground">Acesso rápido na tela inicial.</p></div></div>
+                  <Button onClick={handleInstall} size="sm" className="rounded-xl h-10 px-6 font-black italic uppercase gap-2 shadow-lg shadow-primary/20 relative z-10 w-full sm:w-auto"><Download className="h-4 w-4" />Instalar</Button>
                 </div>
-                <div className="lg:col-span-4 hidden lg:block"><AiBetAssistant /></div>
+              )}
+              {isFcmSupported && permission === 'default' && (
+                <div className="glass-card border-none rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><BellRing className="h-16 w-16 text-accent" /></div>
+                  <div className="flex items-center gap-4 relative z-10 text-center sm:text-left"><div className="h-12 w-12 bg-accent/10 rounded-xl flex items-center justify-center shrink-0"><Bell className="h-6 w-6 text-accent" /></div><div><h4 className="text-sm font-black italic uppercase text-accent leading-tight">Ative Lembretes</h4><p className="text-[10px] font-medium text-muted-foreground">Não perca o prazo de palpitar na rodada.</p></div></div>
+                  <Button onClick={requestPermission} size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl h-10 px-6 font-black italic uppercase gap-2 shadow-lg shadow-accent/20 relative z-10 w-full sm:w-auto"><BellRing className="h-4 w-4" />Ativar</Button>
+                </div>
+              )}
+              {showNotificationSuccess && (
+                <div className="glass-card border-none rounded-[2rem] p-6 flex items-center gap-4 overflow-hidden relative group bg-secondary/5 animate-in fade-in slide-in-from-top-4 duration-500"><div className="h-10 w-10 bg-secondary/10 rounded-xl flex items-center justify-center shrink-0"><CheckCircle2 className="h-5 w-5 text-secondary" /></div><div><h4 className="text-[10px] font-black italic uppercase text-secondary">Notificações Ativas</h4><p className="text-[9px] font-medium text-muted-foreground">Lembretes de palpites e resultados ativados.</p></div></div>
+              )}
+            </div>
+            <section className="space-y-4">
+              <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Medal className="h-5 w-5 text-accent" /><h2 className="text-lg font-black italic uppercase">Pontuação da Rodada</h2></div>{(loadingMatches || isLoadingBets) && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}</div>
+              <RankingSummary scores={scores} isScoresHidden={isEffectivelyHidden} isRoundFinished={isRoundFinished} totalValidMatches={totalValidMatchesCount} />
+            </section>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-8">
+                {currentRound !== null && (<MatchCalendar matches={matches} round={currentRound} totalRounds={38} predictions={predictions[user?.uid || ""] || Array(10).fill({ homeScore: "", awayScore: "" })} setPrediction={(idx, type, value) => updatePrediction(user?.uid || "", idx, type, value)} updateMatchManual={() => {}} isAdmin={false} onPrev={() => setCurrentRound(prev => Math.max(1, prev! - 1))} onNext={() => setCurrentRound(prev => Math.min(38, prev! + 1))} onSave={handleSaveAll} isSaving={isSaving} isLocked={isLocked} />)}
+                {currentRound === null && (<div className="h-96 flex flex-col items-center justify-center glass-card rounded-[2.5rem] border-dashed border-2 gap-4"><Loader2 className="h-10 w-10 animate-spin text-primary" /><span className="text-sm font-black italic uppercase text-muted-foreground">Buscando rodada atual...</span></div>)}
               </div>
+              <div className="lg:col-span-4 hidden lg:block"><AiBetAssistant /></div>
             </div>
-          )}
-          {activeTab === "palpites" && (
-            <div className="space-y-6">
-              <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">{roundName}</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Comparativo em tempo real</p></div>
-              <BettingTable roundName={roundName} matches={matches} predictions={predictions} setPrediction={updatePrediction} results={results} placaresOcultos={isEffectivelyHidden} currentPlayerId={user?.uid || ""} isAdmin={isAdminUser} allUsers={allUsers || []} isLocked={isLocked} />
-            </div>
-          )}
-          {activeTab === "ranking" && (
-            <div className="space-y-6">
-              <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">Ranking Geral</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação do Campeonato</p></div>
-              <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} isAdmin={false} onSave={async () => {}} isSaving={false} />
-            </div>
-          )}
-          {activeTab === "tabela" && (
-            <div className="space-y-6">
-              <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">Tabela Oficial</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação Série A</p></div>
-              <LeagueStandings standings={standings} />
-            </div>
-          )}
+          </div>
+        </div>
+
+        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-500", activeTab !== "palpites" && "hidden")}>
+          <div className="max-w-7xl mx-auto px-4 space-y-6">
+            <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">{roundName}</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Comparativo em tempo real</p></div>
+            <BettingTable roundName={roundName} matches={matches} predictions={predictions} setPrediction={updatePrediction} results={results} placaresOcultos={isEffectivelyHidden} currentPlayerId={user?.uid || ""} isAdmin={isAdminUser} allUsers={allUsers || []} isLocked={isLocked} />
+          </div>
+        </div>
+
+        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-500", activeTab !== "ranking" && "hidden")}>
+          <div className="max-w-7xl mx-auto px-4 space-y-6">
+            <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">Ranking Geral</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação do Campeonato</p></div>
+            <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} isAdmin={false} onSave={async () => {}} isSaving={false} />
+          </div>
+        </div>
+
+        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-500", activeTab !== "tabela" && "hidden")}>
+          <div className="max-w-7xl mx-auto px-4 space-y-6">
+            <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">Tabela Oficial</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação Série A</p></div>
+            <LeagueStandings standings={standings} />
+          </div>
         </div>
       </main>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-primary/10 rounded-none h-20 px-6 pb-2 md:hidden">
+
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-primary/10 rounded-none h-20 px-6 pb-2 md:hidden shrink-0">
         <div className="max-w-md mx-auto h-full flex items-center justify-between">
           <button onClick={() => setActiveTab("jogos")} className={cn("flex flex-col items-center gap-1 transition-all", activeTab === "jogos" ? "text-primary scale-110" : "text-muted-foreground opacity-60")}><Calendar className={cn("h-6 w-6", activeTab === "jogos" && "fill-current")} /><span className="text-[9px] font-black uppercase italic text-center">QUILA/JOGOS</span></button>
           <button onClick={() => setActiveTab("palpites")} className={cn("flex flex-col items-center gap-1 transition-all", activeTab === "palpites" ? "text-primary scale-110" : "text-muted-foreground opacity-60")}><Radar className={cn("h-6 w-6", activeTab === "palpites" && "fill-current")} /><span className="text-[9px] font-black uppercase italic text-center">Palpites</span></button>
