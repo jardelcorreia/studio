@@ -293,7 +293,7 @@ export function MatchCalendar({
                    <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3 text-primary/40" />
                       <span className="text-[10px] font-black italic text-primary/60">
-                        {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isLive ? <span className="text-red-600 dark:text-red-400">AO VIVO</span> : isCancelled ? "PARTIDA ADIADA" : isLocked ? "PALPITES ENCERRADOS" : "AGUARDANDO PALPITE"}
+                        {formatTime(match.utcDate)} {isLive ? "" : `• ${isFinished ? "RESULTADO FINAL" : isCancelled ? "PARTIDA ADIADA" : isLocked ? "PALPITES ENCERRADOS" : "AGUARDANDO PALPITE"}`}
                       </span>
                    </div>
                    {isEffectivelyInvalid && (
