@@ -9,13 +9,13 @@ if (admin.apps.length === 0) {
 
 /**
  * URL base do App. 
- * Definida como o domínio principal da Netlify conforme solicitado.
  */
 const APP_URL = "https://alphabetleague.netlify.app";
+const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
+const BASE_URL = 'https://api.football-data.org/v4';
 
 /**
  * Verifica se estamos no horário de silêncio (22h às 08h BRT).
- * Isso evita incomodar os usuários durante a madrugada com lembretes automáticos.
  */
 function isQuietHours(): boolean {
   const now = new Date();
@@ -29,15 +29,13 @@ function isQuietHours(): boolean {
 }
 
 /**
- * Lógica de Janela de Validade (Replicada do Client)
- * Identifica jogos que estão fora da janela de 3 dias da data principal da rodada.
+ * Lógica de Janela de Validade
  */
 function getValidMatchesCount(matches: any[]): number {
   if (!matches || matches.length === 0) return 0;
   
   const matchesToProcess = matches.slice(0, 10);
   
-  // 1. Encontrar a Data Principal (dia com mais jogos)
   const dateCounts: Record<string, number> = {};
   matchesToProcess.forEach(m => {
     if (m.utcDate) {
@@ -60,16 +58,96 @@ function getValidMatchesCount(matches: any[]): number {
   const mainDate = new Date(`${mainDateStr}T12:00:00Z`).getTime();
   const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
 
-  // 2. Contar jogos que não são 'cancelled' E estão na janela
   return matchesToProcess.filter(m => {
     if (m.status === 'cancelled') return false;
-    if (!m.utcDate) return true; // Se não tem data mas tá na lista, assume válido por precaução
+    if (!m.utcDate) return true;
 
     const matchTime = new Date(m.utcDate).getTime();
     const diff = Math.abs(matchTime - mainDate);
-    return diff <= (threeDaysInMs + 12 * 60 * 60 * 1000); // Janela de 3 dias + tolerância de fuso
+    return diff <= (threeDaysInMs + 12 * 60 * 60 * 1000);
   }).length;
 }
+
+/**
+ * Sincroniza dados da API oficial com o Firestore a cada 15 minutos.
+ * Isso garante que as notificações de placar e lembretes funcionem com o App fechado.
+ */
+export const syncBrasileiraoData = onSchedule("every 15 minutes", async (event) => {
+  if (!API_KEY) {
+    console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não configurada.");
+    return;
+  }
+
+  try {
+    // 1. Busca Rodada Atual
+    const competitionResponse = await fetch(`${BASE_URL}/competitions/BSA`, {
+      headers: { 'X-Auth-Token': API_KEY }
+    });
+    const competitionData = await competitionResponse.json();
+    const currentMatchday = competitionData.currentSeason?.currentMatchday;
+
+    if (!currentMatchday) return;
+
+    // 2. Busca Jogos da Rodada
+    const matchesResponse = await fetch(`${BASE_URL}/competitions/BSA/matches?matchday=${currentMatchday}`, {
+      headers: { 'X-Auth-Token': API_KEY }
+    });
+    const matchesData = await matchesResponse.json();
+
+    const apiMatches = matchesData.matches.map((m: any) => {
+      let status = 'upcoming';
+      if (['IN_PLAY', 'PAUSED', 'LIVE'].includes(m.status)) status = 'live';
+      else if (['FINISHED', 'AWARDED'].includes(m.status)) status = 'finished';
+      else if (['POSTPONED', 'CANCELLED'].includes(m.status)) status = 'cancelled';
+
+      return {
+        id: m.id,
+        homeTeam: m.homeTeam.name,
+        awayTeam: m.awayTeam.name,
+        homeScore: m.score.fullTime.home,
+        awayScore: m.score.fullTime.away,
+        utcDate: m.utcDate,
+        status: status,
+        matchday: m.matchday,
+      };
+    });
+
+    const roundId = `round_${currentMatchday}`;
+    const roundRef = admin.firestore().collection("rounds").doc(roundId);
+    const roundDoc = await roundRef.get();
+    const existingData = roundDoc.exists ? roundDoc.data() : null;
+
+    // Se houver dados manuais no Firestore (Admin), preserva-os onde não houve mudança na API
+    // Mas atualiza o que for essencial para notificações (Placar e Status)
+    let finalMatches = apiMatches;
+    if (existingData && existingData.matches) {
+      finalMatches = apiMatches.map((apiMatch: any) => {
+        const manualMatch = existingData.matches.find((mm: any) => mm.id === apiMatch.id);
+        if (manualMatch && manualMatch.isManual) {
+          // Se o admin editou manualmente, mantém a edição manual EXCETO se o jogo finalizou na API
+          if (apiMatch.status === 'finished') return apiMatch;
+          return manualMatch;
+        }
+        return apiMatch;
+      });
+    }
+
+    await roundRef.set({
+      id: roundId,
+      roundNumber: currentMatchday,
+      name: `Rodada ${currentMatchday}`,
+      matches: finalMatches,
+      isScoresHidden: existingData ? existingData.isScoresHidden : true,
+      dateUpdated: admin.firestore.FieldValue.serverTimestamp(),
+      dateCreated: existingData ? existingData.dateCreated : admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    console.log(`syncBrasileiraoData: Rodada ${currentMatchday} sincronizada com sucesso.`);
+
+  } catch (error) {
+    console.error("syncBrasileiraoData: Erro na sincronização:", error);
+  }
+});
 
 /**
  * Notifica os usuários quando os palpites são revelados.
@@ -80,12 +158,8 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
 
   if (!before || !after) return;
 
-  // Só dispara quando isScoresHidden muda de true para false
   if (before.isScoresHidden === true && after.isScoresHidden === false) {
-    if (isQuietHours()) {
-      console.log("onRevealScores: Notificação cancelada (horário de silêncio).");
-      return;
-    }
+    if (isQuietHours()) return;
 
     const usersSnapshot = await admin.firestore().collection("users").get();
     const tokens: string[] = [];
@@ -97,10 +171,7 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
       }
     });
 
-    if (tokens.length === 0) {
-      console.log("onRevealScores: Nenhum token FCM encontrado.");
-      return;
-    }
+    if (tokens.length === 0) return;
 
     const message = {
       notification: {
@@ -109,34 +180,30 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
       },
       tokens: tokens,
       webpush: {
-        fcmOptions: {
-          link: `${APP_URL}/?tab=palpites`,
-        },
+        fcmOptions: { link: `${APP_URL}/?tab=palpites` },
       },
-      data: {
-        link: `${APP_URL}/?tab=palpites`,
-      }
+      data: { link: `${APP_URL}/?tab=palpites` }
     };
 
     try {
       await admin.messaging().sendEachForMulticast(message);
-      console.log(`onRevealScores: Notificações enviadas para ${tokens.length} dispositivos.`);
     } catch (error) {
-      console.error("onRevealScores: Erro ao enviar notificações:", error);
+      console.error("onRevealScores: Erro:", error);
     }
   }
 });
 
 /**
  * Notifica um usuário específico se ele acertou um placar em cheio.
- * IGNORA o horário de silêncio para garantir feedback imediato do jogo.
  */
 export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (event) => {
   const after = event.data?.after.data();
+  const before = event.data?.before.data();
   if (!after || !after.matches) return;
 
   const roundId = event.params.roundId;
   const matches = after.matches;
+  const oldMatches = before?.matches || [];
 
   const betsSnapshot = await admin.firestore().collection(`rounds/${roundId}/bets`).get();
 
@@ -144,9 +211,10 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
     const bet = betDoc.data();
     const userId = bet.userId;
     const match = matches.find((m: any) => m.id === bet.matchId);
+    const oldMatch = oldMatches.find((m: any) => m.id === bet.matchId);
     
-    // Verifica se a partida acabou e se o palpite foi certeiro
-    if (match && match.status === 'finished') {
+    // Só notifica se o status mudou para 'finished' agora
+    if (match && match.status === 'finished' && oldMatch?.status !== 'finished') {
       const isExact = bet.homeScorePrediction === match.homeScore && 
                       bet.awayScorePrediction === match.awayScore;
 
@@ -161,21 +229,14 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
               body: `Você cravou o placar de um jogo na ${after.name}! +3 pontos garantidos.`,
             },
             tokens: userData.fcmTokens,
-            webpush: {
-              fcmOptions: {
-                link: `${APP_URL}/?tab=jogos`,
-              },
-            },
-            data: {
-              link: `${APP_URL}/?tab=jogos`,
-            }
+            webpush: { fcmOptions: { link: `${APP_URL}/?tab=jogos` } },
+            data: { link: `${APP_URL}/?tab=jogos` }
           };
 
           try {
             await admin.messaging().sendEachForMulticast(message);
-            console.log(`onMatchScoreUpdate: Sucesso para o usuário ${userId}`);
           } catch (error) {
-            console.error(`onMatchScoreUpdate: Erro para o usuário ${userId}:`, error);
+            console.error(`onMatchScoreUpdate: Erro para ${userId}:`, error);
           }
         }
       }
@@ -185,15 +246,10 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
 
 /**
  * Lembrete de Palpites Pendentes.
- * Roda a cada 30 minutos para maior precisão no lembrete pré-jogo.
  */
 export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => {
-  if (isQuietHours()) {
-    console.log("notifyRoundStart: Job cancelado (horário de silêncio).");
-    return;
-  }
+  if (isQuietHours()) return;
 
-  // Pega a rodada mais recente
   const roundsSnapshot = await admin.firestore()
     .collection("rounds")
     .orderBy("roundNumber", "desc")
@@ -206,18 +262,13 @@ export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => 
   const roundData = currentRound.data();
   const roundId = currentRound.id;
 
-  // Se os palpites já foram revelados, a rodada já começou
   if (roundData.isScoresHidden === false) return;
 
   const matches = roundData.matches || [];
   const targetCount = getValidMatchesCount(matches);
   
-  if (targetCount === 0) {
-    console.log("notifyRoundStart: Nenhum jogo válido para esta rodada no momento.");
-    return;
-  }
+  if (targetCount === 0) return;
 
-  // Filtra partidas para encontrar o início real (ignora canceladas)
   const firstMatchTime = matches
     .filter((m: any) => m.status !== 'cancelled' && m.utcDate)
     .reduce((earliest: number, m: any) => {
@@ -225,19 +276,12 @@ export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => 
       return (d > 0 && d < earliest) ? d : earliest;
     }, Infinity);
 
-  if (!Number.isFinite(firstMatchTime)) {
-    console.log("notifyRoundStart: Nenhuma partida válida encontrada para calcular o tempo.");
-    return;
-  }
+  if (!Number.isFinite(firstMatchTime)) return;
 
   const now = Date.now();
   const twentyFourHours = 24 * 60 * 60 * 1000;
 
-  // Só envia lembrete nas 24h que antecedem o primeiro jogo
-  if (now < (firstMatchTime - twentyFourHours) || now >= firstMatchTime) {
-    console.log(`notifyRoundStart: Fora da janela de lembrete. Início: ${new Date(firstMatchTime).toISOString()}`);
-    return;
-  }
+  if (now < (firstMatchTime - twentyFourHours) || now >= firstMatchTime) return;
 
   const usersSnapshot = await admin.firestore().collection("users").get();
   
@@ -252,7 +296,6 @@ export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => 
       .where("userId", "==", userId)
       .get();
 
-    // Notifica quem não completou os palpites obrigatórios (agora dinâmico)
     if (userBetsSnapshot.size < targetCount) {
       const remaining = targetCount - userBetsSnapshot.size;
       const message = {
@@ -261,21 +304,14 @@ export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => 
           body: `Ei ${userData.username || 'campeão'}, faltam ${remaining} palpite${remaining > 1 ? 's' : ''} para a ${roundData.name}. O primeiro jogo já vai começar!`,
         },
         tokens: userData.fcmTokens,
-        webpush: {
-          fcmOptions: {
-            link: `${APP_URL}/?tab=jogos`,
-          },
-        },
-        data: {
-          link: `${APP_URL}/?tab=jogos`,
-        }
+        webpush: { fcmOptions: { link: `${APP_URL}/?tab=jogos` } },
+        data: { link: `${APP_URL}/?tab=jogos` }
       };
 
       try {
         await admin.messaging().sendEachForMulticast(message);
-        console.log(`notifyRoundStart: Lembrete enviado para ${userId} (${userBetsSnapshot.size}/${targetCount})`);
       } catch (error) {
-        console.error(`notifyRoundStart: Erro ao notificar ${userId}:`, error);
+        console.error(`notifyRoundStart: Erro para ${userId}:`, error);
       }
     }
   }
