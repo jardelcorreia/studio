@@ -6,7 +6,6 @@ import { Prediction, PlayerPredictions, Match } from "@/lib/types";
 import { Input } from "./ui/input";
 import { cn, cleanTeamName, getTeamAbrev } from "@/lib/utils";
 import { Swords, AlertCircle, ShieldCheck } from "lucide-react";
-import { RoundCardDialog } from "./round-card-dialog";
 
 interface BettingTableProps {
   roundName: string;
@@ -58,17 +57,6 @@ export function BettingTable({
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4">
-      {isAdmin && (
-        <div className="flex justify-end px-2">
-          <RoundCardDialog 
-            roundName={roundName}
-            matches={matches}
-            predictions={predictions}
-            allUsers={allUsers}
-          />
-        </div>
-      )}
-
       <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-3 bg-primary/5 rounded-2xl border border-primary/10 mb-2">
         <div className="col-span-3 text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Confronto</div>
         <div className="col-span-6 flex justify-around text-[10px] font-black uppercase text-primary/60 italic tracking-widest">Palpites dos Jogadores</div>
