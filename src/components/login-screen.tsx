@@ -282,7 +282,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
             </h1>
             <p className="text-sm sm:text-lg font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
               Jardel • Nailton • Phillipe • Werbet <br />
-              <span className="opacity-60">A Batalha Final do Brasileirão 2026</span>
+              <span className="opacity-60">Quem será o mais Alphabetizado?</span>
             </p>
           </div>
 
