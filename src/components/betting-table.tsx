@@ -130,7 +130,6 @@ export function BettingTable({
                             isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
                             points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
                             points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
-                            points === 0 ? "bg-destructive/15 border-destructive/30 text-red-600 dark:text-red-400 font-bold" :
                             isCurrent ? (isMatchLocked ? "bg-primary/5 border-primary shadow-sm" : "bg-primary/5 border-primary/10 shadow-sm") :
                             "bg-background border-muted/30 shadow-sm"
                           )}>
@@ -142,18 +141,18 @@ export function BettingTable({
                                   onChange={(e) => setPrediction(u.id, originalIdx, 'home', e.target.value)} 
                                   className={cn(
                                     "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
-                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : "text-primary"
+                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : "text-primary"
                                   )} 
                                   placeholder="-"
                                 />
-                                <span className={cn("text-[8px] font-black italic", (points === 3 || points === 1) ? "opacity-30" : "opacity-30")}>x</span>
+                                <span className={cn("text-[8px] font-black italic opacity-30")}>x</span>
                                 <Input 
                                   type="number" 
                                   value={pred.awayScore} 
                                   onChange={(e) => setPrediction(u.id, originalIdx, 'away', e.target.value)} 
                                   className={cn(
                                     "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
-                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : "text-primary"
+                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : "text-primary"
                                   )} 
                                   placeholder="-"
                                 />
@@ -162,7 +161,7 @@ export function BettingTable({
                               <>
                                 <span className={cn(
                                   "text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter",
-                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : ""
+                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : ""
                                 )}>
                                   {isHidden ? "?" : (pred.homeScore || "-")}
                                 </span>
@@ -172,7 +171,7 @@ export function BettingTable({
                                 )}>x</span>
                                 <span className={cn(
                                   "text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter",
-                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : ""
+                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : ""
                                 )}>
                                   {isHidden ? "?" : (pred.awayScore || "-")}
                                 </span>
