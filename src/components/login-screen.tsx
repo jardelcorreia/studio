@@ -19,20 +19,12 @@ import {
   AlertCircle, 
   Lock, 
   ChevronRight, 
-  Zap, 
-  TrendingUp, 
-  Users, 
-  Smartphone, 
-  CheckCircle2,
-  ChevronDown,
   User,
   ArrowRight,
-  Medal,
-  Star
+  ChevronDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { cn } from "@/lib/utils";
 import placeholderData from "@/app/lib/placeholder-images.json";
 
 interface LoginScreenProps {
@@ -256,7 +248,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Hero Section - Exclusivo para os 4 */}
+      {/* Hero Section */}
       <section className="relative h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Image 
@@ -305,67 +297,6 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer opacity-40" onClick={scrollToLogin}>
           <ChevronDown className="h-8 w-8 text-primary" />
-        </div>
-      </section>
-
-      {/* Roda da Fortuna dos 4 */}
-      <section className="max-w-7xl mx-auto px-6 py-24 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <Card className="glass-card border-none rounded-[2rem] p-8 space-y-4 hover:translate-y-[-8px] transition-transform duration-500">
-          <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
-            <Zap className="h-7 w-7 fill-current" />
-          </div>
-          <h3 className="text-2xl font-black italic uppercase text-primary">Quila Rápida</h3>
-          <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-            Mantenha seus 10 palpites em dia. A interface foi feita para quem não tem tempo a perder entre um gol e outro.
-          </p>
-        </Card>
-
-        <Card className="glass-card border-none rounded-[2rem] p-8 space-y-4 hover:translate-y-[-8px] transition-transform duration-500 delay-100">
-          <div className="h-14 w-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent shadow-inner">
-            <Trophy className="h-7 w-7 fill-current" />
-          </div>
-          <h3 className="text-2xl font-black italic uppercase text-accent">Ranking Real</h3>
-          <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-            Acompanhe o saldo da liga e quem está levando o prêmio da rodada. Transparência total entre os 4 amigos.
-          </p>
-        </Card>
-
-        <Card className="glass-card border-none rounded-[2rem] p-8 space-y-4 hover:translate-y-[-8px] transition-transform duration-500 delay-200">
-          <div className="h-14 w-14 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary shadow-inner">
-            <TrendingUp className="h-7 w-7" />
-          </div>
-          <h3 className="text-2xl font-black italic uppercase text-secondary">Tabela CBF</h3>
-          <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-            Consulte a classificação oficial da Série A sem sair do app. Tudo o que você precisa para mitar nos palpites.
-          </p>
-        </Card>
-      </section>
-
-      {/* Player Showcase - Os 4 Craques */}
-      <section className="bg-primary/5 py-24 overflow-hidden border-y border-primary/10">
-        <div className="max-w-7xl mx-auto px-6 space-y-16">
-          <div className="text-center space-y-4">
-             <h2 className="text-3xl sm:text-5xl font-black italic uppercase text-primary tracking-tighter">O Quarteto de Ferro</h2>
-             <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.4em]">Somente os melhores participam desta liga</p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
-            {PLAYERS.map((player, i) => (
-              <div key={player} className="flex flex-col items-center gap-4 group">
-                <div className="relative h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-background border-2 border-primary/20 p-2 shadow-xl transition-transform group-hover:scale-110 group-hover:-rotate-3 duration-500">
-                  <div className="h-full w-full rounded-2xl bg-primary/5 flex items-center justify-center">
-                    {i === 0 ? <Crown className="h-10 w-10 text-accent animate-pulse" /> : 
-                     i === 1 ? <Medal className="h-10 w-10 text-slate-400" /> :
-                     <User className="h-10 w-10 text-primary/40" />}
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 h-8 w-8 bg-primary rounded-xl flex items-center justify-center text-[10px] font-black italic text-white shadow-lg">
-                    #{i+1}
-                  </div>
-                </div>
-                <span className="font-black italic uppercase text-lg text-primary">{player}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
