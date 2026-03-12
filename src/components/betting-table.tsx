@@ -33,9 +33,13 @@ export function BettingTable({
   isLocked = false,
 }: BettingTableProps) {
   const getPoints = (userId: string, idx: number) => {
-    if (!matches[idx] || matches[idx]?.isValidForPoints === false) return null;
+    const match = matches[idx];
+    if (!match || match.isValidForPoints === false) return null;
+    
     const res = results[idx];
-    const pred = predictions[userId]?.[idx];
+    const originalIdx = match.originalIndex ?? idx;
+    const pred = predictions[userId]?.[originalIdx];
+    
     if (!res?.homeScore || !res?.awayScore || !pred?.homeScore || !pred?.awayScore) return null;
     const rh = parseInt(res.homeScore), ra = parseInt(res.awayScore);
     const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
@@ -66,17 +70,18 @@ export function BettingTable({
       <div className="grid grid-cols-1 gap-2">
         {matches.map((match, idx) => {
           const isOutOfWindow = match.isValidForPoints === false;
+          const originalIdx = match.originalIndex ?? idx;
           const desc = `${cleanTeamName(match.homeTeam)} x ${cleanTeamName(match.awayTeam)}`;
 
           return (
-            <div key={idx} className={cn(
+            <div key={match.id || idx} className={cn(
               "glass-card border-none rounded-2xl overflow-hidden group transition-all duration-300",
               isOutOfWindow ? "opacity-60 saturate-50" : "hover:bg-primary/[0.02]"
             )}>
               <div className="grid grid-cols-1 md:grid-cols-12 items-center min-h-[60px] md:min-h-[70px]">
                 <div className="md:col-span-3 px-6 py-3 flex items-center justify-between md:justify-start gap-4 border-b md:border-b-0 md:border-r border-dashed border-primary/10">
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-primary/40 italic tabular-nums">#{idx + 1}</span>
+                    <span className="text-[10px] font-black text-primary/40 italic tabular-nums">#{originalIdx + 1}</span>
                     <div className="flex flex-col">
                       <div className="text-[11px] md:text-xs font-black italic uppercase text-primary leading-tight truncate max-w-[140px] sm:max-w-none group-hover:translate-x-1 transition-transform">
                         {desc || "---"}
@@ -109,7 +114,7 @@ export function BettingTable({
                       const isCurrent = currentPlayerId === u.id;
                       const isHidden = placaresOcultos && !isCurrent;
                       const points = getPoints(u.id, idx);
-                      const pred = predictions[u.id]?.[idx] || { homeScore: "", awayScore: "" };
+                      const pred = predictions[u.id]?.[originalIdx] || { homeScore: "", awayScore: "" };
 
                       const isMatchLocked = isLocked || match.status === 'finished' || match.status === 'live' || match.status === 'cancelled' || match.isValidForPoints === false;
 
@@ -134,7 +139,7 @@ export function BettingTable({
                                 <Input 
                                   type="number" 
                                   value={pred.homeScore} 
-                                  onChange={(e) => setPrediction(u.id, idx, 'home', e.target.value)} 
+                                  onChange={(e) => setPrediction(u.id, originalIdx, 'home', e.target.value)} 
                                   className={cn(
                                     "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
                                     points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : "text-primary"
@@ -145,7 +150,7 @@ export function BettingTable({
                                 <Input 
                                   type="number" 
                                   value={pred.awayScore} 
-                                  onChange={(e) => setPrediction(u.id, idx, 'away', e.target.value)} 
+                                  onChange={(e) => setPrediction(u.id, originalIdx, 'away', e.target.value)} 
                                   className={cn(
                                     "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
                                     points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : "text-primary"

@@ -17,6 +17,7 @@ export type Match = {
   status: MatchStatus;
   matchday: number;
   isValidForPoints?: boolean; // Indica se a partida está dentro da janela de validade da rodada
+  originalIndex?: number; // Índice original na rodada para manter integridade dos palpites
 };
 
 export type StandingEntry = {

@@ -66,6 +66,7 @@ import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/no
 import { cn, cleanTeamName, determineMatchValidity } from "@/lib/utils";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
 import { useFcm } from "@/hooks/use-fcm";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type TabType = "jogos" | "palpites" | "ranking" | "tabela";
 
@@ -77,6 +78,7 @@ function HomeContent() {
   const db = useFirestore();
   const { isInstallable, handleInstall } = usePWAInstall();
   const { permission, requestPermission, isSupported: isFcmSupported } = useFcm();
+  const isMobile = useIsMobile();
 
   const [activeTab, setActiveTab] = useState<TabType>("jogos");
   const [darkMode, setDarkMode] = useState(false);
@@ -144,14 +146,33 @@ function HomeContent() {
         return m;
       });
     }
-    return data;
-  }, [rawMatches, roundData?.matches]);
+
+    // Adiciona o índice original para preservar os palpites durante a ordenação
+    let finalMatches = data.map((m, i) => ({ ...m, originalIndex: i }));
+
+    // No mobile, ordena para colocar os jogos "Ao Vivo" no topo
+    if (isMobile) {
+      finalMatches.sort((a, b) => {
+        const aLive = a.status === 'live';
+        const bLive = b.status === 'live';
+        if (aLive && !bLive) return -1;
+        if (!aLive && bLive) return 1;
+        return (a.originalIndex ?? 0) - (b.originalIndex ?? 0);
+      });
+    }
+
+    return finalMatches;
+  }, [rawMatches, roundData?.matches, isMobile]);
 
   const matchDescriptions = useMemo(() => {
-    return matches.slice(0, 10).map(m => `${cleanTeamName(m.homeTeam)} x ${cleanTeamName(m.awayTeam)}`);
+    // Para descrições e lógica de pontos, usamos a ordem original (0 a 9)
+    // Criamos um mapa baseado no índice original para garantir que as descrições batam com as bets
+    const sorted = [...matches].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
+    return sorted.slice(0, 10).map(m => `${cleanTeamName(m.homeTeam)} x ${cleanTeamName(m.awayTeam)}`);
   }, [matches]);
 
   const results = useMemo((): Prediction[] => {
+    // Os resultados na BettingTable são mapeados 1:1 com a lista matches atual (que pode estar ordenada)
     return matches.slice(0, 10).map(m => {
       const hasScore = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
       const isActive = m.status === 'finished' || m.status === 'live';
@@ -242,10 +263,22 @@ function HomeContent() {
 
   const scores = useMemo((): PlayerScore[] => {
     if (!allUsers || allUsers.length === 0) return [];
+    
+    // Para cálculo de pontos, sempre usamos a ordem original (índice 0 a 9)
+    const sortedOrig = [...matches].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
+    const origResults = sortedOrig.slice(0, 10).map(m => {
+      const hasScore = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
+      const isActive = m.status === 'finished' || m.status === 'live';
+      return {
+        homeScore: (isActive && hasScore) ? m.homeScore!.toString() : "",
+        awayScore: (isActive && hasScore) ? m.awayScore!.toString() : "",
+      };
+    });
+
     const activeIndices = matchDescriptions.map((d, i) => (d && d !== "" ? i : -1)).filter((i) => i !== -1);
     const unfinishedMatchesCount = activeIndices.filter(idx => {
-      const res = results[idx];
-      const match = matches[idx];
+      const res = origResults[idx];
+      const match = sortedOrig[idx];
       const isMatchValid = match?.isValidForPoints !== false && match?.status !== 'cancelled';
       const isFinished = match?.status === 'finished';
       return isMatchValid && !isFinished && (res.homeScore === "" || res.awayScore === "");
@@ -255,11 +288,12 @@ function HomeContent() {
       let pts = 0, exs = 0, filledValidCount = 0;
       const userPreds = predictions[u.id];
       if (!userPreds) return { id: u.id, name: u.username || "Jogador", points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl, isWinner: false };
+      
       activeIndices.forEach(idx => {
-        const res = results[idx], pred = userPreds[idx];
+        const res = origResults[idx], pred = userPreds[idx];
         const hasRes = res.homeScore !== "" && res.awayScore !== "";
         const hasPred = pred.homeScore !== "" && pred.awayScore !== "";
-        const match = matches[idx];
+        const match = sortedOrig[idx];
         const isMatchValid = match?.isValidForPoints !== false && match?.status !== 'cancelled';
         if (isMatchValid && hasPred) filledValidCount++;
         if (hasRes && hasPred && isMatchValid) {
@@ -271,11 +305,13 @@ function HomeContent() {
       });
       return { id: u.id, name: u.username || "Jogador", points: pts, exactScores: exs, betsCompleted: filledValidCount >= totalValidMatchesCount && totalValidMatchesCount > 0, betsCount: filledValidCount, photoUrl: u.photoUrl, isWinner: false };
     });
+
     const hasAnyPoints = playerStats.some(s => s.points > 0);
     const sorted = hasAnyPoints ? [...playerStats].sort((a, b) => b.points - a.points || b.exactScores - a.exactScores || (a.name || "").localeCompare(b.name || "")) : [...playerStats].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     const finalScoresWithWinner = sorted.map(p => ({ ...p, isWinner: false }));
     const leader = sorted[0];
     const runnerUp = sorted[1];
+    
     if (hasAnyPoints) {
       let isDefined = false;
       if (isRoundFinished) isDefined = true;
@@ -285,10 +321,11 @@ function HomeContent() {
         if (leader.points > maxPossiblePointsForRunnerUp) isDefined = true;
         else if (leader.points === maxPossiblePointsForRunnerUp && leader.exactScores > maxPossibleExactsForRunnerUp) isDefined = true;
       } else isDefined = true;
+      
       if (isDefined) finalScoresWithWinner.forEach(s => { if (s.points === leader.points && s.exactScores === leader.exactScores) s.isWinner = true; });
     }
     return finalScoresWithWinner;
-  }, [matchDescriptions, results, predictions, allUsers, matches, isRoundFinished, totalValidMatchesCount]);
+  }, [matchDescriptions, predictions, allUsers, matches, isRoundFinished, totalValidMatchesCount]);
 
   useEffect(() => {
     async function init() {
@@ -311,7 +348,6 @@ function HomeContent() {
     }
   }, [roundData, currentRound]);
 
-  // Atualização automática a cada 60 segundos
   useEffect(() => {
     if (currentRound === null) return;
     
@@ -371,11 +407,14 @@ function HomeContent() {
       const myPreds = predictions[user.uid];
       if (myPreds) {
         const currentUsername = currentUserFirestore?.username || user.displayName || "Jogador";
+        // Ordenamos os matches de volta para a ordem original para salvar nos índices corretos
+        const sortedOrig = [...matches].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
+        
         myPreds.forEach((pred, idx) => {
           const betId = `${user.uid}_${idx}`;
           const betRef = doc(db, "rounds", roundId, "bets", betId);
           if (pred.homeScore === "" || pred.awayScore === "") deleteDocumentNonBlocking(betRef);
-          else setDocumentNonBlocking(betRef, { id: betId, userId: user.uid, username: currentUsername, matchId: matches[idx]?.id || idx, homeScorePrediction: parseInt(pred.homeScore), awayScorePrediction: parseInt(pred.awayScore), dateSubmitted: serverTimestamp() }, { merge: true });
+          else setDocumentNonBlocking(betRef, { id: betId, userId: user.uid, username: currentUsername, matchId: sortedOrig[idx]?.id || idx, homeScorePrediction: parseInt(pred.homeScore), awayScorePrediction: parseInt(pred.awayScore), dateSubmitted: serverTimestamp() }, { merge: true });
         });
       }
       toast({ title: "Salvo!", description: "Dados sincronizados com sucesso." });

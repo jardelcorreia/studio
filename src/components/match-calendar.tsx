@@ -70,10 +70,10 @@ export function MatchCalendar({
     return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
   };
 
-  const handlePredictionChange = (idx: number, type: 'home' | 'away', value: string) => {
+  const handlePredictionChange = (idx: number, originalIdx: number, type: 'home' | 'away', value: string) => {
     if (isLocked) return;
     const cleanValue = value.slice(-1);
-    setPrediction(idx, type, cleanValue);
+    setPrediction(originalIdx, type, cleanValue);
 
     if (cleanValue !== "") {
       if (type === 'home') {
@@ -120,7 +120,8 @@ export function MatchCalendar({
           const isFinished = match.status === 'finished';
           const isLive = match.status === 'live';
           const isCancelled = match.status === 'cancelled';
-          const currentPred = predictions[idx] || { homeScore: "", awayScore: "" };
+          const originalIdx = match.originalIndex ?? idx;
+          const currentPred = predictions[originalIdx] || { homeScore: "", awayScore: "" };
           const isOutOfWindow = match.isValidForPoints === false;
           const isEffectivelyInvalid = isOutOfWindow || isCancelled;
 
@@ -252,7 +253,7 @@ export function MatchCalendar({
                               id={`cal-input-${idx}-home`}
                               type="number"
                               value={currentPred.homeScore}
-                              onChange={(e) => handlePredictionChange(idx, 'home', e.target.value)}
+                              onChange={(e) => handlePredictionChange(idx, originalIdx, 'home', e.target.value)}
                               className={cn(
                                 "w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner",
                                 isLocked && "bg-muted/30 opacity-50 cursor-not-allowed"
@@ -264,7 +265,7 @@ export function MatchCalendar({
                               id={`cal-input-${idx}-away`}
                               type="number"
                               value={currentPred.awayScore}
-                              onChange={(e) => handlePredictionChange(idx, 'away', e.target.value)}
+                              onChange={(e) => handlePredictionChange(idx, originalIdx, 'away', e.target.value)}
                               className={cn(
                                 "w-9 h-9 md:w-10 md:h-10 text-center rounded-xl p-0 font-black text-lg border-primary/20 shadow-inner",
                                 isLocked && "bg-muted/30 opacity-50 cursor-not-allowed"
