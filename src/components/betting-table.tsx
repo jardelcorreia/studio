@@ -347,10 +347,10 @@ export function BettingTable({
                             points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
                             points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
                             points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
-                            isCurrent ? (isMatchLocked ? "bg-muted/30 opacity-50 border-primary/20" : "bg-primary/5 border-primary/10 shadow-sm") :
+                            isCurrent ? (isMatchLocked ? "bg-primary/5 border-primary shadow-sm" : "bg-primary/5 border-primary/10 shadow-sm") :
                             "bg-background border-muted/30 shadow-sm"
                           )}>
-                            {isCurrent ? (
+                            {isCurrent && !isMatchLocked ? (
                               <div className="flex items-center justify-center gap-0.5">
                                 <Input 
                                   type="number" 
@@ -358,31 +358,38 @@ export function BettingTable({
                                   onChange={(e) => setPrediction(u.id, idx, 'home', e.target.value)} 
                                   className={cn(
                                     "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
-                                    (points === 3 || points === 1) ? "text-white" : points === 0 ? "text-destructive" : "text-primary"
+                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-destructive" : "text-primary"
                                   )} 
                                   placeholder="-"
-                                  disabled={isMatchLocked}
                                 />
-                                <span className={cn("text-[8px] font-black italic", (points === 3 || points === 1) ? "text-white/30" : "opacity-30")}>x</span>
+                                <span className={cn("text-[8px] font-black italic", (points === 3 || points === 1) ? "opacity-30" : "opacity-30")}>x</span>
                                 <Input 
                                   type="number" 
                                   value={pred.awayScore} 
                                   onChange={(e) => setPrediction(u.id, idx, 'away', e.target.value)} 
                                   className={cn(
                                     "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
-                                    (points === 3 || points === 1) ? "text-white" : points === 0 ? "text-destructive" : "text-primary"
+                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-destructive" : "text-primary"
                                   )} 
                                   placeholder="-"
-                                  disabled={isMatchLocked}
                                 />
                               </div>
                             ) : (
                               <>
-                                <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
+                                <span className={cn(
+                                  "text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter",
+                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-destructive" : ""
+                                )}>
                                   {isHidden ? "?" : (pred.homeScore || "-")}
                                 </span>
-                                <span className="text-[7px] md:text-[8px] font-black opacity-30 italic">x</span>
-                                <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
+                                <span className={cn(
+                                  "text-[7px] md:text-[8px] font-black opacity-30 italic",
+                                  (points === 3 || points === 1) ? "text-current opacity-30" : ""
+                                )}>x</span>
+                                <span className={cn(
+                                  "text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter",
+                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-destructive" : ""
+                                )}>
                                   {isHidden ? "?" : (pred.awayScore || "-")}
                                 </span>
                               </>
