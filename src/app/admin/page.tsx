@@ -4,10 +4,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
-import { doc, serverTimestamp } from "firebase/firestore";
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from "@/firebase";
+import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { Match, MatchStatus, ChampionshipWinner } from "@/lib/types";
+import { Match, MatchStatus, ChampionshipWinner, PlayerPredictions } from "@/lib/types";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday } from "@/lib/football-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,12 +34,14 @@ import {
   Table,
   RotateCcw,
   Trash2,
-  Info
+  Info,
+  Camera
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getTeamAbrev, cn } from "@/lib/utils";
+import { getTeamAbrev, cn, determineMatchValidity } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RoundCardDialog } from "@/components/round-card-dialog";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -74,6 +76,34 @@ export default function AdminPage() {
   const settingsDocRef = useMemoFirebase(() => user ? doc(db, "app_settings", "championship") : null, [db, user]);
   const { data: settingsData } = useDoc(settingsDocRef);
 
+  // Busca necessária para o RoundCardDialog
+  const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
+  const { data: allUsers } = useCollection(usersCollectionRef);
+
+  const betsCollectionRef = useMemoFirebase(() => {
+    if (!roundId || !user) return null;
+    return collection(db, "rounds", roundId, "bets");
+  }, [db, roundId, user]);
+  const { data: allBets } = useCollection(betsCollectionRef);
+
+  const predictions = useMemo((): PlayerPredictions => {
+    if (!allBets || !allUsers) return {};
+    const next: PlayerPredictions = {};
+    allUsers.forEach(u => { next[u.id] = Array(10).fill({ homeScore: "", awayScore: "" }); });
+    allBets.forEach(bet => {
+      const parts = bet.id.split('_');
+      const matchIdx = parseInt(parts[parts.length - 1]);
+      const bUserId = bet.userId;
+      if (bUserId && next[bUserId] && matchIdx >= 0 && matchIdx < 10) {
+        next[bUserId][matchIdx] = { 
+          homeScore: bet.homeScorePrediction?.toString() || "", 
+          awayScore: bet.awayScorePrediction?.toString() || "" 
+        };
+      }
+    });
+    return next;
+  }, [allBets, allUsers]);
+
   useEffect(() => {
     if (!isUserLoading && !isAdmin) {
       router.push("/");
@@ -103,7 +133,6 @@ export default function AdminPage() {
     }
   }, [roundData, currentRound]);
 
-  // Carrega e atualiza dados da API a cada 60 segundos
   useEffect(() => {
     if (currentRound === null) return;
     
@@ -126,7 +155,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (apiMatches.length === 0) return;
-    let merged = [...apiMatches];
+    let merged = determineMatchValidity(apiMatches);
     if (roundData?.matches && Array.isArray(roundData.matches)) {
       merged = merged.map(m => {
         const override = roundData.matches.find((o: any) => o.id === m.id);
@@ -247,7 +276,9 @@ export default function AdminPage() {
             <Link href="/"><Button variant="ghost" size="icon" className="rounded-xl h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button></Link>
             <div className="flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /><h1 className="text-[10px] font-black italic uppercase text-primary tracking-widest">Painel ADM</h1></div>
           </div>
-          <Button onClick={handleSaveRound} disabled={saving || loading} size="sm" className="rounded-lg h-8 px-4 font-black italic uppercase gap-2 shadow-lg shadow-primary/20 text-[9px]">{saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}Salvar Rodada</Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleSaveRound} disabled={saving || loading} size="sm" className="rounded-lg h-8 px-4 font-black italic uppercase gap-2 shadow-lg shadow-primary/20 text-[9px]">{saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}Salvar Rodada</Button>
+          </div>
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-4 space-y-4">
@@ -257,13 +288,21 @@ export default function AdminPage() {
             <TabsTrigger value="financeiro" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white"><DollarSign className="h-3 w-3" />Financeiro Liga</TabsTrigger>
           </TabsList>
           <TabsContent value="rodada" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <section className="flex items-center justify-between bg-primary/5 p-3 rounded-xl border border-primary/10">
+            <section className="flex flex-col sm:flex-row items-center justify-between bg-primary/5 p-3 rounded-xl border border-primary/10 gap-3">
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => setCurrentRound(prev => Math.max(1, prev! - 1))} className="h-7 w-7 rounded-lg border-primary/10"><ChevronLeft className="h-4 w-4" /></Button>
                 <div className="text-center min-w-[50px]"><h2 className="text-sm font-black italic uppercase text-primary leading-tight">#{currentRound}</h2></div>
                 <Button variant="outline" size="icon" onClick={() => setCurrentRound(prev => Math.min(38, prev! + 1))} className="h-7 w-7 rounded-lg border-primary/10"><ChevronRight className="h-4 w-4" /></Button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <RoundCardDialog 
+                  roundName={roundName}
+                  matches={matches}
+                  predictions={predictions}
+                  allUsers={allUsers || []}
+                  buttonLabel="Card"
+                  triggerClassName="h-7 px-3 text-[8px]"
+                />
                 <TooltipProvider><Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => { const matchday = currentRound; setCurrentRound(null); setTimeout(() => setCurrentRound(matchday), 10); }} className="h-7 w-7 rounded-lg border-primary/10" disabled={loading}><RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} /></Button></TooltipTrigger><TooltipContent><p className="text-[10px] font-bold">Forçar atualização dos dados da API</p></TooltipContent></Tooltip></TooltipProvider>
                 <Button variant={placaresOcultos ? "destructive" : "secondary"} onClick={toggleVisibility} size="sm" className="rounded-lg h-7 px-4 gap-2 font-black italic uppercase text-[8px] shadow-md transition-all active:scale-95">{placaresOcultos ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}{placaresOcultos ? "Revelar Palpites" : "Ocultar Palpites"}</Button>
               </div>
