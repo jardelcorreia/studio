@@ -131,7 +131,6 @@ export default function AdminPage() {
       merged = merged.map(m => {
         const override = roundData.matches.find((o: any) => o.id === m.id);
         if (override) {
-          // Só marca como manual se o dado for REALMENTE diferente do da API
           const hasDifference = 
             (override.homeScore !== undefined && override.homeScore !== m.homeScore) ||
             (override.awayScore !== undefined && override.awayScore !== m.awayScore) ||
@@ -142,7 +141,7 @@ export default function AdminPage() {
             homeScore: (override.homeScore !== undefined && override.homeScore !== null) ? override.homeScore : m.homeScore,
             awayScore: (override.awayScore !== undefined && override.awayScore !== null) ? override.awayScore : m.awayScore,
             status: override.status || m.status,
-            isManual: hasDifference // Flag inteligente
+            isManual: hasDifference
           };
         }
         return m;
@@ -168,7 +167,6 @@ export default function AdminPage() {
     try {
       const roundRef = doc(db, "rounds", roundId);
       
-      // Somente salva no Firestore os jogos que foram marcados como manuais
       const matchOverrides = matches
         .filter(m => m.isManual)
         .map(m => ({

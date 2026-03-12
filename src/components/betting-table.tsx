@@ -332,8 +332,6 @@ export function BettingTable({
                       const points = getPoints(u.id, idx);
                       const pred = predictions[u.id]?.[idx] || { homeScore: "", awayScore: "" };
 
-                      // A edição é bloqueada se o administrador revelou os placares (isLocked)
-                      // ou se o jogo em questão já começou/terminou.
                       const isMatchLocked = isLocked || match.status === 'finished' || match.status === 'live' || match.status === 'cancelled' || match.isValidForPoints === false;
 
                       return (
@@ -344,46 +342,52 @@ export function BettingTable({
                             </span>
                           </div>
                           
-                          {isCurrent ? (
-                            <div className={cn(
-                              "flex items-center justify-center gap-0.5 px-1 py-0.5 rounded-xl border border-primary/20 transition-all",
-                              isMatchLocked ? "bg-muted/30 opacity-50" : "bg-primary/5"
-                            )}>
-                              <Input 
-                                type="number" 
-                                value={pred.homeScore} 
-                                onChange={(e) => setPrediction(u.id, idx, 'home', e.target.value)} 
-                                className="w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0" 
-                                placeholder="-"
-                                disabled={isMatchLocked}
-                              />
-                              <span className="text-[8px] font-black opacity-30 italic">x</span>
-                              <Input 
-                                type="number" 
-                                value={pred.awayScore} 
-                                onChange={(e) => setPrediction(u.id, idx, 'away', e.target.value)} 
-                                className="w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0" 
-                                placeholder="-"
-                                disabled={isMatchLocked}
-                              />
-                            </div>
-                          ) : (
-                            <div className={cn("flex items-center justify-center gap-1 px-1 py-0.5 md:py-1 rounded-xl border-2 transition-all duration-300",
-                              isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
-                              points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
-                              points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
-                              points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
-                              "bg-background border-muted/30 shadow-sm"
-                            )}>
-                              <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
-                                {isHidden ? "?" : (pred.homeScore || "-")}
-                              </span>
-                              <span className="text-[7px] md:text-[8px] font-black opacity-30 italic">x</span>
-                              <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
-                                {isHidden ? "?" : (pred.awayScore || "-")}
-                              </span>
-                            </div>
-                          )}
+                          <div className={cn("flex items-center justify-center gap-1 px-1 py-0.5 md:py-1 rounded-xl border-2 transition-all duration-300",
+                            isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
+                            points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
+                            points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
+                            points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
+                            isCurrent ? (isMatchLocked ? "bg-muted/30 opacity-50 border-primary/20" : "bg-primary/5 border-primary/10 shadow-sm") :
+                            "bg-background border-muted/30 shadow-sm"
+                          )}>
+                            {isCurrent ? (
+                              <div className="flex items-center justify-center gap-0.5">
+                                <Input 
+                                  type="number" 
+                                  value={pred.homeScore} 
+                                  onChange={(e) => setPrediction(u.id, idx, 'home', e.target.value)} 
+                                  className={cn(
+                                    "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
+                                    (points === 3 || points === 1) ? "text-white" : points === 0 ? "text-destructive" : "text-primary"
+                                  )} 
+                                  placeholder="-"
+                                  disabled={isMatchLocked}
+                                />
+                                <span className={cn("text-[8px] font-black italic", (points === 3 || points === 1) ? "text-white/30" : "opacity-30")}>x</span>
+                                <Input 
+                                  type="number" 
+                                  value={pred.awayScore} 
+                                  onChange={(e) => setPrediction(u.id, idx, 'away', e.target.value)} 
+                                  className={cn(
+                                    "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
+                                    (points === 3 || points === 1) ? "text-white" : points === 0 ? "text-destructive" : "text-primary"
+                                  )} 
+                                  placeholder="-"
+                                  disabled={isMatchLocked}
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
+                                  {isHidden ? "?" : (pred.homeScore || "-")}
+                                </span>
+                                <span className="text-[7px] md:text-[8px] font-black opacity-30 italic">x</span>
+                                <span className="text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter">
+                                  {isHidden ? "?" : (pred.awayScore || "-")}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
