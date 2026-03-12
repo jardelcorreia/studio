@@ -337,7 +337,7 @@ export function BettingTable({
                       return (
                         <div key={u.id} className={cn("flex flex-col items-center min-w-[55px] md:min-w-[65px] relative transition-all", isCurrent && "scale-105 z-10")}>
                           <div className="flex items-center gap-1 mb-1 px-1 w-full justify-center">
-                            <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/50")}>
+                            <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-tighter truncate text-center w-full", isCurrent ? "text-primary font-bold" : "text-muted-foreground/80")}>
                               {u.username}
                             </span>
                           </div>
@@ -346,7 +346,7 @@ export function BettingTable({
                             isOutOfWindow ? "bg-muted/50 border-transparent text-muted-foreground" :
                             points === 3 ? "bg-secondary text-white border-secondary shadow-lg shadow-secondary/20" :
                             points === 1 ? "bg-accent text-accent-foreground border-accent shadow-md" :
-                            points === 0 ? "bg-destructive/5 border-destructive/10 text-destructive" :
+                            points === 0 ? "bg-destructive/15 border-destructive/30 text-red-600 dark:text-red-400 font-bold" :
                             isCurrent ? (isMatchLocked ? "bg-primary/5 border-primary shadow-sm" : "bg-primary/5 border-primary/10 shadow-sm") :
                             "bg-background border-muted/30 shadow-sm"
                           )}>
@@ -358,7 +358,7 @@ export function BettingTable({
                                   onChange={(e) => setPrediction(u.id, idx, 'home', e.target.value)} 
                                   className={cn(
                                     "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
-                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-destructive" : "text-primary"
+                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : "text-primary"
                                   )} 
                                   placeholder="-"
                                 />
@@ -369,7 +369,7 @@ export function BettingTable({
                                   onChange={(e) => setPrediction(u.id, idx, 'away', e.target.value)} 
                                   className={cn(
                                     "w-5 h-5 md:w-6 md:h-6 text-center p-0 font-black text-[10px] md:text-xs border-none bg-transparent shadow-none focus-visible:ring-0",
-                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-destructive" : "text-primary"
+                                    points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : "text-primary"
                                   )} 
                                   placeholder="-"
                                 />
@@ -378,7 +378,7 @@ export function BettingTable({
                               <>
                                 <span className={cn(
                                   "text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter",
-                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-destructive" : ""
+                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : ""
                                 )}>
                                   {isHidden ? "?" : (pred.homeScore || "-")}
                                 </span>
@@ -388,7 +388,7 @@ export function BettingTable({
                                 )}>x</span>
                                 <span className={cn(
                                   "text-[11px] md:text-[13px] font-black tabular-nums tracking-tighter",
-                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-destructive" : ""
+                                  points === 3 ? "text-white" : points === 1 ? "text-accent-foreground" : points === 0 ? "text-red-600 dark:text-red-400" : ""
                                 )}>
                                   {isHidden ? "?" : (pred.awayScore || "-")}
                                 </span>

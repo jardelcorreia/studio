@@ -123,7 +123,7 @@ export function RankingSummary({ scores, isScoresHidden, isRoundFinished, totalV
                             "text-[11px] md:text-[11px] font-black uppercase italic tracking-tighter whitespace-nowrap",
                             score.betsCompleted 
                               ? (showWinnerStyles ? "text-white" : "text-secondary") 
-                              : (showWinnerStyles ? "text-white/60" : "text-muted-foreground/60")
+                              : (showWinnerStyles ? "text-white/80" : "text-muted-foreground/80")
                           )}>
                             {score.betsCompleted ? "Quilado" : "Não Quilou"}
                             <span className="ml-1 opacity-50 tabular-nums">({score.betsCount}/{totalValidMatches})</span>
