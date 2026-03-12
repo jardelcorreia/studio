@@ -484,7 +484,7 @@ function HomeContent() {
       </Dialog>
 
       <main className="flex-1 relative overflow-hidden">
-        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-1 pb-24 md:pb-8 animate-in fade-in duration-500", activeTab !== "jogos" && "hidden")}>
+        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-1 pb-24 md:pb-8 animate-in fade-in duration-200", activeTab !== "jogos" && "hidden")}>
           <div className="max-w-7xl mx-auto px-4 space-y-4 md:space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
               {isInstallable && (
@@ -519,21 +519,21 @@ function HomeContent() {
           </div>
         </div>
 
-        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-500", activeTab !== "palpites" && "hidden")}>
+        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-200", activeTab !== "palpites" && "hidden")}>
           <div className="max-w-7xl mx-auto px-4 space-y-6">
             <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">{roundName}</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Comparativo em tempo real</p></div>
             <BettingTable roundName={roundName} matches={matches} predictions={predictions} setPrediction={updatePrediction} results={results} placaresOcultos={isEffectivelyHidden} currentPlayerId={user?.uid || ""} isAdmin={isAdminUser} allUsers={allUsers || []} isLocked={isLocked} />
           </div>
         </div>
 
-        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-500", activeTab !== "ranking" && "hidden")}>
+        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-200", activeTab !== "ranking" && "hidden")}>
           <div className="max-w-7xl mx-auto px-4 space-y-6">
             <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">Ranking Geral</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação do Campeonato</p></div>
             <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} isAdmin={false} onSave={async () => {}} isSaving={false} />
           </div>
         </div>
 
-        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-500", activeTab !== "tabela" && "hidden")}>
+        <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-200", activeTab !== "tabela" && "hidden")}>
           <div className="max-w-7xl mx-auto px-4 space-y-6">
             <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">Tabela Oficial</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação Série A</p></div>
             <LeagueStandings standings={standings} />

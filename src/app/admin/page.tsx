@@ -287,7 +287,7 @@ export default function AdminPage() {
             <TabsTrigger value="rodada" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white"><Table className="h-3 w-3" />Controle de Jogos</TabsTrigger>
             <TabsTrigger value="financeiro" className="rounded-lg font-black italic uppercase text-[8px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-white"><DollarSign className="h-3 w-3" />Financeiro Liga</TabsTrigger>
           </TabsList>
-          <TabsContent value="rodada" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <TabsContent value="rodada" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
             <section className="flex flex-col sm:flex-row items-center justify-between bg-primary/5 p-3 rounded-xl border border-primary/10 gap-3">
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => setCurrentRound(prev => Math.max(1, prev! - 1))} className="h-7 w-7 rounded-lg border-primary/10"><ChevronLeft className="h-4 w-4" /></Button>
@@ -322,7 +322,7 @@ export default function AdminPage() {
               ))}
             </section>
           </TabsContent>
-          <TabsContent value="financeiro" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <TabsContent value="financeiro" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
             <Card className="glass-card border-none rounded-2xl overflow-hidden">
               <CardHeader className="bg-primary/5 p-3 flex flex-row items-center justify-between space-y-0"><div className="flex items-center gap-2"><Settings2 className="h-3.5 w-3.5 text-primary" /><CardTitle className="text-[9px] font-black italic uppercase text-primary">Configurações Liga</CardTitle></div><Button onClick={handleSaveLeagueSettings} disabled={saving} size="sm" className="rounded-lg h-7 px-3 font-black italic uppercase gap-2 text-[8px]">{saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}Salvar</Button></CardHeader>
               <CardContent className="p-4 space-y-4">
