@@ -152,7 +152,7 @@ export function MatchCalendar({
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-none shadow-xl">
                             <SelectItem value="upcoming" className="text-[10px] font-black uppercase italic">Agendado</SelectItem>
-                            <SelectItem value="live" className="text-[10px] font-black uppercase italic text-destructive">Ao Vivo</SelectItem>
+                            <SelectItem value="live" className="text-[10px] font-black uppercase italic text-red-600 dark:text-red-400">Ao Vivo</SelectItem>
                             <SelectItem value="finished" className="text-[10px] font-black uppercase italic text-primary">Finalizado</SelectItem>
                             <SelectItem value="cancelled" className="text-[10px] font-black uppercase italic text-muted-foreground">Adiado</SelectItem>
                           </SelectContent>
@@ -160,7 +160,7 @@ export function MatchCalendar({
                       ) : (
                         <Badge className={cn(
                           "rounded-full px-3 text-[8px] font-black uppercase border-none",
-                          isLive ? "bg-destructive text-white animate-pulse" : 
+                          isLive ? "bg-red-600 text-white animate-pulse" : 
                           isFinished ? "bg-primary/20 text-primary" : 
                           isCancelled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
                         )}>
@@ -217,16 +217,16 @@ export function MatchCalendar({
                       <div className="flex flex-col items-center gap-3">
                         <div className="flex items-center gap-2 md:gap-4 relative">
                           {isLive && (
-                            <Zap className="h-3 w-3 text-destructive absolute -top-4 left-1/2 -translate-x-1/2 animate-bounce fill-current" />
+                            <Zap className="h-3 w-3 text-red-600 dark:text-red-400 absolute -top-4 left-1/2 -translate-x-1/2 animate-bounce fill-current" />
                           )}
                           <span className={cn(
                             "text-3xl md:text-4xl font-black italic",
-                            isLive ? "text-destructive" : "text-primary"
+                            isLive ? "text-red-600 dark:text-red-400" : "text-primary"
                           )}>{match.homeScore ?? 0}</span>
                           <div className="h-6 md:h-8 w-[2px] bg-muted/50 rotate-12" />
                           <span className={cn(
                             "text-3xl md:text-4xl font-black italic",
-                            isLive ? "text-destructive" : "text-primary"
+                            isLive ? "text-red-600 dark:text-red-400" : "text-primary"
                           )}>{match.awayScore ?? 0}</span>
                         </div>
                         
@@ -293,7 +293,7 @@ export function MatchCalendar({
                    <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3 text-primary/40" />
                       <span className="text-[10px] font-black italic text-primary/60">
-                        {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isLive ? "AO VIVO" : isCancelled ? "PARTIDA ADIADA" : isLocked ? "PALPITES ENCERRADOS" : "AGUARDANDO PALPITE"}
+                        {formatTime(match.utcDate)} • {isFinished ? "RESULTADO FINAL" : isLive ? <span className="text-red-600 dark:text-red-400">AO VIVO</span> : isCancelled ? "PARTIDA ADIADA" : isLocked ? "PALPITES ENCERRADOS" : "AGUARDANDO PALPITE"}
                       </span>
                    </div>
                    {isEffectivelyInvalid && (

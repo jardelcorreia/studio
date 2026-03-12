@@ -87,7 +87,7 @@ export function BettingTable({
                         {desc || "---"}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className={cn("text-[8px] font-black uppercase", match.status === 'live' ? "text-destructive" : "text-muted-foreground")}>
+                        <span className={cn("text-[8px] font-black uppercase", match.status === 'live' ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
                           {match.status === 'finished' ? 'Finalizado' : match.status === 'live' ? 'Ao Vivo' : match.status === 'cancelled' ? 'Adiado' : 'Agendado'}
                         </span>
                         {isOutOfWindow && (
