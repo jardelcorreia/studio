@@ -37,4 +37,4 @@ export const TEAMS: Record<string, TeamInfo> = {
   "Clube do Remo": { abrev: "REM", nome: "Remo", escudo: "https://logodetimes.com/times/remo/logo-remo-256.png" },
 };
 
-export const PLAYERS = ["Jardel", "Werbet", "Nailton", "Phillipe"];
+export const PLAYERS = ["Jardel", "Nailton", "Phillipe", "Werbet"];

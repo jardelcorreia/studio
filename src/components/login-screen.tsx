@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -282,7 +281,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
               <span className="text-foreground">League</span>
             </h1>
             <p className="text-sm sm:text-lg font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
-              Jardel • Werbet • Nailton • Phillipe <br />
+              Jardel • Nailton • Phillipe • Werbet <br />
               <span className="opacity-60">A Batalha Final do Brasileirão 2026</span>
             </p>
           </div>
