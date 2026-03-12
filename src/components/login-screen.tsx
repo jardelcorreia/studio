@@ -26,7 +26,9 @@ import {
   CheckCircle2,
   ChevronDown,
   User,
-  ArrowRight
+  ArrowRight,
+  Medal,
+  Star
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -127,8 +129,8 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         setShowPasswordChange(true);
       } else {
         toast({
-          title: `Bem-vindo, ${playerName}!`,
-          description: "Acesso autorizado à plataforma AlphaBet.",
+          title: `Bem-vindo de volta, ${playerName}!`,
+          description: "Acesso autorizado à arena AlphaBet.",
         });
       }
     } catch (err: any) {
@@ -140,15 +142,15 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
           toast({
             title: "Primeiro Acesso!",
-            description: "Agora defina sua senha para garantir a segurança da sua conta.",
+            description: "Agora defina sua senha pessoal para os próximos jogos.",
           });
           onPasswordChangeRequired?.();
           setShowPasswordChange(true);
         } catch (createErr: any) {
-          setError("Erro ao criar perfil. Verifique a conexão.");
+          setError("Erro ao inicializar perfil. Verifique sua conexão.");
         }
       } else {
-        setError("Senha incorreta ou usuário não autorizado.");
+        setError("Senha incorreta ou acesso não autorizado para este perfil.");
       }
     } finally {
       setLoading(false);
@@ -166,7 +168,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       return;
     }
     if (newPassword === "alphabet123") {
-      setError("Use uma senha diferente da padrão.");
+      setError("Sua nova senha deve ser diferente da padrão.");
       return;
     }
 
@@ -177,13 +179,13 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
       if (auth.currentUser) {
         await updatePassword(auth.currentUser, newPassword);
         toast({
-          title: "Senha Atualizada!",
-          description: "Sua conta agora está protegida.",
+          title: "Segurança Atualizada!",
+          description: "Sua conta agora está protegida com a nova senha.",
         });
         onPasswordChanged?.();
       }
     } catch (err: any) {
-      setError("Erro ao atualizar. Reconecte e tente novamente.");
+      setError("Sessão expirada. Faça login novamente para trocar a senha.");
     } finally {
       setLoading(false);
     }
@@ -203,12 +205,12 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
               </div>
             </div>
             <CardTitle className="text-3xl font-black italic uppercase text-primary">Segurança</CardTitle>
-            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-2">Crie sua senha personalizada</CardDescription>
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-2">Personalize sua senha de acesso</CardDescription>
           </CardHeader>
           <form onSubmit={handleChangePassword}>
             <CardContent className="space-y-4 px-8">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Nova Senha</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Nova Senha Pessoal</Label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40" />
                   <Input
@@ -222,12 +224,12 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Confirmar Senha</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Confirmar Nova Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40" />
                   <Input
                     type="password"
-                    placeholder="Repita a senha"
+                    placeholder="Repita a nova senha"
                     className="h-14 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-bold"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -243,7 +245,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
             </CardContent>
             <CardFooter className="px-8 pb-10 pt-4">
               <Button type="submit" className="w-full h-16 rounded-2xl font-black italic uppercase text-lg sports-gradient shadow-xl" disabled={loading}>
-                {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Salvar Senha"}
+                {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Confirmar e Entrar"}
               </Button>
             </CardFooter>
           </form>
@@ -254,7 +256,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Hero Section */}
+      {/* Hero Section - Exclusivo para os 4 */}
       <section className="relative h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Image 
@@ -269,7 +271,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
 
         <div className="relative z-10 max-w-2xl w-full text-center space-y-8 animate-in fade-in slide-in-from-top-12 duration-1000">
           <div className="flex justify-center">
-            <div className="relative h-24 w-24 sm:h-32 sm:w-32 animate-float">
+            <div className="relative h-20 w-20 sm:h-28 sm:w-28 animate-float">
               <Image 
                 src="/icons/android-chrome-512x512.png?v=3" 
                 alt="AlphaBet Logo" 
@@ -280,41 +282,41 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
           </div>
 
           <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest italic animate-pulse">
+              <Shield className="h-3 w-3" /> Liga Privada Brasileira
+            </div>
             <h1 className="text-5xl sm:text-7xl font-black italic uppercase tracking-tighter text-primary leading-[0.9]">
               AlphaBet <br />
               <span className="text-foreground">League</span>
             </h1>
-            <p className="text-sm sm:text-lg font-bold text-muted-foreground uppercase tracking-widest">
-              O Portal Oficial de Palpites <br className="sm:hidden" /> do Brasileirão 2026
+            <p className="text-sm sm:text-lg font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+              Jardel • Werbet • Nailton • Phillipe <br />
+              <span className="opacity-60">A Batalha Final do Brasileirão 2026</span>
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button onClick={scrollToLogin} size="lg" className="w-full sm:w-auto h-16 px-10 rounded-2xl text-lg font-black italic uppercase sports-gradient shadow-2xl shadow-primary/40 group">
-              Começar Agora
+              Acessar Arena
               <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-              <Users className="h-4 w-4 text-primary" />
-              +50 Jogadores Ativos
-            </div>
           </div>
         </div>
 
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer" onClick={scrollToLogin}>
-          <ChevronDown className="h-8 w-8 text-primary/50" />
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer opacity-40" onClick={scrollToLogin}>
+          <ChevronDown className="h-8 w-8 text-primary" />
         </div>
       </section>
 
-      {/* Features Grid */}
+      {/* Roda da Fortuna dos 4 */}
       <section className="max-w-7xl mx-auto px-6 py-24 grid grid-cols-1 md:grid-cols-3 gap-8">
         <Card className="glass-card border-none rounded-[2rem] p-8 space-y-4 hover:translate-y-[-8px] transition-transform duration-500">
           <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
             <Zap className="h-7 w-7 fill-current" />
           </div>
-          <h3 className="text-2xl font-black italic uppercase text-primary">Palpites Rápidos</h3>
+          <h3 className="text-2xl font-black italic uppercase text-primary">Quila Rápida</h3>
           <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-            Interface otimizada para você preencher seus placares em segundos. Não perca o prazo da quila!
+            Mantenha seus 10 palpites em dia. A interface foi feita para quem não tem tempo a perder entre um gol e outro.
           </p>
         </Card>
 
@@ -322,9 +324,9 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
           <div className="h-14 w-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent shadow-inner">
             <Trophy className="h-7 w-7 fill-current" />
           </div>
-          <h3 className="text-2xl font-black italic uppercase text-accent">Ranking Real-Time</h3>
+          <h3 className="text-2xl font-black italic uppercase text-accent">Ranking Real</h3>
           <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-            Acompanhe sua posição no ranking geral e da rodada enquanto os gols acontecem. Emoção pura!
+            Acompanhe o saldo da liga e quem está levando o prêmio da rodada. Transparência total entre os 4 amigos.
           </p>
         </Card>
 
@@ -332,44 +334,37 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
           <div className="h-14 w-14 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary shadow-inner">
             <TrendingUp className="h-7 w-7" />
           </div>
-          <h3 className="text-2xl font-black italic uppercase text-secondary">Análise de Dados</h3>
+          <h3 className="text-2xl font-black italic uppercase text-secondary">Tabela CBF</h3>
           <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-            Estatísticas detalhadas e palpites de especialistas para ajudar você a mitar em todas as rodadas.
+            Consulte a classificação oficial da Série A sem sair do app. Tudo o que você precisa para mitar nos palpites.
           </p>
         </Card>
       </section>
 
-      {/* Mobile Experience Section */}
-      <section className="bg-primary/5 py-24 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
-          <div className="flex-1 space-y-8 text-center md:text-left">
-            <Badge className="bg-primary/10 text-primary border-none px-4 py-1 rounded-full text-[10px] font-black uppercase italic">Mobile Experience</Badge>
-            <h2 className="text-4xl sm:text-6xl font-black italic uppercase text-primary leading-tight">Feito para <br /> seu Celular</h2>
-            <p className="text-sm sm:text-lg text-muted-foreground font-medium max-w-md mx-auto md:mx-0">
-              Instale o app na sua tela inicial e receba notificações em tempo real. Viva o Brasileirão onde você estiver.
-            </p>
-            <ul className="space-y-4">
-              {[
-                "Push Notifications instantâneas",
-                "Instalação PWA simplificada",
-                "Modo Escuro automático",
-                "Consumo mínimo de dados"
-              ].map((item, i) => (
-                <li key={i} className="flex items-center gap-3 font-bold text-xs uppercase italic text-primary/70">
-                  <CheckCircle2 className="h-4 w-4 text-primary" /> {item}
-                </li>
-              ))}
-            </ul>
+      {/* Player Showcase - Os 4 Craques */}
+      <section className="bg-primary/5 py-24 overflow-hidden border-y border-primary/10">
+        <div className="max-w-7xl mx-auto px-6 space-y-16">
+          <div className="text-center space-y-4">
+             <h2 className="text-3xl sm:text-5xl font-black italic uppercase text-primary tracking-tighter">O Quarteto de Ferro</h2>
+             <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.4em]">Somente os melhores participam desta liga</p>
           </div>
-          <div className="flex-1 relative">
-            <div className="relative w-[280px] h-[580px] sm:w-[320px] sm:h-[650px] mx-auto rounded-[3rem] border-[12px] border-slate-900 shadow-2xl overflow-hidden bg-background">
-               <Image src={stadiumImage?.imageUrl || ""} alt="Mockup" fill className="object-cover opacity-50" />
-               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center gap-4">
-                  <Smartphone className="h-16 w-16 text-primary/20" />
-                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Interface Nativa</span>
-               </div>
-            </div>
-            <div className="absolute top-1/2 -translate-y-1/2 -right-4 h-64 w-64 bg-primary/20 blur-[100px] rounded-full -z-10" />
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
+            {PLAYERS.map((player, i) => (
+              <div key={player} className="flex flex-col items-center gap-4 group">
+                <div className="relative h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-background border-2 border-primary/20 p-2 shadow-xl transition-transform group-hover:scale-110 group-hover:-rotate-3 duration-500">
+                  <div className="h-full w-full rounded-2xl bg-primary/5 flex items-center justify-center">
+                    {i === 0 ? <Crown className="h-10 w-10 text-accent animate-pulse" /> : 
+                     i === 1 ? <Medal className="h-10 w-10 text-slate-400" /> :
+                     <User className="h-10 w-10 text-primary/40" />}
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 h-8 w-8 bg-primary rounded-xl flex items-center justify-center text-[10px] font-black italic text-white shadow-lg">
+                    #{i+1}
+                  </div>
+                </div>
+                <span className="font-black italic uppercase text-lg text-primary">{player}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -380,21 +375,21 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         
         <div className="max-w-md mx-auto space-y-12">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl sm:text-5xl font-black italic uppercase text-foreground">Acesse a Arena</h2>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.3em]">Escolha seu perfil para entrar</p>
+            <h2 className="text-3xl sm:text-5xl font-black italic uppercase text-foreground">Acesso à Arena</h2>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.3em]">Identifique-se para continuar</p>
           </div>
 
           <Card className="glass-card border-none rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-700">
             <form onSubmit={handleLogin}>
               <CardContent className="p-8 sm:p-10 space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Quem é você?</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Seu Perfil</Label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/40 z-10" />
                     {isReady && (
                       <Select key={playerName || "initial"} onValueChange={handlePlayerSelect} defaultValue={playerName}>
                         <SelectTrigger className="h-16 pl-12 rounded-2xl border-primary/10 bg-primary/5 font-black italic uppercase text-sm focus:ring-primary/20">
-                          <SelectValue placeholder="Selecione seu Perfil" />
+                          <SelectValue placeholder="Escolha seu nome" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-primary/10">
                           {PLAYERS.map((player) => (
@@ -409,7 +404,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Chave de Acesso</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Chave Secreta</Label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/40" />
                     <Input
@@ -420,7 +415,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                  <p className="text-[9px] text-muted-foreground font-medium italic px-1">* Senha padrão para o primeiro acesso: alphabet123</p>
+                  <p className="text-[9px] text-muted-foreground font-medium italic px-1">* Primeiro acesso? Use a senha padrão AlphaBet</p>
                 </div>
 
                 {error && (
@@ -439,7 +434,7 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
                 >
                   {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                      Entrar no Jogo
+                      Entrar na Liga
                       <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
@@ -450,14 +445,21 @@ export function LoginScreen({ onPasswordChangeRequired, onPasswordChanged, force
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer Minimalista */}
       <footer className="py-12 border-t border-primary/5 text-center space-y-4">
         <div className="flex justify-center items-center gap-2 opacity-30">
           <div className="h-px w-12 bg-primary" />
           <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">AlphaBet League © 2026</span>
           <div className="h-px w-12 bg-primary" />
         </div>
+        <p className="text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest">Acesso restrito aos membros autorizados</p>
       </footer>
     </div>
   );
 }
+
+const Crown = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+  </svg>
+);
