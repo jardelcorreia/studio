@@ -4,12 +4,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.notifyRoundStart = exports.onMatchScoreUpdate = exports.onRevealScores = exports.syncBrasileiraoData = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
-const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
 if (admin.apps.length === 0) {
     admin.initializeApp();
 }
-const footballDataApiKey = (0, params_1.defineSecret)("FOOTBALL_DATA_API_KEY");
 const APP_URL = "https://alphabetleague.netlify.app";
 const BASE_URL = 'https://api.football-data.org/v4';
 function isQuietHours() {
@@ -57,11 +55,10 @@ function getValidMatchesCount(matches) {
 }
 exports.syncBrasileiraoData = (0, scheduler_1.onSchedule)({
     schedule: "every 15 minutes",
-    secrets: [footballDataApiKey],
 }, async (event) => {
-    const apiKey = footballDataApiKey.value();
+    const apiKey = process.env.FOOTBALL_DATA_API_KEY;
     if (!apiKey) {
-        console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não configurada nos Secrets.");
+        console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não encontrada no ambiente.");
         return;
     }
     try {
@@ -120,7 +117,7 @@ exports.syncBrasileiraoData = (0, scheduler_1.onSchedule)({
             dateUpdated: admin.firestore.FieldValue.serverTimestamp(),
             dateCreated: existingData ? existingData.dateCreated : admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
-        console.log(`syncBrasileiraoData: Rodada ${currentMatchday} sincronizada com sucesso.`);
+        console.log(`syncBrasileiraoData: Rodada ${currentMatchday} sincronizada.`);
     }
     catch (error) {
         console.error("syncBrasileiraoData: Erro na sincronização:", error);

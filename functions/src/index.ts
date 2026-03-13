@@ -1,18 +1,14 @@
 
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 
 if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
-// Define o Secret para a API Key
-const footballDataApiKey = defineSecret("FOOTBALL_DATA_API_KEY");
-
 /**
- * URL base do App. 
+ * URL base do App e da API. 
  */
 const APP_URL = "https://alphabetleague.netlify.app";
 const BASE_URL = 'https://api.football-data.org/v4';
@@ -73,16 +69,15 @@ function getValidMatchesCount(matches: any[]): number {
 
 /**
  * Sincroniza dados da API oficial com o Firestore a cada 15 minutos.
- * Utiliza defineSecret para garantir acesso à chave de API.
+ * Utiliza a variável de ambiente FOOTBALL_DATA_API_KEY.
  */
 export const syncBrasileiraoData = onSchedule({
   schedule: "every 15 minutes",
-  secrets: [footballDataApiKey],
 }, async (event) => {
-  const apiKey = footballDataApiKey.value();
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
 
   if (!apiKey) {
-    console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não configurada nos Secrets.");
+    console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não encontrada no ambiente.");
     return;
   }
 
@@ -145,49 +140,35 @@ export const syncBrasileiraoData = onSchedule({
       dateCreated: existingData ? existingData.dateCreated : admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
 
-    console.log(`syncBrasileiraoData: Rodada ${currentMatchday} sincronizada com sucesso.`);
+    console.log(`syncBrasileiraoData: Rodada ${currentMatchday} sincronizada.`);
 
   } catch (error) {
     console.error("syncBrasileiraoData: Erro na sincronização:", error);
   }
 });
 
-/**
- * Notifica os usuários quando os palpites são revelados.
- */
 export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event) => {
   const before = event.data?.before.data();
   const after = event.data?.after.data();
-
   if (!before || !after) return;
-
   if (before.isScoresHidden === true && after.isScoresHidden === false) {
     if (isQuietHours()) return;
-
     const usersSnapshot = await admin.firestore().collection("users").get();
     const tokens: string[] = [];
-
     usersSnapshot.forEach((doc) => {
       const data = doc.data();
-      if (data.fcmTokens && Array.isArray(data.fcmTokens)) {
-        tokens.push(...data.fcmTokens);
-      }
+      if (data.fcmTokens && Array.isArray(data.fcmTokens)) tokens.push(...data.fcmTokens);
     });
-
     if (tokens.length === 0) return;
-
     const message = {
       notification: {
         title: "👀 Palpites Revelados!",
         body: `A rodada começou! Veja agora o que seus amigos jogaram na ${after.name}.`,
       },
       tokens: tokens,
-      webpush: {
-        fcmOptions: { link: `${APP_URL}/?tab=palpites` },
-      },
+      webpush: { fcmOptions: { link: `${APP_URL}/?tab=palpites` } },
       data: { link: `${APP_URL}/?tab=palpites` }
     };
-
     try {
       await admin.messaging().sendEachForMulticast(message);
     } catch (error) {
@@ -196,34 +177,24 @@ export const onRevealScores = onDocumentUpdated("rounds/{roundId}", async (event
   }
 });
 
-/**
- * Notifica um usuário específico se ele acertou um placar em cheio.
- */
 export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (event) => {
   const after = event.data?.after.data();
   const before = event.data?.before.data();
   if (!after || !after.matches) return;
-
   const roundId = event.params.roundId;
   const matches = after.matches;
   const oldMatches = before?.matches || [];
-
   const betsSnapshot = await admin.firestore().collection(`rounds/${roundId}/bets`).get();
-
   for (const betDoc of betsSnapshot.docs) {
     const bet = betDoc.data();
     const userId = bet.userId;
     const match = matches.find((m: any) => m.id === bet.matchId);
     const oldMatch = oldMatches.find((m: any) => m.id === bet.matchId);
-    
     if (match && match.status === 'finished' && oldMatch?.status !== 'finished') {
-      const isExact = bet.homeScorePrediction === match.homeScore && 
-                      bet.awayScorePrediction === match.awayScore;
-
+      const isExact = bet.homeScorePrediction === match.homeScore && bet.awayScorePrediction === match.awayScore;
       if (isExact) {
         const userDoc = await admin.firestore().collection("users").doc(userId).get();
         const userData = userDoc.data();
-        
         if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
           const message = {
             notification: {
@@ -234,7 +205,6 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
             webpush: { fcmOptions: { link: `${APP_URL}/?tab=jogos` } },
             data: { link: `${APP_URL}/?tab=jogos` }
           };
-
           try {
             await admin.messaging().sendEachForMulticast(message);
           } catch (error) {
@@ -246,58 +216,40 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
   }
 });
 
-/**
- * Lembrete de Palpites Pendentes.
- */
 export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => {
   if (isQuietHours()) return;
-
   const roundsSnapshot = await admin.firestore()
     .collection("rounds")
     .orderBy("roundNumber", "desc")
     .limit(1)
     .get();
-
   if (roundsSnapshot.empty) return;
-  
   const currentRound = roundsSnapshot.docs[0];
   const roundData = currentRound.data();
   const roundId = currentRound.id;
-
   if (roundData.isScoresHidden === false) return;
-
   const matches = roundData.matches || [];
   const targetCount = getValidMatchesCount(matches);
-  
   if (targetCount === 0) return;
-
   const firstMatchTime = matches
     .filter((m: any) => m.status !== 'cancelled' && m.utcDate)
     .reduce((earliest: number, m: any) => {
       const d = new Date(m.utcDate).getTime();
       return (d > 0 && d < earliest) ? d : earliest;
     }, Infinity);
-
   if (!Number.isFinite(firstMatchTime)) return;
-
   const now = Date.now();
   const twentyFourHours = 24 * 60 * 60 * 1000;
-
   if (now < (firstMatchTime - twentyFourHours) || now >= firstMatchTime) return;
-
   const usersSnapshot = await admin.firestore().collection("users").get();
-  
   for (const userDoc of usersSnapshot.docs) {
     const userData = userDoc.data();
     const userId = userDoc.id;
-    
     if (!userData.fcmTokens || userData.fcmTokens.length === 0) continue;
-
     const userBetsSnapshot = await admin.firestore()
       .collection(`rounds/${roundId}/bets`)
       .where("userId", "==", userId)
       .get();
-
     if (userBetsSnapshot.size < targetCount) {
       const remaining = targetCount - userBetsSnapshot.size;
       const message = {
@@ -309,7 +261,6 @@ export const notifyRoundStart = onSchedule("every 30 minutes", async (event) => 
         webpush: { fcmOptions: { link: `${APP_URL}/?tab=jogos` } },
         data: { link: `${APP_URL}/?tab=jogos` }
       };
-
       try {
         await admin.messaging().sendEachForMulticast(message);
       } catch (error) {
