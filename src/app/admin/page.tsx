@@ -28,15 +28,13 @@ import {
   EyeOff,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
   Settings2,
   DollarSign,
   Table,
-  RotateCcw,
   Trash2,
   Info,
-  Camera,
-  Trophy
+  Trophy,
+  Zap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getTeamAbrev, cn, determineMatchValidity } from "@/lib/utils";
@@ -105,7 +103,6 @@ export default function AdminPage() {
     return next;
   }, [allBets, allUsers]);
 
-  // Cálculo de pontuação para consolidação
   const currentScores = useMemo(() => {
     if (!allUsers || !matches.length || !predictions) return [];
     
@@ -121,9 +118,9 @@ export default function AdminPage() {
       sortedMatches.slice(0, 10).forEach((match, idx) => {
         const pred = userPreds[idx];
         const isMatchValid = match.isValidForPoints !== false && match.status !== 'cancelled';
-        const isFinished = match.status === 'finished';
+        const isActive = match.status === 'finished' || match.status === 'live';
         
-        if (isMatchValid && isFinished && pred.homeScore !== "" && pred.awayScore !== "" && match.homeScore !== undefined && match.awayScore !== undefined) {
+        if (isMatchValid && isActive && pred.homeScore !== "" && pred.awayScore !== "" && match.homeScore !== undefined && match.awayScore !== undefined) {
           const rh = match.homeScore, ra = match.awayScore;
           const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
           
@@ -254,7 +251,7 @@ export default function AdminPage() {
         dateCreated: roundData?.dateCreated || serverTimestamp(),
       }, { merge: true });
 
-      toast({ title: "Sucesso!", description: "Configurações da rodada salvas." });
+      toast({ title: "Sucesso!", description: "Configurações da rodada salvas. O servidor recalculará o ranking em instantes." });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: "Falha ao salvar." });
     } finally {
@@ -262,7 +259,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleConsolidatePoints = async () => {
+  const handleForceConsolidation = async () => {
     if (!currentRound || !hasLoadedHistory) return;
     
     setSaving(true);
@@ -285,9 +282,9 @@ export default function AdminPage() {
       }, { merge: true });
 
       setRoundWinners(updatedHistory);
-      toast({ title: "Rodada Consolidada!", description: `Pontos salvos para a Rodada ${currentRound}.` });
+      toast({ title: "Ranking Forçado!", description: `Sincronização manual concluída para a Rodada ${currentRound}.` });
     } catch (error) {
-      toast({ variant: "destructive", title: "Erro", description: "Falha ao consolidar pontos." });
+      toast({ variant: "destructive", title: "Erro", description: "Falha ao sincronizar manual." });
     } finally {
       setSaving(false);
     }
@@ -371,13 +368,13 @@ export default function AdminPage() {
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button 
-                  onClick={handleConsolidatePoints} 
+                  onClick={handleForceConsolidation} 
                   disabled={saving || !currentScores.some(s => s.points > 0)} 
-                  variant="secondary" 
+                  variant="outline" 
                   size="sm" 
-                  className="rounded-lg h-7 px-3 text-[8px] font-black italic uppercase gap-2"
+                  className="rounded-lg h-7 px-3 text-[8px] font-black italic uppercase gap-2 border-primary/10 text-primary"
                 >
-                  <Trophy className="h-3 w-3" /> Consolidar Pontos
+                  <RefreshCw className={cn("h-3 w-3", saving && "animate-spin")} /> Forçar Ranking
                 </Button>
                 <RoundCardDialog 
                   roundName={roundName}
@@ -387,11 +384,16 @@ export default function AdminPage() {
                   buttonLabel="Card"
                   triggerClassName="h-7 px-3 text-[8px]"
                 />
-                <TooltipProvider><Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => { const matchday = currentRound; setCurrentRound(null); setTimeout(() => setCurrentRound(matchday), 10); }} className="h-7 w-7 rounded-lg border-primary/10" disabled={loading}><RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} /></Button></TooltipTrigger><TooltipContent><p className="text-[10px] font-bold">Forçar atualização dos dados da API</p></TooltipContent></Tooltip></TooltipProvider>
                 <Button variant={placaresOcultos ? "destructive" : "secondary"} onClick={toggleVisibility} size="sm" className="rounded-lg h-7 px-4 gap-2 font-black italic uppercase text-[8px] shadow-md transition-all active:scale-95">{placaresOcultos ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}{placaresOcultos ? "Revelar Palpites" : "Ocultar Palpites"}</Button>
               </div>
             </section>
-            <div className="bg-muted/30 p-2 rounded-lg flex items-center gap-2 border border-primary/5"><Info className="h-3 w-3 text-primary/60 shrink-0" /><p className="text-[8px] font-bold text-muted-foreground uppercase leading-tight">Prioridade: API. Edite os campos para criar uma sobreposição manual. Use o ícone de lixeira para voltar ao modo automático da API.</p></div>
+            <div className="bg-primary/10 p-3 rounded-lg flex items-center gap-3 border border-primary/20">
+              <Zap className="h-5 w-5 text-primary shrink-0 animate-pulse" />
+              <div className="flex flex-col">
+                <p className="text-[9px] font-black uppercase text-primary leading-none">Ranking Automático Ativado</p>
+                <p className="text-[8px] font-bold text-muted-foreground uppercase leading-tight mt-1">As pontuações são atualizadas no servidor sempre que você salvar os placares ou a API atualizar um jogo.</p>
+              </div>
+            </div>
             <section className="space-y-1">
               {matches.map((match, idx) => (
                 <Card key={match.id} className={cn("glass-card border-none rounded-xl overflow-hidden group transition-all", match.isManual && "ring-1 ring-primary/20 bg-primary/[0.02]")}>

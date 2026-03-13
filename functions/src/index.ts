@@ -7,9 +7,6 @@ if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
-/**
- * URL base do App e da API. 
- */
 const APP_URL = "https://alphabetleague.netlify.app";
 const BASE_URL = 'https://api.football-data.org/v4';
 
@@ -69,7 +66,6 @@ function getValidMatchesCount(matches: any[]): number {
 
 /**
  * Sincroniza dados da API oficial com o Firestore a cada 15 minutos.
- * Utiliza a variável de ambiente FOOTBALL_DATA_API_KEY.
  */
 export const syncBrasileiraoData = onSchedule({
   schedule: "every 15 minutes",
@@ -121,18 +117,10 @@ export const syncBrasileiraoData = onSchedule({
     let finalMatches = apiMatches;
     if (existingData && existingData.matches) {
       finalMatches = apiMatches.map((apiMatch: any) => {
-        // Procuramos se existe um override manual para este jogo específico
         const manualMatch = existingData.matches.find((mm: any) => mm.id === apiMatch.id);
-        
-        // Se o Admin marcou explicitamente como isManual: true, respeitamos
         if (manualMatch && manualMatch.isManual === true) {
-          // Exceção: Se o jogo oficial terminou na API, podemos decidir seguir a API 
-          // ou manter o manual. Para maior controle do Admin, manteremos o manual
-          // a menos que o status da API seja 'finished' e o admin queira transparência.
-          // Por agora, o manual tem precedência absoluta se isManual for true.
           return {
             ...manualMatch,
-            // Mantemos metadados da API que não costumam ser editados
             utcDate: apiMatch.utcDate,
             homeTeam: apiMatch.homeTeam,
             awayTeam: apiMatch.awayTeam,
@@ -157,6 +145,100 @@ export const syncBrasileiraoData = onSchedule({
 
   } catch (error) {
     console.error("syncBrasileiraoData: Erro na sincronização:", error);
+  }
+});
+
+/**
+ * Recalcula e salva automaticamente o ranking sempre que a rodada é atualizada.
+ */
+export const onRoundUpdateConsolidate = onDocumentUpdated("rounds/{roundId}", async (event) => {
+  const after = event.data?.after.data();
+  if (!after || !after.matches) return;
+
+  const roundId = event.params.roundId;
+  const roundNumber = after.roundNumber;
+  if (!roundNumber) return;
+
+  const db = admin.firestore();
+  
+  try {
+    // 1. Buscar todos os palpites da rodada
+    const betsSnapshot = await db.collection(`rounds/${roundId}/bets`).get();
+    const betsByUser: Record<string, any[]> = {};
+    betsSnapshot.forEach(doc => {
+      const bet = doc.data();
+      if (!betsByUser[bet.userId]) betsByUser[bet.userId] = [];
+      betsByUser[bet.userId].push(bet);
+    });
+
+    // 2. Buscar todos os usuários
+    const usersSnapshot = await db.collection("users").get();
+    const users: any[] = [];
+    usersSnapshot.forEach(doc => users.push(doc.data()));
+
+    // 3. Calcular pontos
+    const pointsMap: Record<string, number> = {};
+    users.forEach(u => {
+      let pts = 0;
+      const userBets = betsByUser[u.id] || [];
+      
+      after.matches.forEach((match: any) => {
+        if (match.status !== 'finished' && match.status !== 'live') return;
+        
+        const bet = userBets.find(b => b.matchId === match.id);
+        if (!bet) return;
+
+        const rh = match.homeScore, ra = match.awayScore;
+        const ph = bet.homeScorePrediction, pa = bet.awayScorePrediction;
+
+        if (rh !== null && ra !== null && ph !== undefined && pa !== undefined) {
+          if (ph === rh && pa === ra) {
+            pts += 3;
+          } else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) {
+            pts += 1;
+          }
+        }
+      });
+      pointsMap[u.id] = pts;
+    });
+
+    // 4. Determinar vencedores (string apenas para exibição)
+    const maxPts = Math.max(...Object.values(pointsMap), 0);
+    const winnerNames = users
+      .filter(u => pointsMap[u.id] === maxPts && maxPts > 0)
+      .map(u => u.username || u.id)
+      .join(", ");
+
+    // 5. Atualizar o histórico global do campeonato
+    const settingsRef = db.collection("app_settings").doc("championship");
+    const settingsDoc = await settingsRef.get();
+    let history = settingsDoc.exists ? settingsDoc.data()?.history : null;
+
+    if (!history) {
+      history = Array.from({ length: 38 }, (_, i) => ({
+        round: i + 1,
+        winners: "",
+        value: i < 19 ? 6 : 6,
+        pointsMap: {}
+      }));
+    }
+
+    history[roundNumber - 1] = {
+      ...history[roundNumber - 1],
+      round: roundNumber,
+      winners: winnerNames,
+      pointsMap: pointsMap
+    };
+
+    await settingsRef.set({ 
+      history,
+      dateUpdated: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    console.log(`onRoundUpdateConsolidate: Ranking da Rodada ${roundNumber} atualizado automaticamente.`);
+
+  } catch (error) {
+    console.error(`onRoundUpdateConsolidate: Erro na Rodada ${roundNumber}:`, error);
   }
 });
 

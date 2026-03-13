@@ -1,7 +1,7 @@
 
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notifyRoundStart = exports.onMatchScoreUpdate = exports.onRevealScores = exports.syncBrasileiraoData = void 0;
+exports.notifyRoundStart = exports.onMatchScoreUpdate = exports.onRevealScores = exports.onRoundUpdateConsolidate = exports.syncBrasileiraoData = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
@@ -119,6 +119,77 @@ exports.syncBrasileiraoData = (0, scheduler_1.onSchedule)({
     }
     catch (error) {
         console.error("syncBrasileiraoData: Erro na sincronização:", error);
+    }
+});
+exports.onRoundUpdateConsolidate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
+    const after = event.data?.after.data();
+    if (!after || !after.matches)
+        return;
+    const roundId = event.params.roundId;
+    const roundNumber = after.roundNumber;
+    if (!roundNumber)
+        return;
+    const db = admin.firestore();
+    try {
+        const betsSnapshot = await db.collection(`rounds/${roundId}/bets`).get();
+        const betsByUser = {};
+        betsSnapshot.forEach(doc => {
+            const bet = doc.data();
+            if (!betsByUser[bet.userId])
+                betsByUser[bet.userId] = [];
+            betsByUser[bet.userId].push(bet);
+        });
+        const usersSnapshot = await db.collection("users").get();
+        const users = [];
+        usersSnapshot.forEach(doc => users.push(doc.data()));
+        const pointsMap = {};
+        users.forEach(u => {
+            let pts = 0;
+            const userBets = betsByUser[u.id] || [];
+            after.matches.forEach((match) => {
+                if (match.status !== 'finished' && match.status !== 'live')
+                    return;
+                const bet = userBets.find(b => b.matchId === match.id);
+                if (!bet)
+                    return;
+                const rh = match.homeScore, ra = match.awayScore;
+                const ph = bet.homeScorePrediction, pa = bet.awayScorePrediction;
+                if (rh !== null && ra !== null && ph !== undefined && pa !== undefined) {
+                    if (ph === rh && pa === ra) {
+                        pts += 3;
+                    }
+                    else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) {
+                        pts += 1;
+                    }
+                }
+            });
+            pointsMap[u.id] = pts;
+        });
+        const maxPts = Math.max(...Object.values(pointsMap), 0);
+        const winnerNames = users
+            .filter(u => pointsMap[u.id] === maxPts && maxPts > 0)
+            .map(u => u.username || u.id)
+            .join(", ");
+        const settingsRef = db.collection("app_settings").doc("championship");
+        const settingsDoc = await settingsRef.get();
+        let history = settingsDoc.exists ? settingsDoc.data()?.history : null;
+        if (!history) {
+            history = Array.from({ length: 38 }, (_, i) => ({
+                round: i + 1,
+                winners: "",
+                value: i < 19 ? 6 : 6,
+                pointsMap: {}
+            }));
+        }
+        history[roundNumber - 1] = Object.assign(Object.assign({}, history[roundNumber - 1]), { round: roundNumber, winners: winnerNames, pointsMap: pointsMap });
+        await settingsRef.set({
+            history,
+            dateUpdated: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        console.log(`onRoundUpdateConsolidate: Ranking da Rodada ${roundNumber} atualizado automaticamente.`);
+    }
+    catch (error) {
+        console.error(`onRoundUpdateConsolidate: Erro na Rodada ${roundNumber}:`, error);
     }
 });
 exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
