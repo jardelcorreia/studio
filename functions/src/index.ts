@@ -153,7 +153,11 @@ export const syncBrasileiraoData = onSchedule({
  */
 export const onRoundUpdateConsolidate = onDocumentUpdated("rounds/{roundId}", async (event) => {
   const after = event.data?.after.data();
-  if (!after || !after.matches) return;
+  // PROTEÇÃO: Não processar se a lista de jogos estiver vazia ou for muito pequena (provável erro de estado transient)
+  if (!after || !after.matches || after.matches.length < 5) {
+    console.log(`onRoundUpdateConsolidate: Ignorando atualização com dados incompletos (${after?.matches?.length || 0} jogos).`);
+    return;
+  }
 
   const roundId = event.params.roundId;
   const roundNumber = after.roundNumber;
@@ -178,6 +182,7 @@ export const onRoundUpdateConsolidate = onDocumentUpdated("rounds/{roundId}", as
 
     // 3. Calcular pontos
     const pointsMap: Record<string, number> = {};
+    let totalPointsInRound = 0;
     users.forEach(u => {
       let pts = 0;
       const userBets = betsByUser[u.id] || [];
@@ -200,9 +205,10 @@ export const onRoundUpdateConsolidate = onDocumentUpdated("rounds/{roundId}", as
         }
       });
       pointsMap[u.id] = pts;
+      totalPointsInRound += pts;
     });
 
-    // 4. Determinar vencedores (string apenas para exibição)
+    // DETERMINAR VENCEDORES
     const maxPts = Math.max(...Object.values(pointsMap), 0);
     const winnerNames = users
       .filter(u => pointsMap[u.id] === maxPts && maxPts > 0)
@@ -235,7 +241,7 @@ export const onRoundUpdateConsolidate = onDocumentUpdated("rounds/{roundId}", as
       dateUpdated: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    console.log(`onRoundUpdateConsolidate: Ranking da Rodada ${roundNumber} atualizado automaticamente.`);
+    console.log(`onRoundUpdateConsolidate: Rodada ${roundNumber} recalculada. Total de pontos distribuídos: ${totalPointsInRound}`);
 
   } catch (error) {
     console.error(`onRoundUpdateConsolidate: Erro na Rodada ${roundNumber}:`, error);

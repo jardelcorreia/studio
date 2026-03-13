@@ -189,18 +189,18 @@ export default function AdminPage() {
   const persistRoundChanges = (updatedMatches: Match[]) => {
     if (!currentRound || !roundId) return;
     
-    const matchOverrides = updatedMatches
-      .filter(m => m.isManual)
-      .map(m => ({
-        id: m.id,
-        homeTeam: m.homeTeam,
-        awayTeam: m.awayTeam,
-        homeScore: m.homeScore ?? null,
-        awayScore: m.awayScore ?? null,
-        status: m.status || 'upcoming',
-        utcDate: m.utcDate,
-        isManual: true
-      }));
+    // IMPORTANTE: Enviar a lista COMPLETA de jogos para evitar que o ranking zere no servidor
+    const fullMatchList = updatedMatches.map(m => ({
+      id: m.id,
+      homeTeam: m.homeTeam,
+      awayTeam: m.awayTeam,
+      homeScore: (m.homeScore !== undefined && m.homeScore !== null) ? m.homeScore : null,
+      awayScore: (m.awayScore !== undefined && m.awayScore !== null) ? m.awayScore : null,
+      status: m.status || 'upcoming',
+      utcDate: m.utcDate,
+      isManual: m.isManual || false,
+      matchday: m.matchday
+    }));
 
     const roundRef = doc(db, "rounds", roundId);
     setDocumentNonBlocking(roundRef, {
@@ -208,7 +208,7 @@ export default function AdminPage() {
       roundNumber: currentRound,
       name: roundName,
       isScoresHidden: placaresOcultos,
-      matches: matchOverrides,
+      matches: fullMatchList,
       dateUpdated: serverTimestamp(),
       dateCreated: roundData?.dateCreated || serverTimestamp(),
     }, { merge: true });
