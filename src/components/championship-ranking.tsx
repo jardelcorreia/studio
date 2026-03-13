@@ -22,19 +22,20 @@ interface ChampionshipRankingProps {
 }
 
 export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores, currentRoundNumber }: ChampionshipRankingProps) {
+  // Mapeamento de ID para Nome para garantir que sempre exibamos o nome correto, mesmo se o Firestore tiver IDs
+  const userMap = useMemo(() => {
+    const map: Record<string, any> = {};
+    allUsers?.forEach(u => {
+      map[u.id] = u;
+    });
+    return map;
+  }, [allUsers]);
+
   const overallStats = useMemo(() => {
     if (!allUsers || allUsers.length === 0) return [];
 
-    const uniqueUsersMap = new Map();
-    allUsers.forEach(u => {
-      if (!uniqueUsersMap.has(u.id)) {
-        uniqueUsersMap.set(u.id, u);
-      }
-    });
-    const uniqueUsers = Array.from(uniqueUsersMap.values());
-
     const stats: Record<string, PlayerOverallStats & { id: string; photoUrl?: string }> = Object.fromEntries(
-      uniqueUsers.map((u) => [
+      allUsers.map((u) => [
         u.id, 
         { id: u.id, name: u.username, wins: 0, draws: 0, points: 0, balance: 0, photoUrl: u.photoUrl }
       ])
@@ -42,67 +43,56 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
 
     const processedRounds = new Set<number>();
     
-    // 1. Processar histórico do Firestore
+    // 1. Processar histórico oficial do Firestore
     roundWinners.forEach((rw) => {
       if (!rw.round || processedRounds.has(rw.round)) return;
+      
+      const ptsEntries = Object.entries(rw.pointsMap || {});
+      const hasValidPoints = ptsEntries.some(([_, p]) => Number(p) > 0);
+      
+      if (!hasValidPoints) return;
       processedRounds.add(rw.round);
 
-      if (rw.pointsMap) {
-        Object.entries(rw.pointsMap).forEach(([uId, pts]) => {
-          if (stats[uId]) {
-            stats[uId].points += (Number(pts) || 0);
-          }
-        });
-      }
-
-      if (!rw.winners || !rw.winners.trim()) return;
-      
-      const winnersList = rw.winners.split(",").map((s) => s.trim());
-      const winnerIds = uniqueUsers
-        .filter(u => winnersList.includes(u.username))
-        .map(u => u.id);
-      
-      if (winnerIds.length === 0) return;
-      
-      const roundValue = rw.value || 0;
-      const numPlayers = uniqueUsers.length;
-
-      if (winnerIds.length === 1) {
-        const winnerId = winnerIds[0];
-        if (stats[winnerId]) {
-          stats[winnerId].wins += 1;
-          stats[winnerId].balance += roundValue * (numPlayers - 1);
+      // Somar pontos
+      ptsEntries.forEach(([uId, pts]) => {
+        if (stats[uId]) {
+          stats[uId].points += (Number(pts) || 0);
         }
-        uniqueUsers.forEach(u => {
-          if (u.id !== winnerId && stats[u.id]) {
-            stats[u.id].balance -= roundValue;
+      });
+
+      // Calcular vencedores e saldo financeiro baseados nos pontos (Ignora a string 'winners' do DB para cálculo)
+      const maxPts = Math.max(...ptsEntries.map(([_, p]) => Number(p)));
+      if (maxPts > 0) {
+        const winnerIds = ptsEntries.filter(([_, p]) => Number(p) === maxPts).map(([id, _]) => id);
+        const roundValue = rw.value || 0;
+        const numPlayers = allUsers.length;
+
+        if (winnerIds.length === 1) {
+          const winnerId = winnerIds[0];
+          if (stats[winnerId]) {
+            stats[winnerId].wins += 1;
+            stats[winnerId].balance += roundValue * (numPlayers - 1);
           }
-        });
-      } else {
-        winnerIds.forEach((wId) => { 
-          if (stats[wId]) stats[wId].draws += 1; 
-        });
-        
-        const losers = uniqueUsers.filter(u => !winnerIds.includes(u.id));
-        const totalPot = losers.length * roundValue;
-        const prizePerWinner = totalPot / winnerIds.length;
-        
-        winnerIds.forEach(wId => { 
-          if (stats[wId]) stats[wId].balance += prizePerWinner; 
-        });
-        losers.forEach(l => { 
-          if (stats[l.id]) stats[l.id].balance -= roundValue; 
-        });
+          allUsers.forEach(u => {
+            if (u.id !== winnerId && stats[u.id]) {
+              stats[u.id].balance -= roundValue;
+            }
+          });
+        } else if (winnerIds.length > 1) {
+          winnerIds.forEach((wId) => { if (stats[wId]) stats[wId].draws += 1; });
+          const losers = allUsers.filter(u => !winnerIds.includes(u.id));
+          const totalPot = losers.length * roundValue;
+          const prizePerWinner = totalPot / winnerIds.length;
+          winnerIds.forEach(wId => { if (stats[wId]) stats[wId].balance += prizePerWinner; });
+          losers.forEach(l => { if (stats[l.id]) stats[l.id].balance -= roundValue; });
+        }
       }
     });
 
-    // 2. Adicionar pontos da rodada "live" se ela não estiver no histórico ou estiver com zeros
+    // 2. Adicionar pontos da rodada "em aberto" (tempo real)
+    // Se a rodada atual não está no histórico consolidado (ou está zerada lá), pegamos os scores da tela
     if (currentRoundScores && currentRoundNumber) {
-      const histEntry = roundWinners.find(rw => rw.round === currentRoundNumber);
-      const isHistEmpty = !histEntry || !histEntry.pointsMap || Object.keys(histEntry.pointsMap).length === 0 || 
-                         Object.values(histEntry.pointsMap).every(v => v === 0);
-
-      if (isHistEmpty) {
+      if (!processedRounds.has(currentRoundNumber)) {
         currentRoundScores.forEach(s => {
           if (stats[s.id]) {
             stats[s.id].points += s.points;
@@ -114,9 +104,7 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
     const hasAnyActivity = Object.values(stats).some(s => s.wins > 0 || s.draws > 0 || s.points > 0 || s.balance !== 0);
 
     return Object.values(stats).sort((a, b) => {
-      if (!hasAnyActivity) {
-        return a.name.localeCompare(b.name);
-      }
+      if (!hasAnyActivity) return a.name.localeCompare(b.name);
       if (b.wins !== a.wins) return b.wins - a.wins;
       if (b.draws !== a.draws) return b.draws - a.draws;
       if (b.points !== a.points) return b.points - a.points;
@@ -126,30 +114,38 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
   }, [roundWinners, allUsers, currentRoundScores, currentRoundNumber]);
 
   const renderRoundItem = (rw: ChampionshipWinner, idx: number) => {
-    const hasWinners = rw.winners && rw.winners.trim() !== "";
-    const winnersList = rw.winners ? rw.winners.split(",").map(s => s.trim()) : [];
+    // Para exibição, preferimos os nomes. Se houver IDs no campo winners, mapeamos para nomes.
+    let displayWinners = rw.winners || "";
+    const ptsEntries = Object.entries(rw.pointsMap || {});
+    const maxPts = Math.max(...ptsEntries.map(([_, p]) => Number(p)));
+    const hasData = ptsEntries.length > 0 && maxPts > 0;
+
+    if (hasData) {
+      const winnerIds = ptsEntries.filter(([_, p]) => Number(p) === maxPts).map(([id, _]) => id);
+      displayWinners = winnerIds.map(id => userMap[id]?.username || id).join(", ");
+    }
+
+    const isAvailable = displayWinners.trim() !== "";
 
     return (
       <div key={`${rw.round}-${idx}`} className="group relative flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className={cn(
             "h-8 w-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 shadow-sm transition-transform group-hover:rotate-3",
-            hasWinners ? "bg-primary text-white shadow-primary/10" : "bg-muted text-muted-foreground"
+            isAvailable ? "bg-primary text-white shadow-primary/10" : "bg-muted text-muted-foreground"
           )}>
             {rw.round}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest flex items-center gap-1">
-              {hasWinners ? <Trophy className="h-2 w-2 text-accent" /> : <Clock className="h-2 w-2" />}
-              {hasWinners ? "Campeão" : "Aguardando"}
+              {isAvailable ? <Trophy className="h-2 w-2 text-accent" /> : <Clock className="h-2 w-2" />}
+              {isAvailable ? "Campeão" : "Aguardando"}
             </span>
             <div className="flex flex-wrap gap-1 mt-0.5">
-              {hasWinners ? (
-                winnersList.map((w, i) => (
-                  <span key={i} className="text-[11px] font-black italic uppercase text-primary truncate max-w-[120px]">
-                    {w}{i < winnersList.length - 1 ? "," : ""}
-                  </span>
-                ))
+              {isAvailable ? (
+                <span className="text-[11px] font-black italic uppercase text-primary truncate max-w-[160px]">
+                  {displayWinners}
+                </span>
               ) : (
                 <span className="text-[10px] font-medium italic text-muted-foreground/40">Pendente</span>
               )}

@@ -336,7 +336,7 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
-    if (settingsData?.history && JSON.stringify(settingsData.history) !== JSON.stringify(roundWinners)) {
+    if (settingsData?.history) {
       setRoundWinners(settingsData.history);
     }
   }, [settingsData]);
@@ -391,9 +391,11 @@ function HomeContent() {
     });
   }, [allBets, allUsers]);
 
+  // Atualização robusta dos vencedores e mapa de pontos
   useEffect(() => {
     if (currentRound === null || scores.length === 0 || !isRoundFinished) return;
     
+    // Garantimos que pegamos nomes reais para exibição e IDs para lógica
     const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
     const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
     
@@ -404,7 +406,6 @@ function HomeContent() {
       const hasPointsChanged = JSON.stringify(existing.pointsMap) !== JSON.stringify(pointsMap);
       const hasWinnersChanged = existing.winners !== winnersList;
       
-      // Só atualiza se houver mudança real e se não estivermos sobrescrevendo dados bons por vazios
       if ((hasPointsChanged || hasWinnersChanged) && Object.keys(pointsMap).length > 0) {
         next[currentRound - 1] = { 
           ...existing, 
