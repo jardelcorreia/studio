@@ -204,12 +204,12 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
 
                         <div className={cn(
                           "p-4 sm:p-6 rounded-2xl border border-dashed flex items-center justify-between transition-colors",
-                          isPositive ? "bg-secondary/5 border-secondary/20" : "bg-destructive/5 border-destructive/20"
+                          isPositive ? "bg-secondary/5 border-secondary/20" : "bg-red-600/5 dark:bg-red-400/5 border-red-600/20 dark:border-red-400/20"
                         )}>
                           <div className="flex items-center gap-3">
                              <div className={cn(
                                "h-8 w-8 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center shadow-md",
-                               isPositive ? "bg-secondary text-white" : "bg-destructive text-white"
+                               isPositive ? "bg-secondary text-white" : "bg-red-600 dark:bg-red-400 text-white"
                              )}>
                                 {isPositive ? <TrendingUp className="h-4 w-4 sm:h-6 w-6" /> : <TrendingDown className="h-4 w-4 sm:h-6 w-6" />}
                              </div>
@@ -217,7 +217,7 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
                           </div>
                           <span className={cn(
                              "text-2xl sm:text-3xl font-black italic leading-none",
-                             isPositive ? "text-secondary" : "text-destructive"
+                             isPositive ? "text-secondary" : "text-red-600 dark:text-red-400"
                           )}>
                              R$ {player.balance.toFixed(2)}
                           </span>
