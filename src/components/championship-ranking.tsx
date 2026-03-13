@@ -22,7 +22,6 @@ interface ChampionshipRankingProps {
 }
 
 export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores, currentRoundNumber }: ChampionshipRankingProps) {
-  // Mapeamento de ID para Nome para garantir que sempre exibamos o nome correto, mesmo se o Firestore tiver IDs
   const userMap = useMemo(() => {
     const map: Record<string, any> = {};
     allUsers?.forEach(u => {
@@ -43,29 +42,37 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
 
     const processedRounds = new Set<number>();
     
-    // 1. Processar histórico oficial do Firestore
     roundWinners.forEach((rw) => {
-      if (!rw.round || processedRounds.has(rw.round)) return;
+      if (!rw.round) return;
       
       const ptsEntries = Object.entries(rw.pointsMap || {});
-      const hasValidPoints = ptsEntries.some(([_, p]) => Number(p) > 0);
-      
-      if (!hasValidPoints) return;
+      if (ptsEntries.length === 0) return;
+
       processedRounds.add(rw.round);
 
-      // Somar pontos
-      ptsEntries.forEach(([uId, pts]) => {
-        if (stats[uId]) {
-          stats[uId].points += (Number(pts) || 0);
+      ptsEntries.forEach(([key, pts]) => {
+        // Tenta encontrar por ID primeiro, depois por Nome (compatibilidade retroativa)
+        let playerStat = stats[key];
+        if (!playerStat) {
+          playerStat = Object.values(stats).find(s => s.name === key);
+        }
+
+        if (playerStat) {
+          playerStat.points += (Number(pts) || 0);
         }
       });
 
-      // Calcular vencedores e saldo financeiro baseados nos pontos (Ignora a string 'winners' do DB para cálculo)
       const maxPts = Math.max(...ptsEntries.map(([_, p]) => Number(p)));
       if (maxPts > 0) {
-        const winnerIds = ptsEntries.filter(([_, p]) => Number(p) === maxPts).map(([id, _]) => id);
+        const winnerKeys = ptsEntries.filter(([_, p]) => Number(p) === maxPts).map(([key, _]) => key);
         const roundValue = rw.value || 0;
         const numPlayers = allUsers.length;
+
+        // Mapeia chaves (IDs ou Nomes) para IDs reais de estatísticas
+        const winnerIds = winnerKeys.map(key => {
+          if (stats[key]) return key;
+          return Object.values(stats).find(s => s.name === key)?.id;
+        }).filter(id => !!id) as string[];
 
         if (winnerIds.length === 1) {
           const winnerId = winnerIds[0];
@@ -89,16 +96,12 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
       }
     });
 
-    // 2. Adicionar pontos da rodada "em aberto" (tempo real)
-    // Se a rodada atual não está no histórico consolidado (ou está zerada lá), pegamos os scores da tela
-    if (currentRoundScores && currentRoundNumber) {
-      if (!processedRounds.has(currentRoundNumber)) {
-        currentRoundScores.forEach(s => {
-          if (stats[s.id]) {
-            stats[s.id].points += s.points;
-          }
-        });
-      }
+    if (currentRoundScores && currentRoundNumber && !processedRounds.has(currentRoundNumber)) {
+      currentRoundScores.forEach(s => {
+        if (stats[s.id]) {
+          stats[s.id].points += s.points;
+        }
+      });
     }
 
     const hasAnyActivity = Object.values(stats).some(s => s.wins > 0 || s.draws > 0 || s.points > 0 || s.balance !== 0);
@@ -114,15 +117,14 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
   }, [roundWinners, allUsers, currentRoundScores, currentRoundNumber]);
 
   const renderRoundItem = (rw: ChampionshipWinner, idx: number) => {
-    // Para exibição, preferimos os nomes. Se houver IDs no campo winners, mapeamos para nomes.
     let displayWinners = rw.winners || "";
     const ptsEntries = Object.entries(rw.pointsMap || {});
     const maxPts = Math.max(...ptsEntries.map(([_, p]) => Number(p)));
     const hasData = ptsEntries.length > 0 && maxPts > 0;
 
     if (hasData) {
-      const winnerIds = ptsEntries.filter(([_, p]) => Number(p) === maxPts).map(([id, _]) => id);
-      displayWinners = winnerIds.map(id => userMap[id]?.username || id).join(", ");
+      const winnerKeys = ptsEntries.filter(([_, p]) => Number(p) === maxPts).map(([key, _]) => key);
+      displayWinners = winnerKeys.map(key => userMap[key]?.username || key).join(", ");
     }
 
     const isAvailable = displayWinners.trim() !== "";

@@ -391,33 +391,6 @@ function HomeContent() {
     });
   }, [allBets, allUsers]);
 
-  // Atualização robusta dos vencedores e mapa de pontos
-  useEffect(() => {
-    if (currentRound === null || scores.length === 0 || !isRoundFinished) return;
-    
-    // Garantimos que pegamos nomes reais para exibição e IDs para lógica
-    const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
-    const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
-    
-    setRoundWinners(prev => {
-      const next = [...prev];
-      const existing = next[currentRound - 1];
-      
-      const hasPointsChanged = JSON.stringify(existing.pointsMap) !== JSON.stringify(pointsMap);
-      const hasWinnersChanged = existing.winners !== winnersList;
-      
-      if ((hasPointsChanged || hasWinnersChanged) && Object.keys(pointsMap).length > 0) {
-        next[currentRound - 1] = { 
-          ...existing, 
-          winners: winnersList || existing.winners, 
-          pointsMap: pointsMap 
-        };
-        return next;
-      }
-      return prev;
-    });
-  }, [scores, currentRound, isRoundFinished]);
-
   const handleSaveAll = async () => {
     if (!currentRound || !user || !roundId || isLocked) return;
     setIsSaving(true);

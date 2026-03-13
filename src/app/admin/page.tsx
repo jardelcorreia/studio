@@ -35,7 +35,8 @@ import {
   RotateCcw,
   Trash2,
   Info,
-  Camera
+  Camera,
+  Trophy
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getTeamAbrev, cn, determineMatchValidity } from "@/lib/utils";
@@ -103,6 +104,41 @@ export default function AdminPage() {
     });
     return next;
   }, [allBets, allUsers]);
+
+  // Cálculo de pontuação para consolidação
+  const currentScores = useMemo(() => {
+    if (!allUsers || !matches.length || !predictions) return [];
+    
+    const sortedMatches = [...matches].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
+    
+    return allUsers.map(u => {
+      let pts = 0;
+      let exs = 0;
+      const userPreds = predictions[u.id];
+      
+      if (!userPreds) return { id: u.id, name: u.username, points: 0, exactScores: 0 };
+
+      sortedMatches.slice(0, 10).forEach((match, idx) => {
+        const pred = userPreds[idx];
+        const isMatchValid = match.isValidForPoints !== false && match.status !== 'cancelled';
+        const isFinished = match.status === 'finished';
+        
+        if (isMatchValid && isFinished && pred.homeScore !== "" && pred.awayScore !== "" && match.homeScore !== undefined && match.awayScore !== undefined) {
+          const rh = match.homeScore, ra = match.awayScore;
+          const ph = parseInt(pred.homeScore), pa = parseInt(pred.awayScore);
+          
+          if (ph === rh && pa === ra) {
+            pts += 3;
+            exs += 1;
+          } else if ((ph > pa && rh > ra) || (ph < pa && rh < ra) || (ph === pa && rh === ra)) {
+            pts += 1;
+          }
+        }
+      });
+      
+      return { id: u.id, name: u.username, points: pts, exactScores: exs };
+    });
+  }, [allUsers, matches, predictions]);
 
   useEffect(() => {
     if (!isUserLoading && !isAdmin) {
@@ -226,6 +262,37 @@ export default function AdminPage() {
     }
   };
 
+  const handleConsolidatePoints = async () => {
+    if (!currentRound || !hasLoadedHistory) return;
+    
+    setSaving(true);
+    try {
+      const maxPts = Math.max(...currentScores.map(s => s.points));
+      const winners = currentScores.filter(s => s.points === maxPts && maxPts > 0).map(s => s.name).join(", ");
+      const pointsMap = Object.fromEntries(currentScores.map(s => [s.id, s.points]));
+
+      const updatedHistory = [...roundWinners];
+      updatedHistory[currentRound - 1] = {
+        ...updatedHistory[currentRound - 1],
+        winners,
+        pointsMap
+      };
+
+      const settingsRef = doc(db, "app_settings", "championship");
+      setDocumentNonBlocking(settingsRef, {
+        history: updatedHistory,
+        dateUpdated: serverTimestamp(),
+      }, { merge: true });
+
+      setRoundWinners(updatedHistory);
+      toast({ title: "Rodada Consolidada!", description: `Pontos salvos para a Rodada ${currentRound}.` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Erro", description: "Falha ao consolidar pontos." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveLeagueSettings = async () => {
     if (!hasLoadedHistory || isLoadingSettings) {
       toast({ variant: "destructive", title: "Aguarde", description: "O histórico ainda está sendo carregado. Tente novamente em instantes." });
@@ -303,6 +370,15 @@ export default function AdminPage() {
                 <Button variant="outline" size="icon" onClick={() => setCurrentRound(prev => Math.min(38, prev! + 1))} className="h-7 w-7 rounded-lg border-primary/10"><ChevronRight className="h-4 w-4" /></Button>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button 
+                  onClick={handleConsolidatePoints} 
+                  disabled={saving || !currentScores.some(s => s.points > 0)} 
+                  variant="secondary" 
+                  size="sm" 
+                  className="rounded-lg h-7 px-3 text-[8px] font-black italic uppercase gap-2"
+                >
+                  <Trophy className="h-3 w-3" /> Consolidar Pontos
+                </Button>
                 <RoundCardDialog 
                   roundName={roundName}
                   matches={matches}
