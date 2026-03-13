@@ -233,7 +233,7 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
                              "rounded-full text-[10px] sm:text-[12px] font-black uppercase tracking-[0.15em] px-3 py-0.5 h-6 border-primary/10 bg-white/50 dark:bg-black/20 whitespace-nowrap",
                              isFirst ? "text-accent border-accent/20" : "text-muted-foreground"
                           )}>
-                             {isFirst ? "Líder Geral" : `Posição ${index + 1}`}
+                             {isFirst ? "Alpha Líder" : `Posição ${index + 1}`}
                           </Badge>
                         </div>
                      </div>
