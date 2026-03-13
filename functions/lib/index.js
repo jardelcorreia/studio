@@ -1,21 +1,17 @@
+
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.notifyRoundStart = exports.onMatchScoreUpdate = exports.onRevealScores = exports.syncBrasileiraoData = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
+const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
 if (admin.apps.length === 0) {
     admin.initializeApp();
 }
-/**
- * URL base do App.
- */
+const footballDataApiKey = (0, params_1.defineSecret)("FOOTBALL_DATA_API_KEY");
 const APP_URL = "https://alphabetleague.netlify.app";
-const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const BASE_URL = 'https://api.football-data.org/v4';
-/**
- * Verifica se estamos no horário de silêncio (22h às 08h BRT).
- */
 function isQuietHours() {
     const now = new Date();
     const formatter = new Intl.DateTimeFormat('pt-BR', {
@@ -26,9 +22,6 @@ function isQuietHours() {
     const hour = parseInt(formatter.format(now));
     return hour >= 22 || hour < 8;
 }
-/**
- * Lógica de Janela de Validade
- */
 function getValidMatchesCount(matches) {
     if (!matches || matches.length === 0)
         return 0;
@@ -62,24 +55,25 @@ function getValidMatchesCount(matches) {
         return diff <= (threeDaysInMs + 12 * 60 * 60 * 1000);
     }).length;
 }
-/**
- * Sincroniza dados da API oficial com o Firestore a cada 15 minutos.
- */
-exports.syncBrasileiraoData = (0, scheduler_1.onSchedule)("every 15 minutes", async (event) => {
-    if (!API_KEY) {
-        console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não configurada.");
+exports.syncBrasileiraoData = (0, scheduler_1.onSchedule)({
+    schedule: "every 15 minutes",
+    secrets: [footballDataApiKey],
+}, async (event) => {
+    const apiKey = footballDataApiKey.value();
+    if (!apiKey) {
+        console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não configurada nos Secrets.");
         return;
     }
     try {
         const competitionResponse = await fetch(`${BASE_URL}/competitions/BSA`, {
-            headers: { 'X-Auth-Token': API_KEY }
+            headers: { 'X-Auth-Token': apiKey }
         });
         const competitionData = await competitionResponse.json();
         const currentMatchday = competitionData.currentSeason?.currentMatchday;
         if (!currentMatchday)
             return;
         const matchesResponse = await fetch(`${BASE_URL}/competitions/BSA/matches?matchday=${currentMatchday}`, {
-            headers: { 'X-Auth-Token': API_KEY }
+            headers: { 'X-Auth-Token': apiKey }
         });
         const matchesData = await matchesResponse.json();
         const apiMatches = matchesData.matches.map((m) => {
@@ -132,9 +126,6 @@ exports.syncBrasileiraoData = (0, scheduler_1.onSchedule)("every 15 minutes", as
         console.error("syncBrasileiraoData: Erro na sincronização:", error);
     }
 });
-/**
- * Notifica os usuários quando os palpites são revelados.
- */
 exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
     const before = event.data?.before.data();
     const after = event.data?.after.data();
@@ -172,9 +163,6 @@ exports.onRevealScores = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", 
         }
     }
 });
-/**
- * Notifica um usuário específico se ele acertou um placar em cheio.
- */
 exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId}", async (event) => {
     const after = event.data?.after.data();
     const before = event.data?.before.data();
@@ -216,9 +204,6 @@ exports.onMatchScoreUpdate = (0, firestore_1.onDocumentUpdated)("rounds/{roundId
         }
     }
 });
-/**
- * Lembrete de Palpites Pendentes.
- */
 exports.notifyRoundStart = (0, scheduler_1.onSchedule)("every 30 minutes", async (event) => {
     if (isQuietHours())
         return;

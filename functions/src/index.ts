@@ -1,17 +1,20 @@
 
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 
 if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
+// Define o Secret para a API Key
+const footballDataApiKey = defineSecret("FOOTBALL_DATA_API_KEY");
+
 /**
  * URL base do App. 
  */
 const APP_URL = "https://alphabetleague.netlify.app";
-const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const BASE_URL = 'https://api.football-data.org/v4';
 
 /**
@@ -70,27 +73,30 @@ function getValidMatchesCount(matches: any[]): number {
 
 /**
  * Sincroniza dados da API oficial com o Firestore a cada 15 minutos.
- * Isso garante que as notificações de placar e lembretes funcionem com o App fechado.
+ * Utiliza defineSecret para garantir acesso à chave de API.
  */
-export const syncBrasileiraoData = onSchedule("every 15 minutes", async (event) => {
-  if (!API_KEY) {
-    console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não configurada.");
+export const syncBrasileiraoData = onSchedule({
+  schedule: "every 15 minutes",
+  secrets: [footballDataApiKey],
+}, async (event) => {
+  const apiKey = footballDataApiKey.value();
+
+  if (!apiKey) {
+    console.error("syncBrasileiraoData: FOOTBALL_DATA_API_KEY não configurada nos Secrets.");
     return;
   }
 
   try {
-    // 1. Busca Rodada Atual
     const competitionResponse = await fetch(`${BASE_URL}/competitions/BSA`, {
-      headers: { 'X-Auth-Token': API_KEY }
+      headers: { 'X-Auth-Token': apiKey }
     });
     const competitionData = await competitionResponse.json();
     const currentMatchday = competitionData.currentSeason?.currentMatchday;
 
     if (!currentMatchday) return;
 
-    // 2. Busca Jogos da Rodada
     const matchesResponse = await fetch(`${BASE_URL}/competitions/BSA/matches?matchday=${currentMatchday}`, {
-      headers: { 'X-Auth-Token': API_KEY }
+      headers: { 'X-Auth-Token': apiKey }
     });
     const matchesData = await matchesResponse.json();
 
@@ -117,14 +123,11 @@ export const syncBrasileiraoData = onSchedule("every 15 minutes", async (event) 
     const roundDoc = await roundRef.get();
     const existingData = roundDoc.exists ? roundDoc.data() : null;
 
-    // Se houver dados manuais no Firestore (Admin), preserva-os onde não houve mudança na API
-    // Mas atualiza o que for essencial para notificações (Placar e Status)
     let finalMatches = apiMatches;
     if (existingData && existingData.matches) {
       finalMatches = apiMatches.map((apiMatch: any) => {
         const manualMatch = existingData.matches.find((mm: any) => mm.id === apiMatch.id);
         if (manualMatch && manualMatch.isManual) {
-          // Se o admin editou manualmente, mantém a edição manual EXCETO se o jogo finalizou na API
           if (apiMatch.status === 'finished') return apiMatch;
           return manualMatch;
         }
@@ -213,7 +216,6 @@ export const onMatchScoreUpdate = onDocumentUpdated("rounds/{roundId}", async (e
     const match = matches.find((m: any) => m.id === bet.matchId);
     const oldMatch = oldMatches.find((m: any) => m.id === bet.matchId);
     
-    // Só notifica se o status mudou para 'finished' agora
     if (match && match.status === 'finished' && oldMatch?.status !== 'finished') {
       const isExact = bet.homeScorePrediction === match.homeScore && 
                       bet.awayScorePrediction === match.awayScore;
