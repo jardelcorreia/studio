@@ -76,7 +76,6 @@ export default function AdminPage() {
   const settingsDocRef = useMemoFirebase(() => user ? doc(db, "app_settings", "championship") : null, [db, user]);
   const { data: settingsData } = useDoc(settingsDocRef);
 
-  // Busca necessária para o RoundCardDialog
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
 
@@ -161,6 +160,7 @@ export default function AdminPage() {
         const override = roundData.matches.find((o: any) => o.id === m.id);
         if (override) {
           const hasDifference = 
+            override.isManual === true ||
             (override.homeScore !== undefined && override.homeScore !== m.homeScore) ||
             (override.awayScore !== undefined && override.awayScore !== m.awayScore) ||
             (override.status !== undefined && override.status !== m.status);
@@ -195,6 +195,8 @@ export default function AdminPage() {
     setSaving(true);
     try {
       const roundRef = doc(db, "rounds", roundId);
+      
+      // Filtramos apenas o que é manual ou que veio de um estado anterior de manual
       const matchOverrides = matches
         .filter(m => m.isManual)
         .map(m => ({
@@ -202,7 +204,8 @@ export default function AdminPage() {
           homeScore: m.homeScore ?? null,
           awayScore: m.awayScore ?? null,
           status: m.status || 'upcoming',
-          utcDate: m.utcDate
+          utcDate: m.utcDate,
+          isManual: true // CRÍTICO: Indica ao servidor que este jogo não deve ser sobrescrito pela API
         }));
 
       setDocumentNonBlocking(roundRef, {

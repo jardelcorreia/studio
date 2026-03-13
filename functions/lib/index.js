@@ -100,10 +100,8 @@ exports.syncBrasileiraoData = (0, scheduler_1.onSchedule)({
         if (existingData && existingData.matches) {
             finalMatches = apiMatches.map((apiMatch) => {
                 const manualMatch = existingData.matches.find((mm) => mm.id === apiMatch.id);
-                if (manualMatch && manualMatch.isManual) {
-                    if (apiMatch.status === 'finished')
-                        return apiMatch;
-                    return manualMatch;
+                if (manualMatch && manualMatch.isManual === true) {
+                    return Object.assign(Object.assign({}, manualMatch), { utcDate: apiMatch.utcDate, homeTeam: apiMatch.homeTeam, awayTeam: apiMatch.awayTeam, matchday: apiMatch.matchday });
                 }
                 return apiMatch;
             });

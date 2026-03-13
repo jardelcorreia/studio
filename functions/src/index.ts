@@ -121,10 +121,23 @@ export const syncBrasileiraoData = onSchedule({
     let finalMatches = apiMatches;
     if (existingData && existingData.matches) {
       finalMatches = apiMatches.map((apiMatch: any) => {
+        // Procuramos se existe um override manual para este jogo específico
         const manualMatch = existingData.matches.find((mm: any) => mm.id === apiMatch.id);
-        if (manualMatch && manualMatch.isManual) {
-          if (apiMatch.status === 'finished') return apiMatch;
-          return manualMatch;
+        
+        // Se o Admin marcou explicitamente como isManual: true, respeitamos
+        if (manualMatch && manualMatch.isManual === true) {
+          // Exceção: Se o jogo oficial terminou na API, podemos decidir seguir a API 
+          // ou manter o manual. Para maior controle do Admin, manteremos o manual
+          // a menos que o status da API seja 'finished' e o admin queira transparência.
+          // Por agora, o manual tem precedência absoluta se isManual for true.
+          return {
+            ...manualMatch,
+            // Mantemos metadados da API que não costumam ser editados
+            utcDate: apiMatch.utcDate,
+            homeTeam: apiMatch.homeTeam,
+            awayTeam: apiMatch.awayTeam,
+            matchday: apiMatch.matchday
+          };
         }
         return apiMatch;
       });
