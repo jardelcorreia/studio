@@ -466,7 +466,7 @@ function HomeContent() {
                   {isInstallable && (<DropdownMenuItem onClick={handleInstall} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10 md:hidden"><Smartphone className="h-4 w-4 text-primary" />Instalar no Celular</DropdownMenuItem>)}
                   <DropdownMenuItem onClick={() => setDarkMode(!darkMode)} className="rounded-xl gap-2 font-bold cursor-pointer py-3 focus:bg-primary/10">{darkMode ? <Sun className="h-4 w-4 text-accent" /> : <Moon className="h-4 w-4 text-primary" />}Tema {darkMode ? 'Claro' : 'Escuro'}</DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-primary/5" />
-                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl gap-2 font-bold cursor-pointer py-3 text-destructive focus:bg-destructive/10"><LogOut className="h-4 w-4" />Encerrar Sessão</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl gap-2 font-bold cursor-pointer py-3 text-red-600 dark:text-red-400 focus:bg-red-600/10 dark:focus:bg-red-400/10"><LogOut className="h-4 w-4" />Encerrar Sessão</DropdownMenuItem>
                 </DropdownMenuContent>
              </DropdownMenu>
           </div>

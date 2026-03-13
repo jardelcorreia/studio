@@ -67,7 +67,9 @@ export function LeagueStandings({ standings }: LeagueStandingsProps) {
                 <TableCell className="text-center font-medium p-2">
                    <Badge variant="outline" className={cn(
                      "rounded-full px-1.5 sm:px-2 text-[9px] sm:text-[10px]",
-                     entry.goalDifference > 0 ? "border-secondary/20 text-secondary bg-secondary/5" : "border-destructive/20 text-destructive bg-destructive/5"
+                     entry.goalDifference > 0 
+                      ? "border-secondary/20 text-secondary bg-secondary/5" 
+                      : "border-red-600/20 dark:border-red-400/20 text-red-600 dark:text-red-400 bg-red-600/5 dark:bg-red-400/5"
                    )}>
                       {entry.goalDifference > 0 ? `+${entry.goalDifference}` : entry.goalDifference}
                    </Badge>
