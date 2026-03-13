@@ -23,43 +23,78 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
   const overallStats = useMemo(() => {
     if (!allUsers || allUsers.length === 0) return [];
 
+    // Criar um mapa de usuários únicos para evitar duplicatas vindas do banco/hook
+    const uniqueUsersMap = new Map<string, any>();
+    allUsers.forEach(u => {
+      if (u.id && !uniqueUsersMap.has(u.id)) {
+        uniqueUsersMap.set(u.id, u);
+      }
+    });
+
+    const uniqueUsers = Array.from(uniqueUsersMap.values());
+
     const stats: Record<string, PlayerOverallStats & { id: string; photoUrl?: string }> = Object.fromEntries(
-      allUsers.map((u) => [u.id, { id: u.id, name: u.username, wins: 0, draws: 0, points: 0, balance: 0, photoUrl: u.photoUrl }])
+      uniqueUsers.map((u) => [
+        u.id, 
+        { id: u.id, name: u.username, wins: 0, draws: 0, points: 0, balance: 0, photoUrl: u.photoUrl }
+      ])
     );
 
     roundWinners.forEach((rw) => {
+      // 1. Processar pontos da rodada (pointsMap)
       if (rw.pointsMap) {
-        allUsers.forEach(u => {
-          if (stats[u.id]) {
-            stats[u.id].points += rw.pointsMap?.[u.id] || 0;
+        // Iterar sobre as chaves do pointsMap (que são IDs de usuários) em vez de allUsers
+        Object.entries(rw.pointsMap).forEach(([userId, points]) => {
+          if (stats[userId]) {
+            stats[userId].points += points || 0;
           }
         });
       }
 
+      // 2. Processar vencedores da rodada (vencedor e saldo financeiro)
       if (!rw.winners || !rw.winners.trim()) return;
       
       const winnersList = rw.winners.split(",").map((s) => s.trim());
-      const winnerIds = allUsers.filter(u => winnersList.includes(u.username)).map(u => u.id);
+      // Identificar IDs dos vencedores comparando usernames
+      const winnerIds = uniqueUsers
+        .filter(u => winnersList.includes(u.username))
+        .map(u => u.id);
       
       if (winnerIds.length === 0) return;
       
       const roundValue = rw.value;
-      const numPlayers = allUsers.length;
+      const numPlayers = uniqueUsers.length;
 
       if (winnerIds.length === 1) {
+        // Vencedor Único
         const winnerId = winnerIds[0];
-        stats[winnerId].wins += 1;
-        stats[winnerId].balance += roundValue * (numPlayers - 1);
-        allUsers.forEach(u => { if (u.id !== winnerId) stats[u.id].balance -= roundValue; });
-      } else {
-        winnerIds.forEach((wId) => { 
-          stats[wId].draws += 1; 
+        if (stats[winnerId]) {
+          stats[winnerId].wins += 1;
+          stats[winnerId].balance += roundValue * (numPlayers - 1);
+        }
+        // Descontar dos outros
+        uniqueUsers.forEach(u => { 
+          if (u.id !== winnerId && stats[u.id]) {
+            stats[u.id].balance -= roundValue; 
+          }
         });
-        const losers = allUsers.filter(u => !winnerIds.includes(u.id));
+      } else {
+        // Empate entre vários vencedores
+        winnerIds.forEach((wId) => { 
+          if (stats[wId]) stats[wId].draws += 1; 
+        });
+        
+        const losers = uniqueUsers.filter(u => !winnerIds.includes(u.id));
         const totalPot = losers.length * roundValue;
         const prizePerWinner = totalPot / winnerIds.length;
-        winnerIds.forEach(wId => { stats[wId].balance += prizePerWinner; });
-        losers.forEach(l => { stats[l.id].balance -= roundValue; });
+        
+        winnerIds.forEach(wId => { 
+          if (stats[wId]) stats[wId].balance += prizePerWinner; 
+        });
+        
+        losers.forEach(l => { 
+          if (stats[l.id]) stats[l.id].balance -= roundValue; 
+        });
       }
     });
 
