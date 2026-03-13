@@ -23,16 +23,16 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
   const overallStats = useMemo(() => {
     if (!allUsers || allUsers.length === 0) return [];
 
-    // Criar um mapa de usuários únicos para evitar duplicatas vindas do banco/hook
-    const uniqueUsersMap = new Map<string, any>();
+    // 1. Garantir lista de usuários única por ID
+    const uniqueUsersMap = new Map();
     allUsers.forEach(u => {
-      if (u.id && !uniqueUsersMap.has(u.id)) {
+      if (!uniqueUsersMap.has(u.id)) {
         uniqueUsersMap.set(u.id, u);
       }
     });
-
     const uniqueUsers = Array.from(uniqueUsersMap.values());
 
+    // Inicializar objeto de estatísticas
     const stats: Record<string, PlayerOverallStats & { id: string; photoUrl?: string }> = Object.fromEntries(
       uniqueUsers.map((u) => [
         u.id, 
@@ -40,18 +40,23 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
       ])
     );
 
+    // 2. Processar apenas rodadas únicas (evita duplicar se o array tiver clones)
+    const processedRounds = new Set<number>();
+    
     roundWinners.forEach((rw) => {
-      // 1. Processar pontos da rodada (pointsMap)
+      if (!rw.round || processedRounds.has(rw.round)) return;
+      processedRounds.add(rw.round);
+
+      // Soma de pontos baseada no pointsMap da rodada
       if (rw.pointsMap) {
-        // Iterar sobre as chaves do pointsMap (que são IDs de usuários) em vez de allUsers
-        Object.entries(rw.pointsMap).forEach(([userId, points]) => {
-          if (stats[userId]) {
-            stats[userId].points += points || 0;
+        Object.entries(rw.pointsMap).forEach(([uId, pts]) => {
+          if (stats[uId]) {
+            stats[uId].points += (Number(pts) || 0);
           }
         });
       }
 
-      // 2. Processar vencedores da rodada (vencedor e saldo financeiro)
+      // Lógica de Vitórias e Saldo Financeiro
       if (!rw.winners || !rw.winners.trim()) return;
       
       const winnersList = rw.winners.split(",").map((s) => s.trim());
@@ -62,7 +67,7 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
       
       if (winnerIds.length === 0) return;
       
-      const roundValue = rw.value;
+      const roundValue = rw.value || 0;
       const numPlayers = uniqueUsers.length;
 
       if (winnerIds.length === 1) {
@@ -72,10 +77,10 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
           stats[winnerId].wins += 1;
           stats[winnerId].balance += roundValue * (numPlayers - 1);
         }
-        // Descontar dos outros
-        uniqueUsers.forEach(u => { 
+        // Descontar dos perdedores
+        uniqueUsers.forEach(u => {
           if (u.id !== winnerId && stats[u.id]) {
-            stats[u.id].balance -= roundValue; 
+            stats[u.id].balance -= roundValue;
           }
         });
       } else {
@@ -91,7 +96,6 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
         winnerIds.forEach(wId => { 
           if (stats[wId]) stats[wId].balance += prizePerWinner; 
         });
-        
         losers.forEach(l => { 
           if (stats[l.id]) stats[l.id].balance -= roundValue; 
         });
@@ -117,7 +121,7 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
     const winnersList = rw.winners ? rw.winners.split(",").map(s => s.trim()) : [];
 
     return (
-      <div key={idx} className="group relative flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
+      <div key={`${rw.round}-${idx}`} className="group relative flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className={cn(
             "h-8 w-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 shadow-sm transition-transform group-hover:rotate-3",
@@ -147,7 +151,7 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
         <div className="flex flex-col items-end shrink-0 ml-3">
           <span className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest">Aposta</span>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] font-black text-primary/60 italic">R$ {rw.value.toFixed(2)}</span>
+            <span className="text-[10px] font-black text-primary/60 italic">R$ {(rw.value || 0).toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -193,7 +197,7 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
                                   "text-2xl sm:text-4xl font-black italic w-full h-full flex items-center justify-center",
                                   isFirst ? "bg-white text-primary" : "bg-primary/10 text-primary"
                                 )}>
-                                  {player.name.substring(0, 2).toUpperCase()}
+                                  {player.name ? player.name.substring(0, 2).toUpperCase() : "AL"}
                                 </AvatarFallback>
                               </Avatar>
                            </div>

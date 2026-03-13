@@ -259,6 +259,13 @@ function HomeContent() {
   const scores = useMemo((): PlayerScore[] => {
     if (!allUsers || allUsers.length === 0) return [];
     
+    // Garantir usuários únicos para evitar duplicar cálculos se a coleção tiver clones
+    const uniqueUsersMap = new Map();
+    allUsers.forEach(u => {
+      if (!uniqueUsersMap.has(u.id)) uniqueUsersMap.set(u.id, u);
+    });
+    const uniqueUsers = Array.from(uniqueUsersMap.values());
+
     const sortedOrig = [...matches].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
     const origResults = sortedOrig.slice(0, 10).map(m => {
       const hasScore = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
@@ -278,7 +285,7 @@ function HomeContent() {
       return isMatchValid && !isFinished && (res.homeScore === "" || res.awayScore === "");
     }).length;
 
-    const playerStats = allUsers.map(u => {
+    const playerStats = uniqueUsers.map(u => {
       let pts = 0, exs = 0, filledValidCount = 0;
       const userPreds = predictions[u.id];
       if (!userPreds) return { id: u.id, name: u.username || "Jogador", points: 0, exactScores: 0, betsCompleted: false, betsCount: 0, photoUrl: u.photoUrl, isWinner: false };
@@ -330,7 +337,10 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
-    if (settingsData?.history) setRoundWinners(settingsData.history);
+    // Sincronizar apenas se o histórico for diferente para evitar loops e sobreposições
+    if (settingsData?.history && JSON.stringify(settingsData.history) !== JSON.stringify(roundWinners)) {
+      setRoundWinners(settingsData.history);
+    }
   }, [settingsData]);
 
   useEffect(() => {
@@ -389,8 +399,12 @@ function HomeContent() {
     const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
     setRoundWinners(prev => {
       const next = [...prev];
-      next[currentRound - 1] = { ...next[currentRound - 1], winners: winnersList || next[currentRound - 1].winners, pointsMap: pointsMap };
-      return next;
+      // Apenas atualiza se houver mudança real no vencedor ou pontos
+      if (next[currentRound - 1].winners !== winnersList || JSON.stringify(next[currentRound - 1].pointsMap) !== JSON.stringify(pointsMap)) {
+        next[currentRound - 1] = { ...next[currentRound - 1], winners: winnersList || next[currentRound - 1].winners, pointsMap: pointsMap };
+        return next;
+      }
+      return prev;
     });
   }, [scores, currentRound, isRoundFinished]);
 
