@@ -10,6 +10,7 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Match, MatchStatus, ChampionshipWinner, PlayerPredictions } from "@/lib/types";
 import { getBrasileiraoMatches, getBrasileiraoCurrentMatchday } from "@/lib/football-api";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -21,7 +22,6 @@ import {
 import {
   Shield,
   ArrowLeft,
-  Save,
   Loader2,
   RefreshCw,
   Eye,
@@ -32,7 +32,6 @@ import {
   DollarSign,
   Table,
   Trash2,
-  Trophy,
   Zap,
   CheckCircle2
 } from "lucide-react";
