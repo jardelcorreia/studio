@@ -24,8 +24,12 @@ interface ChampionshipRankingProps {
 export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores, currentRoundNumber }: ChampionshipRankingProps) {
   const userMap = useMemo(() => {
     const map: Record<string, any> = {};
+    const uniqueUsersMap = new Map();
     allUsers?.forEach(u => {
-      map[u.id] = u;
+      if (!uniqueUsersMap.has(u.id)) {
+        uniqueUsersMap.set(u.id, u);
+        map[u.id] = u;
+      }
     });
     return map;
   }, [allUsers]);
@@ -33,8 +37,10 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
   const overallStats = useMemo(() => {
     if (!allUsers || allUsers.length === 0) return [];
 
+    const uniqueUsers = Array.from(new Map(allUsers.map(u => [u.id, u])).values());
+
     const stats: Record<string, PlayerOverallStats & { id: string; photoUrl?: string }> = Object.fromEntries(
-      allUsers.map((u) => [
+      uniqueUsers.map((u) => [
         u.id, 
         { id: u.id, name: u.username, wins: 0, draws: 0, points: 0, balance: 0, photoUrl: u.photoUrl }
       ])
@@ -42,8 +48,9 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
 
     const processedRounds = new Set<number>();
     
+    // Processamos o histórico consolidado
     roundWinners.forEach((rw) => {
-      if (!rw.round) return;
+      if (!rw.round || processedRounds.has(rw.round)) return;
       
       const ptsEntries = Object.entries(rw.pointsMap || {});
       if (ptsEntries.length === 0) return;
@@ -51,7 +58,6 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
       processedRounds.add(rw.round);
 
       ptsEntries.forEach(([key, pts]) => {
-        // Tenta encontrar por ID primeiro, depois por Nome (compatibilidade retroativa)
         let playerStat = stats[key];
         if (!playerStat) {
           playerStat = Object.values(stats).find(s => s.name === key);
@@ -66,9 +72,8 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
       if (maxPts > 0) {
         const winnerKeys = ptsEntries.filter(([_, p]) => Number(p) === maxPts).map(([key, _]) => key);
         const roundValue = rw.value || 0;
-        const numPlayers = allUsers.length;
+        const numPlayers = uniqueUsers.length;
 
-        // Mapeia chaves (IDs ou Nomes) para IDs reais de estatísticas
         const winnerIds = winnerKeys.map(key => {
           if (stats[key]) return key;
           return Object.values(stats).find(s => s.name === key)?.id;
@@ -80,14 +85,14 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
             stats[winnerId].wins += 1;
             stats[winnerId].balance += roundValue * (numPlayers - 1);
           }
-          allUsers.forEach(u => {
+          uniqueUsers.forEach(u => {
             if (u.id !== winnerId && stats[u.id]) {
               stats[u.id].balance -= roundValue;
             }
           });
         } else if (winnerIds.length > 1) {
           winnerIds.forEach((wId) => { if (stats[wId]) stats[wId].draws += 1; });
-          const losers = allUsers.filter(u => !winnerIds.includes(u.id));
+          const losers = uniqueUsers.filter(u => !winnerIds.includes(u.id));
           const totalPot = losers.length * roundValue;
           const prizePerWinner = totalPot / winnerIds.length;
           winnerIds.forEach(wId => { if (stats[wId]) stats[wId].balance += prizePerWinner; });
@@ -96,6 +101,7 @@ export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores
       }
     });
 
+    // Adicionamos os pontos da rodada atual se ela ainda não estiver consolidada no histórico
     if (currentRoundScores && currentRoundNumber && !processedRounds.has(currentRoundNumber)) {
       currentRoundScores.forEach(s => {
         if (stats[s.id]) {
