@@ -259,7 +259,6 @@ function HomeContent() {
   const scores = useMemo((): PlayerScore[] => {
     if (!allUsers || allUsers.length === 0) return [];
     
-    // Garantir usuários únicos para evitar duplicar cálculos se a coleção tiver clones
     const uniqueUsersMap = new Map();
     allUsers.forEach(u => {
       if (!uniqueUsersMap.has(u.id)) uniqueUsersMap.set(u.id, u);
@@ -337,7 +336,6 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
-    // Sincronizar apenas se o histórico for diferente para evitar loops e sobreposições
     if (settingsData?.history && JSON.stringify(settingsData.history) !== JSON.stringify(roundWinners)) {
       setRoundWinners(settingsData.history);
     }
@@ -395,13 +393,24 @@ function HomeContent() {
 
   useEffect(() => {
     if (currentRound === null || scores.length === 0 || !isRoundFinished) return;
+    
     const winnersList = scores.filter(s => s.isWinner).map(s => s.name).join(", ");
     const pointsMap = Object.fromEntries(scores.map(s => [s.id, s.points]));
+    
     setRoundWinners(prev => {
       const next = [...prev];
-      // Apenas atualiza se houver mudança real no vencedor ou pontos
-      if (next[currentRound - 1].winners !== winnersList || JSON.stringify(next[currentRound - 1].pointsMap) !== JSON.stringify(pointsMap)) {
-        next[currentRound - 1] = { ...next[currentRound - 1], winners: winnersList || next[currentRound - 1].winners, pointsMap: pointsMap };
+      const existing = next[currentRound - 1];
+      
+      const hasPointsChanged = JSON.stringify(existing.pointsMap) !== JSON.stringify(pointsMap);
+      const hasWinnersChanged = existing.winners !== winnersList;
+      
+      // Só atualiza se houver mudança real e se não estivermos sobrescrevendo dados bons por vazios
+      if ((hasPointsChanged || hasWinnersChanged) && Object.keys(pointsMap).length > 0) {
+        next[currentRound - 1] = { 
+          ...existing, 
+          winners: winnersList || existing.winners, 
+          pointsMap: pointsMap 
+        };
         return next;
       }
       return prev;
@@ -543,7 +552,16 @@ function HomeContent() {
         <div className={cn("absolute inset-0 overflow-y-auto no-scrollbar pt-4 pb-24 md:pb-8 animate-in fade-in duration-200", activeTab !== "ranking" && "hidden")}>
           <div className="max-w-7xl mx-auto px-4 space-y-6">
             <div className="flex flex-col"><h3 className="font-black italic uppercase text-lg text-primary">Ranking Geral</h3><p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Classificação do Campeonato</p></div>
-            <ChampionshipRanking roundWinners={roundWinners} setRoundWinners={setRoundWinners} allUsers={allUsers || []} isAdmin={false} onSave={async () => {}} isSaving={false} />
+            <ChampionshipRanking 
+              roundWinners={roundWinners} 
+              setRoundWinners={setRoundWinners} 
+              allUsers={allUsers || []} 
+              isAdmin={false} 
+              onSave={async () => {}} 
+              isSaving={false} 
+              currentRoundScores={scores}
+              currentRoundNumber={currentRound}
+            />
           </div>
         </div>
 

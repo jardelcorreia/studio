@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ChampionshipWinner, PlayerOverallStats } from "@/lib/types";
+import { ChampionshipWinner, PlayerOverallStats, PlayerScore } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Trophy, Medal, Star, TrendingUp, TrendingDown, History, Clock, ChevronDown, Crown } from "lucide-react";
@@ -17,13 +17,14 @@ interface ChampionshipRankingProps {
   isAdmin?: boolean;
   onSave?: (data?: ChampionshipWinner[]) => Promise<void>;
   isSaving?: boolean;
+  currentRoundScores?: PlayerScore[];
+  currentRoundNumber?: number | null;
 }
 
-export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRankingProps) {
+export function ChampionshipRanking({ roundWinners, allUsers, currentRoundScores, currentRoundNumber }: ChampionshipRankingProps) {
   const overallStats = useMemo(() => {
     if (!allUsers || allUsers.length === 0) return [];
 
-    // 1. Garantir lista de usuários única por ID
     const uniqueUsersMap = new Map();
     allUsers.forEach(u => {
       if (!uniqueUsersMap.has(u.id)) {
@@ -32,7 +33,6 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
     });
     const uniqueUsers = Array.from(uniqueUsersMap.values());
 
-    // Inicializar objeto de estatísticas
     const stats: Record<string, PlayerOverallStats & { id: string; photoUrl?: string }> = Object.fromEntries(
       uniqueUsers.map((u) => [
         u.id, 
@@ -40,14 +40,13 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
       ])
     );
 
-    // 2. Processar apenas rodadas únicas (evita duplicar se o array tiver clones)
     const processedRounds = new Set<number>();
     
+    // 1. Processar histórico do Firestore
     roundWinners.forEach((rw) => {
       if (!rw.round || processedRounds.has(rw.round)) return;
       processedRounds.add(rw.round);
 
-      // Soma de pontos baseada no pointsMap da rodada
       if (rw.pointsMap) {
         Object.entries(rw.pointsMap).forEach(([uId, pts]) => {
           if (stats[uId]) {
@@ -56,11 +55,9 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
         });
       }
 
-      // Lógica de Vitórias e Saldo Financeiro
       if (!rw.winners || !rw.winners.trim()) return;
       
       const winnersList = rw.winners.split(",").map((s) => s.trim());
-      // Identificar IDs dos vencedores comparando usernames
       const winnerIds = uniqueUsers
         .filter(u => winnersList.includes(u.username))
         .map(u => u.id);
@@ -71,20 +68,17 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
       const numPlayers = uniqueUsers.length;
 
       if (winnerIds.length === 1) {
-        // Vencedor Único
         const winnerId = winnerIds[0];
         if (stats[winnerId]) {
           stats[winnerId].wins += 1;
           stats[winnerId].balance += roundValue * (numPlayers - 1);
         }
-        // Descontar dos perdedores
         uniqueUsers.forEach(u => {
           if (u.id !== winnerId && stats[u.id]) {
             stats[u.id].balance -= roundValue;
           }
         });
       } else {
-        // Empate entre vários vencedores
         winnerIds.forEach((wId) => { 
           if (stats[wId]) stats[wId].draws += 1; 
         });
@@ -102,6 +96,21 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
       }
     });
 
+    // 2. Adicionar pontos da rodada "live" se ela não estiver no histórico ou estiver com zeros
+    if (currentRoundScores && currentRoundNumber) {
+      const histEntry = roundWinners.find(rw => rw.round === currentRoundNumber);
+      const isHistEmpty = !histEntry || !histEntry.pointsMap || Object.keys(histEntry.pointsMap).length === 0 || 
+                         Object.values(histEntry.pointsMap).every(v => v === 0);
+
+      if (isHistEmpty) {
+        currentRoundScores.forEach(s => {
+          if (stats[s.id]) {
+            stats[s.id].points += s.points;
+          }
+        });
+      }
+    }
+
     const hasAnyActivity = Object.values(stats).some(s => s.wins > 0 || s.draws > 0 || s.points > 0 || s.balance !== 0);
 
     return Object.values(stats).sort((a, b) => {
@@ -114,7 +123,7 @@ export function ChampionshipRanking({ roundWinners, allUsers }: ChampionshipRank
       if (b.balance !== a.balance) return b.balance - a.balance;
       return a.name.localeCompare(b.name);
     });
-  }, [roundWinners, allUsers]);
+  }, [roundWinners, allUsers, currentRoundScores, currentRoundNumber]);
 
   const renderRoundItem = (rw: ChampionshipWinner, idx: number) => {
     const hasWinners = rw.winners && rw.winners.trim() !== "";

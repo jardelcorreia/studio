@@ -59,6 +59,7 @@ export default function AdminPage() {
 
   const [turn1Value, setTurn1Value] = useState(6);
   const [turn2Value, setTurn2Value] = useState(6);
+  const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
   const [roundWinners, setRoundWinners] = useState<ChampionshipWinner[]>(
     Array.from({ length: 38 }, (_, i) => ({
       round: i + 1,
@@ -74,7 +75,7 @@ export default function AdminPage() {
   const { data: roundData } = useDoc(roundDocRef);
 
   const settingsDocRef = useMemoFirebase(() => user ? doc(db, "app_settings", "championship") : null, [db, user]);
-  const { data: settingsData } = useDoc(settingsDocRef);
+  const { data: settingsData, isLoading: isLoadingSettings } = useDoc(settingsDocRef);
 
   const usersCollectionRef = useMemoFirebase(() => user ? collection(db, "users") : null, [db, user]);
   const { data: allUsers } = useCollection(usersCollectionRef);
@@ -120,6 +121,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (settingsData?.history) {
       setRoundWinners(settingsData.history);
+      setHasLoadedHistory(true);
     }
   }, [settingsData]);
 
@@ -195,8 +197,6 @@ export default function AdminPage() {
     setSaving(true);
     try {
       const roundRef = doc(db, "rounds", roundId);
-      
-      // Filtramos apenas o que é manual ou que veio de um estado anterior de manual
       const matchOverrides = matches
         .filter(m => m.isManual)
         .map(m => ({
@@ -205,7 +205,7 @@ export default function AdminPage() {
           awayScore: m.awayScore ?? null,
           status: m.status || 'upcoming',
           utcDate: m.utcDate,
-          isManual: true // CRÍTICO: Indica ao servidor que este jogo não deve ser sobrescrito pela API
+          isManual: true
         }));
 
       setDocumentNonBlocking(roundRef, {
@@ -227,6 +227,11 @@ export default function AdminPage() {
   };
 
   const handleSaveLeagueSettings = async () => {
+    if (!hasLoadedHistory || isLoadingSettings) {
+      toast({ variant: "destructive", title: "Aguarde", description: "O histórico ainda está sendo carregado. Tente novamente em instantes." });
+      return;
+    }
+
     setSaving(true);
     try {
       const settingsRef = doc(db, "app_settings", "championship");
@@ -327,14 +332,20 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="financeiro" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
             <Card className="glass-card border-none rounded-2xl overflow-hidden">
-              <CardHeader className="bg-primary/5 p-3 flex flex-row items-center justify-between space-y-0"><div className="flex items-center gap-2"><Settings2 className="h-3.5 w-3.5 text-primary" /><CardTitle className="text-[9px] font-black italic uppercase text-primary">Configurações Liga</CardTitle></div><Button onClick={handleSaveLeagueSettings} disabled={saving} size="sm" className="rounded-lg h-7 px-3 font-black italic uppercase gap-2 text-[8px]">{saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}Salvar</Button></CardHeader>
+              <CardHeader className="bg-primary/5 p-3 flex flex-row items-center justify-between space-y-0"><div className="flex items-center gap-2"><Settings2 className="h-3.5 w-3.5 text-primary" /><CardTitle className="text-[9px] font-black italic uppercase text-primary">Configurações Liga</CardTitle></div><Button onClick={handleSaveLeagueSettings} disabled={saving || isLoadingSettings} size="sm" className="rounded-lg h-7 px-3 font-black italic uppercase gap-2 text-[8px]">{saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}Salvar</Button></CardHeader>
               <CardContent className="p-4 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1"><label className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Turno 1</label><div className="flex items-center gap-1.5 bg-muted/20 p-2 rounded-xl border border-primary/5"><span className="text-[10px] font-black text-primary/40">R$</span><input type="number" value={turn1Value} onChange={(e) => setTurn1Value(parseFloat(e.target.value) || 0)} className="border-none bg-transparent font-black text-base focus:outline-none w-full" /></div></div>
                   <div className="space-y-1"><label className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Turno 2</label><div className="flex items-center gap-1.5 bg-muted/20 p-2 rounded-xl border border-primary/5"><span className="text-[10px] font-black text-primary/40">R$</span><input type="number" value={turn2Value} onChange={(e) => setTurn2Value(parseFloat(e.target.value) || 0)} className="border-none bg-transparent font-black text-base focus:outline-none w-full" /></div></div>
                 </div>
                 <Button onClick={applyTurnValues} variant="outline" className="w-full rounded-xl h-8 font-black italic uppercase gap-2 text-[8px] border-primary/10 text-primary hover:bg-primary/5"><RefreshCw className="h-3 w-3" />Atualizar 38 Rodadas</Button>
-                <div className="pt-3 border-t border-primary/5"><div className="grid grid-cols-5 sm:grid-cols-8 gap-1.5">{roundWinners.map((rw, idx) => (<div key={idx} className="bg-muted/30 p-1.5 rounded-lg border border-primary/5 flex flex-col items-center gap-0.5"><span className="text-[6px] font-black uppercase text-foreground">R{rw.round}</span><div className="flex items-center gap-0.5"><span className="text-[6px] font-bold text-primary/40">R$</span><input type="number" value={rw.value} onChange={(e) => updateRoundWinnerValue(idx, parseFloat(e.target.value) || 0)} className="w-6 bg-transparent text-center font-black text-[9px] focus:outline-none" /></div></div>))}</div></div>
+                <div className="pt-3 border-t border-primary/5">
+                  {isLoadingSettings && !hasLoadedHistory ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+                  ) : (
+                    <div className="grid grid-cols-5 sm:grid-cols-8 gap-1.5">{roundWinners.map((rw, idx) => (<div key={idx} className="bg-muted/30 p-1.5 rounded-lg border border-primary/5 flex flex-col items-center gap-0.5"><span className="text-[6px] font-black uppercase text-foreground">R{rw.round}</span><div className="flex items-center gap-0.5"><span className="text-[6px] font-bold text-primary/40">R$</span><input type="number" value={rw.value} onChange={(e) => updateRoundWinnerValue(idx, parseFloat(e.target.value) || 0)} className="w-6 bg-transparent text-center font-black text-[9px] focus:outline-none" /></div></div>))}</div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
